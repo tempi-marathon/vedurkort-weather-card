@@ -65,8 +65,8 @@ export function renderBackground(
         style=${cloudOpacity != null ? `opacity:${cloudOpacity}` : ""}
       ></div>
       <div class="vk-bg__layer vk-bg__precip"></div>
-      <div class="vk-bg__layer vk-bg__fx"></div>
       <div class="vk-bg__scrim"></div>
+      <div class="vk-bg__layer vk-bg__fx"></div>
     </div>
   `;
 }
@@ -83,6 +83,14 @@ export const backgroundStyles = css`
   .vk-bg__layer {
     position: absolute;
     inset: 0;
+  }
+  .vk-bg__precip::before,
+  .vk-bg__precip::after,
+  .vk-bg__fx::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
   .vk-bg__scrim {
     position: absolute;
@@ -133,51 +141,208 @@ export const backgroundStyles = css`
       );
     animation: vk-drift 28s linear infinite;
   }
+
+  /* Rain: sparse falling needles on 3 staggered layers */
   .vk-bg--rain .vk-bg__sky {
     background: linear-gradient(180deg, #3d4f66 0%, #5a6e86 60%, #74879c 100%);
   }
+  .vk-bg--rain .vk-bg__clouds {
+    background:
+      radial-gradient(
+        ellipse 50% 28% at 30% 22%,
+        rgba(160, 175, 195, 0.55),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 45% 24% at 75% 18%,
+        rgba(140, 155, 175, 0.45),
+        transparent 70%
+      );
+  }
   .vk-bg--rain .vk-bg__precip {
+    inset: -40% 0 0 0;
     background-image: repeating-linear-gradient(
-      -20deg,
-      transparent,
-      transparent 8px,
-      rgba(200, 220, 255, 0.35) 8px,
-      rgba(200, 220, 255, 0.35) 10px
+      105deg,
+      transparent 0,
+      transparent 46px,
+      rgba(210, 228, 255, 0.55) 46px,
+      rgba(210, 228, 255, 0.15) 47px,
+      transparent 48px,
+      transparent 95px
     );
-    background-size: 24px 40px;
-    animation: vk-rain 0.55s linear infinite;
+    background-size: 95px 70px;
+    animation: vk-rain-a 0.65s linear infinite;
+    opacity: 0.75;
+  }
+  .vk-bg--rain .vk-bg__precip::before {
+    inset: -50% 0 0 0;
+    background-image: repeating-linear-gradient(
+      100deg,
+      transparent 0,
+      transparent 62px,
+      rgba(190, 215, 255, 0.45) 62px,
+      rgba(190, 215, 255, 0.1) 63.5px,
+      transparent 65px,
+      transparent 130px
+    );
+    background-size: 130px 90px;
+    animation: vk-rain-b 0.95s linear infinite;
     opacity: 0.55;
   }
+  .vk-bg--rain .vk-bg__precip::after {
+    inset: -45% 0 0 0;
+    background-image: repeating-linear-gradient(
+      110deg,
+      transparent 0,
+      transparent 38px,
+      rgba(230, 240, 255, 0.4) 38px,
+      transparent 39px,
+      transparent 88px
+    );
+    background-size: 88px 55px;
+    animation: vk-rain-c 0.48s linear infinite;
+    opacity: 0.45;
+  }
+
+  /* Snow: multi-size flakes with drift */
   .vk-bg--snow .vk-bg__sky {
     background: linear-gradient(180deg, #7a8fa8 0%, #b0c0d2 55%, #dce6f0 100%);
   }
   .vk-bg--snow .vk-bg__precip {
+    inset: -30% 0 0 0;
     background-image:
-      radial-gradient(circle, #fff 1.2px, transparent 1.4px),
-      radial-gradient(circle, #fff 1px, transparent 1.2px);
-    background-size: 36px 36px, 52px 52px;
-    background-position: 0 0, 18px 12px;
-    animation: vk-snow 4.5s linear infinite;
-    opacity: 0.7;
+      radial-gradient(circle, rgba(255, 255, 255, 0.95) 1.1px, transparent 1.35px),
+      radial-gradient(circle, rgba(255, 255, 255, 0.7) 0.85px, transparent 1.1px);
+    background-size: 51px 58px, 79px 86px;
+    background-position: 0 0, 27px 33px;
+    animation: vk-snow-a 8s linear infinite;
+    opacity: 0.85;
   }
+  .vk-bg--snow .vk-bg__precip::before {
+    inset: -40% 0 0 0;
+    background-image:
+      radial-gradient(circle, #fff 1.7px, transparent 2px),
+      radial-gradient(circle, rgba(255, 255, 255, 0.8) 1.15px, transparent 1.4px);
+    background-size: 103px 118px, 67px 74px;
+    background-position: 14px 9px, 41px 52px;
+    animation: vk-snow-b 12.5s linear infinite;
+    opacity: 0.8;
+  }
+  .vk-bg--snow .vk-bg__precip::after {
+    inset: -35% 0 0 0;
+    background-image:
+      radial-gradient(circle, rgba(255, 255, 255, 0.95) 2.1px, transparent 2.4px),
+      radial-gradient(circle, rgba(255, 255, 255, 0.55) 0.65px, transparent 0.85px),
+      radial-gradient(circle, #fff 1.25px, transparent 1.5px);
+    background-size: 141px 155px, 43px 49px, 91px 99px;
+    background-position: 7px 22px, 19px 4px, 63px 44px;
+    animation: vk-snow-c 17s linear infinite;
+    opacity: 0.9;
+  }
+
+  /* Storm: dark sky, heavy rain, lightning above scrim */
   .vk-bg--storm .vk-bg__sky {
-    background: linear-gradient(180deg, #1c2230 0%, #2e3a4e 50%, #3d4d63 100%);
+    background: linear-gradient(180deg, #0d111a 0%, #1a2333 45%, #2a3548 100%);
   }
-  .vk-bg--storm .vk-bg__fx {
-    animation: vk-flash 7s ease-in-out infinite;
+  .vk-bg--storm .vk-bg__clouds {
+    background:
+      radial-gradient(
+        ellipse 55% 32% at 25% 18%,
+        rgba(40, 48, 62, 0.85),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 50% 28% at 70% 12%,
+        rgba(55, 65, 82, 0.75),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 60% 30% at 50% 28%,
+        rgba(30, 36, 48, 0.7),
+        transparent 75%
+      );
+    animation: vk-drift 40s linear infinite;
+  }
+  .vk-bg--storm .vk-bg__scrim {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.28) 0%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
   }
   .vk-bg--storm .vk-bg__precip {
+    inset: -40% 0 0 0;
     background-image: repeating-linear-gradient(
-      -25deg,
-      transparent,
-      transparent 7px,
-      rgba(180, 200, 255, 0.4) 7px,
-      rgba(180, 200, 255, 0.4) 9px
+      108deg,
+      transparent 0,
+      transparent 36px,
+      rgba(180, 205, 255, 0.65) 36px,
+      rgba(180, 205, 255, 0.2) 37.5px,
+      transparent 39px,
+      transparent 78px
     );
-    background-size: 20px 36px;
-    animation: vk-rain 0.4s linear infinite;
-    opacity: 0.45;
+    background-size: 78px 60px;
+    animation: vk-rain-a 0.42s linear infinite;
+    opacity: 0.7;
   }
+  .vk-bg--storm .vk-bg__precip::before {
+    inset: -50% 0 0 0;
+    background-image: repeating-linear-gradient(
+      102deg,
+      transparent 0,
+      transparent 54px,
+      rgba(160, 190, 255, 0.5) 54px,
+      transparent 56px,
+      transparent 115px
+    );
+    background-size: 115px 75px;
+    animation: vk-rain-b 0.7s linear infinite;
+    opacity: 0.55;
+  }
+  .vk-bg--storm .vk-bg__precip::after {
+    inset: -45% 0 0 0;
+    background-image: repeating-linear-gradient(
+      112deg,
+      transparent 0,
+      transparent 28px,
+      rgba(220, 230, 255, 0.45) 28px,
+      transparent 29px,
+      transparent 70px
+    );
+    background-size: 70px 48px;
+    animation: vk-rain-c 0.32s linear infinite;
+    opacity: 0.5;
+  }
+  .vk-bg--storm .vk-bg__fx {
+    animation: vk-sky-flash 9s ease-in-out infinite;
+  }
+  .vk-bg--storm .vk-bg__fx::before {
+    left: 56%;
+    top: 4%;
+    width: 34px;
+    height: 58%;
+    inset: auto;
+    background: linear-gradient(
+      180deg,
+      #fffef8 0%,
+      #e8f0ff 40%,
+      rgba(160, 190, 255, 0.85) 100%
+    );
+    clip-path: polygon(
+      42% 0%,
+      62% 0%,
+      48% 32%,
+      78% 32%,
+      28% 100%,
+      40% 46%,
+      18% 46%
+    );
+    filter: drop-shadow(0 0 10px rgba(255, 255, 240, 0.95))
+      drop-shadow(0 0 22px rgba(180, 210, 255, 0.7));
+    opacity: 0;
+    animation: vk-bolt 9s ease-in-out infinite;
+  }
+
   .vk-bg--fog .vk-bg__sky {
     background: linear-gradient(180deg, #8a939e 0%, #b4bcc6 50%, #d0d6dc 100%);
   }
@@ -204,20 +369,53 @@ export const backgroundStyles = css`
     );
     animation: vk-drift 8s linear infinite;
   }
-  @keyframes vk-rain {
+
+  @keyframes vk-rain-a {
     from {
       background-position: 0 0;
     }
     to {
-      background-position: 24px 40px;
+      background-position: 18px 70px;
     }
   }
-  @keyframes vk-snow {
+  @keyframes vk-rain-b {
     from {
-      background-position: 0 0, 18px 12px;
+      background-position: 10px 0;
     }
     to {
-      background-position: 0 36px, 18px 64px;
+      background-position: -12px 90px;
+    }
+  }
+  @keyframes vk-rain-c {
+    from {
+      background-position: -6px 0;
+    }
+    to {
+      background-position: 14px 55px;
+    }
+  }
+  @keyframes vk-snow-a {
+    from {
+      background-position: 0 0, 27px 33px;
+    }
+    to {
+      background-position: 22px 140px, 55px 175px;
+    }
+  }
+  @keyframes vk-snow-b {
+    from {
+      background-position: 14px 9px, 41px 52px;
+    }
+    to {
+      background-position: -28px 160px, 12px 200px;
+    }
+  }
+  @keyframes vk-snow-c {
+    from {
+      background-position: 7px 22px, 19px 4px, 63px 44px;
+    }
+    to {
+      background-position: 38px 180px, -18px 120px, 95px 220px;
     }
   }
   @keyframes vk-drift {
@@ -238,15 +436,57 @@ export const backgroundStyles = css`
       transform: translateY(-4%);
     }
   }
-  @keyframes vk-flash {
+  @keyframes vk-sky-flash {
     0%,
-    88%,
+    7%,
+    11%,
+    60%,
+    64%,
     100% {
       background: transparent;
     }
-    90%,
-    92% {
-      background: rgba(255, 255, 220, 0.35);
+    7.8%,
+    8.4% {
+      background: rgba(255, 255, 240, 0.55);
+    }
+    9%,
+    10.2% {
+      background: rgba(255, 255, 245, 0.75);
+    }
+    61.2% {
+      background: rgba(210, 225, 255, 0.4);
+    }
+    62% {
+      background: rgba(255, 255, 245, 0.65);
+    }
+  }
+  @keyframes vk-bolt {
+    0%,
+    7%,
+    11%,
+    60%,
+    64%,
+    100% {
+      opacity: 0;
+    }
+    7.8% {
+      opacity: 0.85;
+    }
+    8.2% {
+      opacity: 0.2;
+    }
+    9%,
+    10% {
+      opacity: 1;
+    }
+    10.5% {
+      opacity: 0;
+    }
+    61.2% {
+      opacity: 0.7;
+    }
+    62.2% {
+      opacity: 0;
     }
   }
 `;
