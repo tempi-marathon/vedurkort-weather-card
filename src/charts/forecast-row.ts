@@ -10,7 +10,7 @@ import {
 import { getMeteoconSvg } from "../icons/meteocons";
 import type { ForecastItem, HomeAssistant } from "../types";
 import { tipWrap } from "../ui/tooltip";
-import { formatConditionLabel, isSunUp } from "../weather/adapter";
+import { formatConditionLabel, isDaytimeAt, isSunUp } from "../weather/adapter";
 
 export function renderForecastRow(
   hass: HomeAssistant,
@@ -33,16 +33,17 @@ export function renderForecastRow(
   }
 
   const weatherEntity = hass.states[opts.weatherEntityId];
+  const sunEntity = opts.sunEntity ?? "sun.sun";
 
   return html`
     <div class="forecast-row" style="--cols: ${items.length}">
       ${items.map((item) => {
-        const hour = new Date(item.datetime).getHours();
+        // Prefer sun rising/setting for hourly so icons match real dusk/dawn.
+        // Fall back to forecast is_daytime, then sun.sun for daily.
         const isDay =
-          item.is_daytime ??
-          (opts.mode === "hourly"
-            ? hour >= 6 && hour < 20
-            : isSunUp(hass, opts.sunEntity));
+          opts.mode === "hourly"
+            ? isDaytimeAt(hass, item.datetime, sunEntity)
+            : (item.is_daytime ?? isSunUp(hass, sunEntity));
         const icon = conditionToMeteocon(item.condition, isDay);
         const svg = getMeteoconSvg(icon, opts.iconStyle, opts.animated);
         const conditionLabel = formatConditionLabel(

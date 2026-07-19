@@ -10236,6 +10236,35 @@ function H4(e, t = "sun.sun") {
   const i = e.states[t];
   return i ? i.state === "above_horizon" : !0;
 }
+function Lg(e, t, i = "sun.sun") {
+  const a = new Date(t).getTime();
+  if (Number.isNaN(a)) {
+    const _ = new Date(t).getHours();
+    return _ >= 6 && _ < 20;
+  }
+  const r = e.states[i], n = r?.attributes.next_rising, s = r?.attributes.next_setting;
+  if (!n || !s) {
+    const _ = new Date(t).getHours();
+    return _ >= 6 && _ < 20;
+  }
+  const l = new Date(n).getTime(), o = new Date(s).getTime();
+  if (Number.isNaN(l) || Number.isNaN(o)) {
+    const _ = new Date(t).getHours();
+    return _ >= 6 && _ < 20;
+  }
+  const d = 1440 * 60 * 1e3;
+  for (const _ of [
+    -864e5,
+    0,
+    d
+  ]) {
+    const c = l + _, h = o + _;
+    if (c < h) {
+      if (a >= c && a < h) return !0;
+    } else if (a >= c - d && a < h || a >= c && a < h + d) return !0;
+  }
+  return !1;
+}
 function Aa(e, t) {
   const i = e.states[t.entity];
   if (!i) return null;
@@ -10325,7 +10354,7 @@ function N4(e, t, i) {
   const a = (i ?? "unknown").replace(/-/g, " ");
   return !t || !i ? a : e.formatEntityState?.(t, i) ?? a;
 }
-function Lg(e, t, i = 0) {
+function Bg(e, t, i = 0) {
   return e == null || Number.isNaN(e) ? "—" : `${e.toFixed(i)}${t}`;
 }
 function H0(e, t) {
@@ -10346,13 +10375,13 @@ var D2 = O((() => {
 }));
 e0();
 D2();
-function Bg(e, t, i) {
+function $g(e, t, i) {
   if (!i.showIcons && !i.showWindSpeed && !i.showWindDirection) return C;
-  const a = e.states[i.weatherEntityId];
+  const a = e.states[i.weatherEntityId], r = i.sunEntity ?? "sun.sun";
   return z`
     <div class="forecast-row" style="--cols: ${t.length}">
-      ${t.map((r) => {
-    const n = new Date(r.datetime).getHours(), s = r.is_daytime ?? (i.mode === "hourly" ? n >= 6 && n < 20 : H4(e, i.sunEntity)), l = $0(S4(r.condition, s), i.iconStyle, i.animated), o = N4(e, a, r.condition), d = h2(r.wind_bearing), _ = $0(z4(r.wind_bearing), i.iconStyle, i.animated), c = P4(r.wind_speed, i.windSpeedUnit), h = $0(T4(c), i.iconStyle, i.animated), u = `Wind ${r.wind_speed != null ? `${Math.round(r.wind_speed)} ${i.windSpeedUnit}` : "—"} (Beaufort ${c})`, g = `Wind direction ${d}`, f = i.showWindSpeed || i.showWindDirection;
+      ${t.map((n) => {
+    const s = i.mode === "hourly" ? Lg(e, n.datetime, r) : n.is_daytime ?? H4(e, r), l = $0(S4(n.condition, s), i.iconStyle, i.animated), o = N4(e, a, n.condition), d = h2(n.wind_bearing), _ = $0(z4(n.wind_bearing), i.iconStyle, i.animated), c = P4(n.wind_speed, i.windSpeedUnit), h = $0(T4(c), i.iconStyle, i.animated), u = `Wind ${n.wind_speed != null ? `${Math.round(n.wind_speed)} ${i.windSpeedUnit}` : "—"} (Beaufort ${c})`, g = `Wind direction ${d}`, f = i.showWindSpeed || i.showWindDirection;
     return z`
           <div class="forecast-col">
             ${i.showIcons ? O1(o, z`<div class="forecast-icon" .innerHTML=${l}></div>`) : C}
@@ -10365,7 +10394,7 @@ function Bg(e, t, i) {
                                 .innerHTML=${h}
                               ></span>
                               <span class="wind-meta"
-                                >${r.wind_speed != null ? Math.round(r.wind_speed) : "—"}</span
+                                >${n.wind_speed != null ? Math.round(n.wind_speed) : "—"}</span
                               >
                             </div>
                           `) : C}
@@ -10451,7 +10480,7 @@ function J(e, t, i, a) {
   return r > 3 && n && Object.defineProperty(t, i, n), n;
 }
 var L4 = O((() => {
-})), Ea, Ia, B4, $g, Og = O((() => {
+})), Ea, Ia, B4, Og, Rg = O((() => {
   Ea = [
     "clear-day",
     "clear-night",
@@ -10536,9 +10565,9 @@ var L4 = O((() => {
     "flat",
     "line",
     "monochrome"
-  ], $g = [.../* @__PURE__ */ new Set([...Ea, ...Ia])];
-})), Rg = /* @__PURE__ */ $4({ VedurkortWeatherCardEditor: () => $1 }), $1, Ag = O((() => {
-  e0(), U4(), Og(), D2(), L4(), $1 = class extends J1 {
+  ], Og = [.../* @__PURE__ */ new Set([...Ea, ...Ia])];
+})), Ag = /* @__PURE__ */ $4({ VedurkortWeatherCardEditor: () => $1 }), $1, Vg = O((() => {
+  e0(), U4(), Rg(), D2(), L4(), $1 = class extends J1 {
     constructor(...t) {
       super(...t), this._dailyHasProbability = null, this._hourlyHasProbability = null, this._probeKey = "";
     }
@@ -10962,7 +10991,7 @@ var l1 = class extends J1 {
     super(...t), this._dailyForecast = [], this._hourlyForecast = [], this._dailyError = null, this._hourlyError = null, this._dailyPlotLeft = 0, this._dailyPlotWidth = 0, this._hourlyPlotLeft = 0, this._hourlyPlotWidth = 0, this._dailyChart = null, this._hourlyChart = null, this._dailyChartFingerprint = "", this._hourlyChartFingerprint = "", this._dailyChartModeKey = "", this._hourlyChartModeKey = "", this._forecastKey = "", this._forecastLoading = !1;
   }
   static async getConfigElement() {
-    return await Promise.resolve().then(() => (Ag(), Rg)), document.createElement("vedurkort-weather-card-editor");
+    return await Promise.resolve().then(() => (Vg(), Ag)), document.createElement("vedurkort-weather-card-editor");
   }
   static getStubConfig(t, i) {
     const a = i.find((r) => r.startsWith("weather."));
@@ -11086,7 +11115,7 @@ var l1 = class extends J1 {
                 class="forecast-row-slot"
                 style=${d ? `margin-left:${o}px;width:${d}px` : ""}
               >
-                ${Bg(this.hass, l, {
+                ${$g(this.hass, l, {
       showIcons: r.show_condition_icons,
       showWindSpeed: r.show_wind_speed,
       showWindDirection: r.show_wind_direction,
@@ -11134,7 +11163,7 @@ var l1 = class extends J1 {
                       <div class="location">${t.name}</div>
                       <div class="condition">${t.conditionLabel}</div>
                       <div class="temp">
-                        ${Lg(t.temperature, t.temperatureUnit)}
+                        ${Bg(t.temperature, t.temperatureUnit)}
                       </div>
                     </div>
                     <div

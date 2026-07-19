@@ -59,6 +59,54 @@ export function isSunUp(hass: HomeAssistant, sunEntity = "sun.sun"): boolean {
   return sun.state === "above_horizon";
 }
 
+/**
+ * Whether `iso` falls in daytime for the location, using sun.sun
+ * next_rising / next_setting (±1 day). Avoids the crude 06–20 clock heuristic
+ * that shows night icons before summer sunsets.
+ */
+export function isDaytimeAt(
+  hass: HomeAssistant,
+  iso: string,
+  sunEntity = "sun.sun",
+): boolean {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) {
+    const hour = new Date(iso).getHours();
+    return hour >= 6 && hour < 20;
+  }
+
+  const sun = hass.states[sunEntity];
+  const nextRising = sun?.attributes.next_rising as string | undefined;
+  const nextSetting = sun?.attributes.next_setting as string | undefined;
+  if (!nextRising || !nextSetting) {
+    const hour = new Date(iso).getHours();
+    return hour >= 6 && hour < 20;
+  }
+
+  const rising = new Date(nextRising).getTime();
+  const setting = new Date(nextSetting).getTime();
+  if (Number.isNaN(rising) || Number.isNaN(setting)) {
+    const hour = new Date(iso).getHours();
+    return hour >= 6 && hour < 20;
+  }
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  // Check this rising/setting pair and neighbors (±1 day).
+  for (const offset of [-dayMs, 0, dayMs]) {
+    const r = rising + offset;
+    const s = setting + offset;
+    if (r < s) {
+      if (t >= r && t < s) return true;
+    } else {
+      // Setting comes before rising across midnight (pair from adjacent days).
+      // Day spans previous rise → this setting, or this rise → next setting.
+      if (t >= r - dayMs && t < s) return true;
+      if (t >= r && t < s + dayMs) return true;
+    }
+  }
+  return false;
+}
+
 export function getWeatherSnapshot(
   hass: HomeAssistant,
   config: VedurkortCardConfig,
