@@ -11,13 +11,13 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 
 **Custom type:** `custom:vedurkort-weather-card`
 
-| Basic | Hourly | Daily |
+| Current | Hourly | Daily |
 | --- | --- | --- |
-| ![Basic layout](images/vedurkort-basic.png) | ![Hourly layout](images/vedurkort-hourly.png) | ![Daily layout](images/vedurkort-daily.png) |
+| ![Current weather](images/vedurkort-basic.png) | ![Hourly forecast](images/vedurkort-hourly.png) | ![Daily forecast](images/vedurkort-daily.png) |
 
 ## Features
 
-- One card, three layouts: `basic`, `daily`, `hourly`
+- Compose sections independently: current weather, daily forecast, hourly forecast (any combination)
 - **Meteocons only** — styles `fill` / `flat` / `line` / `monochrome`, animated or static (8 combinations)
 - Day/night condition icons where Meteocons provides variants
 - Optional CSS animated backgrounds (cloud opacity lightly follows `cloud_coverage`)
@@ -46,7 +46,7 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | --- | --- | --- | --- |
 | `type` | string | **Required** | Must be `custom:vedurkort-weather-card`. |
 | `entity` | string | **Required** | A `weather.*` entity. |
-| `layout` | string | `basic` | Card layout: `basic`, `daily`, or `hourly`. |
+| `show_current` | boolean | `true` | Show the current weather header (location, condition, temperature, icon). Detail chips only appear when this is on. |
 | `name` | string | none | Override the location/title. Falls back to the entity friendly name. |
 | `icon_style` | string | `fill` | Meteocons style: `fill`, `flat`, `line`, or `monochrome`. |
 | `animated_icons` | boolean | `true` | Use animated Meteocons (`true`) or static SVGs (`false`). |
@@ -72,13 +72,14 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `feels_like_entity` | string | none | Optional sensor override for feels-like temperature. |
 | `dew_point_entity` | string | none | Optional sensor override for dew point. |
 | `visibility_entity` | string | none | Optional sensor override for visibility. |
-| `daily` | object | see below | Daily forecast options. Used when `layout: daily`. |
-| `hourly` | object | see below | Hourly forecast options. Used when `layout: hourly`. |
+| `daily` | object | see below | Daily forecast section options. |
+| `hourly` | object | see below | Hourly forecast section options. |
 
 ### Daily options (`daily`)
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
+| `enabled` | boolean | `false` | Show the daily forecast chart and icons. |
 | `days` | number | `5` | Number of daily forecast points to show (2–7). |
 | `show_condition_icons` | boolean | `true` | Show Meteocons condition icons under the chart. |
 | `show_wind_speed` | boolean | `true` | Show Beaufort icon + speed under the chart. |
@@ -89,22 +90,23 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
+| `enabled` | boolean | `false` | Show the hourly forecast chart and icons. |
 | `hours` | number | `12` | Number of hourly forecast points to show (2–48). |
 | `show_condition_icons` | boolean | `true` | Show Meteocons condition icons under the chart. |
 | `show_wind_speed` | boolean | `true` | Show Beaufort icon + speed under the chart. |
 | `show_wind_direction` | boolean | `true` | Show compass label + wind-direction icon under the chart. |
 | `precip_type` | string | `rainfall` | Precipitation series: `rainfall` or `probability`. |
 
-`daily` and `hourly` are separate objects so each layout can be tuned independently, even though only one `layout` is visible at a time.
+Enable any combination of `show_current`, `daily.enabled`, and `hourly.enabled`. When both forecasts are on, daily is shown above hourly. If all three are off, `show_current` is forced on so the card is never empty.
 
 ## Example usage
 
-### Basic card
+### Current weather only
 
 ```yaml
 type: custom:vedurkort-weather-card
 entity: weather.forecast_thuis
-layout: basic
+show_current: true
 icon_style: fill
 animated_icons: true
 animated_background: true
@@ -117,13 +119,14 @@ show_pressure: true
 show_cloud_coverage: true
 ```
 
-### Daily forecast
+### Current + daily forecast
 
 ```yaml
 type: custom:vedurkort-weather-card
 entity: weather.forecast_thuis
-layout: daily
+show_current: true
 daily:
+  enabled: true
   days: 7
   show_condition_icons: true
   show_wind_speed: true
@@ -131,13 +134,28 @@ daily:
   precip_type: rainfall
 ```
 
-### Hourly forecast
+### Daily forecast only
 
 ```yaml
 type: custom:vedurkort-weather-card
 entity: weather.forecast_thuis
-layout: hourly
+show_current: false
+daily:
+  enabled: true
+  days: 5
+```
+
+### Current + daily + hourly
+
+```yaml
+type: custom:vedurkort-weather-card
+entity: weather.forecast_thuis
+show_current: true
+daily:
+  enabled: true
+  days: 5
 hourly:
+  enabled: true
   hours: 12
   precip_type: probability
 ```
@@ -166,7 +184,7 @@ On the card, detail chips are **hidden when there is no value**. In the visual e
 ```yaml
 type: custom:vedurkort-weather-card
 entity: weather.forecast_thuis
-layout: basic
+show_current: true
 temperature_entity: sensor.outdoor_temperature
 humidity_entity: sensor.outdoor_humidity
 uv_index_entity: sensor.uv_index

@@ -45,16 +45,24 @@ export class VedurkortWeatherCard extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
 
   @state() private _config!: VedurkortCardConfig;
-  @state() private _forecast: ForecastItem[] = [];
-  @state() private _forecastError: string | null = null;
-  @state() private _plotLeft = 0;
-  @state() private _plotWidth = 0;
+  @state() private _dailyForecast: ForecastItem[] = [];
+  @state() private _hourlyForecast: ForecastItem[] = [];
+  @state() private _dailyError: string | null = null;
+  @state() private _hourlyError: string | null = null;
+  @state() private _dailyPlotLeft = 0;
+  @state() private _dailyPlotWidth = 0;
+  @state() private _hourlyPlotLeft = 0;
+  @state() private _hourlyPlotWidth = 0;
 
-  private _chart: Chart | null = null;
-  private _chartFingerprint = "";
-  private _chartModeKey = "";
+  private _dailyChart: Chart | null = null;
+  private _hourlyChart: Chart | null = null;
+  private _dailyChartFingerprint = "";
+  private _hourlyChartFingerprint = "";
+  private _dailyChartModeKey = "";
+  private _hourlyChartModeKey = "";
   private _forecastKey = "";
-  private _unsubForecast: (() => void) | undefined;
+  private _unsubDaily: (() => void) | undefined;
+  private _unsubHourly: (() => void) | undefined;
   private _forecastLoading = false;
 
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
@@ -81,8 +89,10 @@ export class VedurkortWeatherCard extends LitElement {
 
   public getCardSize(): number {
     if (!this._config) return 3;
-    if (this._config.layout === "basic") return 3;
-    return 6;
+    let size = this._config.show_current ? 3 : 1;
+    if (this._config.daily.enabled) size += 3;
+    if (this._config.hourly.enabled) size += 3;
+    return size;
   }
 
   protected updated(changed: Map<string, unknown>): void {
@@ -94,92 +104,166 @@ export class VedurkortWeatherCard extends LitElement {
       void this._ensureForecastSubscription();
     }
     if (
-      changed.has("_forecast") ||
+      changed.has("_dailyForecast") ||
+      changed.has("_hourlyForecast") ||
       changed.has("_config") ||
       changed.has("hass")
     ) {
-      this.updateComplete.then(() => this._renderChart());
+      this.updateComplete.then(() => this._renderCharts());
     }
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     this._teardownForecast();
-    this._destroyChart();
+    this._destroyCharts();
   }
 
   private _teardownForecast(): void {
-    this._unsubForecast?.();
-    this._unsubForecast = undefined;
+    this._unsubDaily?.();
+    this._unsubHourly?.();
+    this._unsubDaily = undefined;
+    this._unsubHourly = undefined;
     this._forecastKey = "";
   }
 
   private async _ensureForecastSubscription(): Promise<void> {
-    const layout = this._config.layout;
-    if (layout === "basic") {
+    const wantDaily = this._config.daily.enabled;
+    const wantHourly = this._config.hourly.enabled;
+    if (!wantDaily && !wantHourly) {
       this._teardownForecast();
-      this._forecast = [];
-      this._forecastError = null;
+      this._dailyForecast = [];
+      this._hourlyForecast = [];
+      this._dailyError = null;
+      this._hourlyError = null;
+      this._destroyCharts();
       return;
     }
 
-    const key = `${this._config.entity}:${layout}`;
+    const key = `${this._config.entity}:d=${wantDaily}:h=${wantHourly}`;
     if (key === this._forecastKey || this._forecastLoading) return;
     this._forecastLoading = true;
     this._teardownForecast();
     this._forecastKey = key;
-    this._forecastError = null;
+    this._dailyError = null;
+    this._hourlyError = null;
 
-    const type = layout === "daily" ? "daily" : "hourly";
     try {
-      this._unsubForecast = await subscribeForecast(
-        this.hass,
-        this._config.entity,
-        type,
-        (items, error) => {
-          this._forecast = items;
-          this._forecastError = error;
-          this.requestUpdate();
-        },
-      );
+      if (wantDaily) {
+        this._unsubDaily = await subscribeForecast(
+          this.hass,
+          this._config.entity,
+          "daily",
+          (items, error) => {
+            this._dailyForecast = items;
+            this._dailyError = error;
+            this.requestUpdate();
+          },
+        );
+      } else {
+        this._dailyForecast = [];
+        this._destroyChart("daily");
+      }
+      if (wantHourly) {
+        this._unsubHourly = await subscribeForecast(
+          this.hass,
+          this._config.entity,
+          "hourly",
+          (items, error) => {
+            this._hourlyForecast = items;
+            this._hourlyError = error;
+            this.requestUpdate();
+          },
+        );
+      } else {
+        this._hourlyForecast = [];
+        this._destroyChart("hourly");
+      }
     } catch (err) {
-      this._forecast = [];
-      this._forecastError =
+      const message =
         err instanceof Error ? err.message : "Failed to load forecast";
+      if (wantDaily) {
+        this._dailyForecast = [];
+        this._dailyError = message;
+      }
+      if (wantHourly) {
+        this._hourlyForecast = [];
+        this._hourlyError = message;
+      }
       this._forecastKey = "";
     } finally {
       this._forecastLoading = false;
     }
   }
 
-  private _destroyChart(): void {
-    this._chart?.destroy();
-    this._chart = null;
-    this._chartFingerprint = "";
-    this._chartModeKey = "";
-    this._plotLeft = 0;
-    this._plotWidth = 0;
-  }
-
-  private _syncPlotArea(): void {
-    if (!this._chart) return;
-    const area = getChartPlotArea(this._chart);
-    if (!area) return;
-    if (
-      Math.abs(area.left - this._plotLeft) > 0.5 ||
-      Math.abs(area.width - this._plotWidth) > 0.5
-    ) {
-      this._plotLeft = area.left;
-      this._plotWidth = area.width;
+  private _destroyChart(mode: "daily" | "hourly"): void {
+    if (mode === "daily") {
+      this._dailyChart?.destroy();
+      this._dailyChart = null;
+      this._dailyChartFingerprint = "";
+      this._dailyChartModeKey = "";
+      this._dailyPlotLeft = 0;
+      this._dailyPlotWidth = 0;
+    } else {
+      this._hourlyChart?.destroy();
+      this._hourlyChart = null;
+      this._hourlyChartFingerprint = "";
+      this._hourlyChartModeKey = "";
+      this._hourlyPlotLeft = 0;
+      this._hourlyPlotWidth = 0;
     }
   }
 
-  private _renderChart(): void {
+  private _destroyCharts(): void {
+    this._destroyChart("daily");
+    this._destroyChart("hourly");
+  }
+
+  private _syncPlotArea(mode: "daily" | "hourly"): void {
+    const chart = mode === "daily" ? this._dailyChart : this._hourlyChart;
+    if (!chart) return;
+    const area = getChartPlotArea(chart);
+    if (!area) return;
+    if (mode === "daily") {
+      if (
+        Math.abs(area.left - this._dailyPlotLeft) > 0.5 ||
+        Math.abs(area.width - this._dailyPlotWidth) > 0.5
+      ) {
+        this._dailyPlotLeft = area.left;
+        this._dailyPlotWidth = area.width;
+      }
+    } else if (
+      Math.abs(area.left - this._hourlyPlotLeft) > 0.5 ||
+      Math.abs(area.width - this._hourlyPlotWidth) > 0.5
+    ) {
+      this._hourlyPlotLeft = area.left;
+      this._hourlyPlotWidth = area.width;
+    }
+  }
+
+  private _renderCharts(): void {
+    if (!this._config) {
+      this._destroyCharts();
+      return;
+    }
+    if (this._config.daily.enabled) {
+      this._renderOneChart("daily");
+    } else {
+      this._destroyChart("daily");
+    }
+    if (this._config.hourly.enabled) {
+      this._renderOneChart("hourly");
+    } else {
+      this._destroyChart("hourly");
+    }
+  }
+
+  private _renderOneChart(mode: "daily" | "hourly"): void {
     const canvas = this.renderRoot.querySelector(
-      "canvas.forecast-canvas",
+      `canvas.forecast-canvas-${mode}`,
     ) as HTMLCanvasElement | null;
-    if (!canvas || !this._config || this._config.layout === "basic") {
-      this._destroyChart();
+    if (!canvas) {
+      this._destroyChart(mode);
       return;
     }
 
@@ -198,50 +282,55 @@ export class VedurkortWeatherCard extends LitElement {
       (snap?.entity.attributes.precipitation_unit as string | undefined) ??
       "mm";
     const temperatureUnit = snap?.temperatureUnit ?? "°C";
-
     const language =
       this.hass.locale?.language ??
       this.hass.language ??
       this.hass.config.language;
-    const mode = this._config.layout === "daily" ? "daily" : "hourly";
+
     const precipType =
       mode === "daily"
         ? this._config.daily.precip_type
         : this._config.hourly.precip_type;
+    const items =
+      mode === "daily" ? this._dailyForecast : this._hourlyForecast;
     const series =
       mode === "daily"
         ? buildDailySeries(
-            this._forecast,
+            items,
             this._config.daily.days,
             precipType,
             language,
           )
         : buildHourlySeries(
-            this._forecast,
+            items,
             this._config.hourly.hours,
             precipType,
             language,
           );
 
     if (!series.labels.length) {
-      this._destroyChart();
+      this._destroyChart(mode);
       return;
     }
 
     const modeKey = `${mode}:${precipType}:${precipUnit}:${temperatureUnit}:${this._config.animated_background}:${scene}`;
     const fingerprint = seriesFingerprint(series);
-    if (
-      this._chart &&
-      this._chartModeKey === modeKey &&
-      this._chartFingerprint === fingerprint
-    ) {
-      this._syncPlotArea();
+    const existing = mode === "daily" ? this._dailyChart : this._hourlyChart;
+    const existingKey =
+      mode === "daily" ? this._dailyChartModeKey : this._hourlyChartModeKey;
+    const existingFp =
+      mode === "daily"
+        ? this._dailyChartFingerprint
+        : this._hourlyChartFingerprint;
+
+    if (existing && existingKey === modeKey && existingFp === fingerprint) {
+      this._syncPlotArea(mode);
       return;
     }
 
-    if (this._chart && this._chartModeKey.split(":")[0] === mode) {
+    if (existing && existingKey.split(":")[0] === mode) {
       syncForecastChart(
-        this._chart,
+        existing,
         series,
         mode,
         precipType,
@@ -249,14 +338,19 @@ export class VedurkortWeatherCard extends LitElement {
         precipUnit,
         temperatureUnit,
       );
-      this._chartFingerprint = fingerprint;
-      this._chartModeKey = modeKey;
-      this._syncPlotArea();
+      if (mode === "daily") {
+        this._dailyChartFingerprint = fingerprint;
+        this._dailyChartModeKey = modeKey;
+      } else {
+        this._hourlyChartFingerprint = fingerprint;
+        this._hourlyChartModeKey = modeKey;
+      }
+      this._syncPlotArea(mode);
       return;
     }
 
-    this._destroyChart();
-    this._chart = createForecastChart(
+    this._destroyChart(mode);
+    const chart = createForecastChart(
       canvas,
       series,
       mode,
@@ -265,10 +359,16 @@ export class VedurkortWeatherCard extends LitElement {
       precipUnit,
       temperatureUnit,
     );
-    this._chartFingerprint = fingerprint;
-    this._chartModeKey = modeKey;
-    // chartArea is ready after layout
-    requestAnimationFrame(() => this._syncPlotArea());
+    if (mode === "daily") {
+      this._dailyChart = chart;
+      this._dailyChartFingerprint = fingerprint;
+      this._dailyChartModeKey = modeKey;
+    } else {
+      this._hourlyChart = chart;
+      this._hourlyChartFingerprint = fingerprint;
+      this._hourlyChartModeKey = modeKey;
+    }
+    requestAnimationFrame(() => this._syncPlotArea(mode));
   }
 
   private _icon(
@@ -296,6 +396,66 @@ export class VedurkortWeatherCard extends LitElement {
       `,
       "detail",
     );
+  }
+
+  private _renderForecastSection(
+    mode: "daily" | "hourly",
+    snap: NonNullable<ReturnType<typeof getWeatherSnapshot>>,
+    language?: string,
+  ) {
+    const block =
+      mode === "daily" ? this._config.daily : this._config.hourly;
+    if (!block.enabled) return nothing;
+
+    const items =
+      mode === "daily" ? this._dailyForecast : this._hourlyForecast;
+    const error = mode === "daily" ? this._dailyError : this._hourlyError;
+    const slice =
+      mode === "daily"
+        ? items.slice(0, this._config.daily.days)
+        : items.slice(0, this._config.hourly.hours);
+    const plotLeft =
+      mode === "daily" ? this._dailyPlotLeft : this._hourlyPlotLeft;
+    const plotWidth =
+      mode === "daily" ? this._dailyPlotWidth : this._hourlyPlotWidth;
+
+    return html`
+      <div class="forecast forecast-${mode}">
+        ${error ? html`<div class="warn">${error}</div>` : nothing}
+        ${!error && !slice.length
+          ? html`<div class="warn">
+              No ${mode} forecast data available on
+              <code>${this._config.entity}</code>
+            </div>`
+          : nothing}
+        ${slice.length
+          ? html`
+              <div class="chart-wrap">
+                <canvas class="forecast-canvas-${mode}"></canvas>
+              </div>
+              <div
+                class="forecast-row-slot"
+                style=${plotWidth
+                  ? `margin-left:${plotLeft}px;width:${plotWidth}px`
+                  : ""}
+              >
+                ${renderForecastRow(this.hass, slice, {
+                  showIcons: block.show_condition_icons,
+                  showWindSpeed: block.show_wind_speed,
+                  showWindDirection: block.show_wind_direction,
+                  iconStyle: this._config.icon_style,
+                  animated: this._config.animated_icons,
+                  windSpeedUnit: snap.windSpeedUnit,
+                  mode,
+                  language,
+                  sunEntity: this._config.sun_entity,
+                  weatherEntityId: this._config.entity,
+                })}
+              </div>
+            `
+          : nothing}
+      </div>
+    `;
   }
 
   protected render() {
@@ -326,30 +486,17 @@ export class VedurkortWeatherCard extends LitElement {
 
     const bft = windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit);
     const showDetails =
-      this._config.show_sun ||
-      this._config.show_humidity ||
-      this._config.show_wind_speed ||
-      this._config.show_wind_direction ||
-      this._config.show_uv_index ||
-      this._config.show_pressure ||
-      this._config.show_cloud_coverage ||
-      this._config.show_feels_like ||
-      this._config.show_dew_point ||
-      this._config.show_visibility;
-
-    const forecastBlock =
-      this._config.layout === "daily"
-        ? this._config.daily
-        : this._config.layout === "hourly"
-          ? this._config.hourly
-          : null;
-
-    const forecastSlice =
-      this._config.layout === "daily"
-        ? this._forecast.slice(0, this._config.daily.days)
-        : this._config.layout === "hourly"
-          ? this._forecast.slice(0, this._config.hourly.hours)
-          : [];
+      this._config.show_current &&
+      (this._config.show_sun ||
+        this._config.show_humidity ||
+        this._config.show_wind_speed ||
+        this._config.show_wind_direction ||
+        this._config.show_uv_index ||
+        this._config.show_pressure ||
+        this._config.show_cloud_coverage ||
+        this._config.show_feels_like ||
+        this._config.show_dew_point ||
+        this._config.show_visibility);
 
     return html`
       <ha-card class=${this._config.animated_background ? "has-bg" : ""}>
@@ -359,19 +506,23 @@ export class VedurkortWeatherCard extends LitElement {
           snap.cloudCoverage,
         )}
         <div class="content">
-          <div class="main">
-            <div class="main-text">
-              <div class="location">${snap.name}</div>
-              <div class="condition">${snap.conditionLabel}</div>
-              <div class="temp">
-                ${formatTemp(snap.temperature, snap.temperatureUnit)}
-              </div>
-            </div>
-            <div
-              class="main-icon"
-              .innerHTML=${this._icon(iconName)}
-            ></div>
-          </div>
+          ${this._config.show_current
+            ? html`
+                <div class="main">
+                  <div class="main-text">
+                    <div class="location">${snap.name}</div>
+                    <div class="condition">${snap.conditionLabel}</div>
+                    <div class="temp">
+                      ${formatTemp(snap.temperature, snap.temperatureUnit)}
+                    </div>
+                  </div>
+                  <div
+                    class="main-icon"
+                    .innerHTML=${this._icon(iconName)}
+                  ></div>
+                </div>
+              `
+            : nothing}
 
           ${showDetails
             ? html`
@@ -504,51 +655,8 @@ export class VedurkortWeatherCard extends LitElement {
               `
             : nothing}
 
-          ${forecastBlock
-            ? html`
-                <div class="forecast">
-                  ${this._forecastError
-                    ? html`<div class="warn">${this._forecastError}</div>`
-                    : nothing}
-                  ${!this._forecastError && !forecastSlice.length
-                    ? html`<div class="warn">
-                        No forecast data available for ${this._config.layout}
-                        forecasts on <code>${this._config.entity}</code>
-                      </div>`
-                    : nothing}
-                  ${forecastSlice.length
-                    ? html`
-                        <div class="chart-wrap">
-                          <canvas class="forecast-canvas"></canvas>
-                        </div>
-                        <div
-                          class="forecast-row-slot"
-                          style=${this._plotWidth
-                            ? `margin-left:${this._plotLeft}px;width:${this._plotWidth}px`
-                            : ""}
-                        >
-                          ${renderForecastRow(this.hass, forecastSlice, {
-                            showIcons: forecastBlock.show_condition_icons,
-                            showWindSpeed: forecastBlock.show_wind_speed,
-                            showWindDirection:
-                              forecastBlock.show_wind_direction,
-                            iconStyle: this._config.icon_style,
-                            animated: this._config.animated_icons,
-                            windSpeedUnit: snap.windSpeedUnit,
-                            mode:
-                              this._config.layout === "daily"
-                                ? "daily"
-                                : "hourly",
-                            language,
-                            sunEntity: this._config.sun_entity,
-                            weatherEntityId: this._config.entity,
-                          })}
-                        </div>
-                      `
-                    : nothing}
-                </div>
-              `
-            : nothing}
+          ${this._renderForecastSection("daily", snap, language)}
+          ${this._renderForecastSection("hourly", snap, language)}
         </div>
       </ha-card>
     `;

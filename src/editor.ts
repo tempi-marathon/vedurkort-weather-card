@@ -209,18 +209,36 @@ export class VedurkortWeatherCardEditor extends LitElement {
       <div class="form">
         ${this._picker("Weather entity", "entity", "weather", false)}
 
-        <label>
-          Layout
-          <select
-            .value=${c.layout}
-            data-config="layout"
-            @change=${this._value}
+        <fieldset>
+          <legend>Sections</legend>
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.show_current}
+              data-config="show_current"
+              @change=${this._value}
+            />
+            Current weather</label
           >
-            <option value="basic">basic</option>
-            <option value="daily">daily</option>
-            <option value="hourly">hourly</option>
-          </select>
-        </label>
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.daily.enabled}
+              data-config="daily.enabled"
+              @change=${this._value}
+            />
+            Daily forecast</label
+          >
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.hourly.enabled}
+              data-config="hourly.enabled"
+              @change=${this._value}
+            />
+            Hourly forecast</label
+          >
+        </fieldset>
 
         <label>
           Name (optional)
