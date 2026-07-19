@@ -293,6 +293,31 @@ export function getChartPlotArea(chart: Chart): ChartPlotArea | null {
   return { left: area.left, width: area.width };
 }
 
+function tooltipCallbacks(
+  precipType: PrecipType,
+  precipUnit: string,
+  temperatureUnit: string,
+) {
+  const tempSuffix = temperatureUnit.trim().startsWith("°")
+    ? temperatureUnit.trim()
+    : `°${temperatureUnit.trim()}`;
+
+  return {
+    label(ctx: {
+      parsed: { y: number | null };
+      dataset: { label?: string; yAxisID?: string };
+    }) {
+      const value = ctx.parsed.y;
+      if (value == null || Number.isNaN(value)) return "";
+      const name = ctx.dataset.label ?? "";
+      if (ctx.dataset.yAxisID === "yPrecip") {
+        return `${name}: ${formatPrecipLabel(value, precipType, precipUnit)}`;
+      }
+      return `${name}: ${Math.round(value)}${tempSuffix}`;
+    },
+  };
+}
+
 export function createForecastChart(
   canvas: HTMLCanvasElement,
   series: ChartSeries,
@@ -300,6 +325,7 @@ export function createForecastChart(
   precipType: PrecipType,
   chrome: ChartChrome,
   precipUnit = "mm",
+  temperatureUnit = "°C",
 ): Chart {
   const config: ChartConfiguration = {
     type: "bar",
@@ -317,7 +343,14 @@ export function createForecastChart(
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { display: false },
-        tooltip: { enabled: true },
+        tooltip: {
+          enabled: true,
+          callbacks: tooltipCallbacks(
+            precipType,
+            precipUnit,
+            temperatureUnit,
+          ),
+        },
         datalabels: {
           clamp: false,
           clip: false,
@@ -380,6 +413,7 @@ export function syncForecastChart(
   precipType: PrecipType,
   chrome: ChartChrome,
   precipUnit = "mm",
+  temperatureUnit = "°C",
 ): void {
   const nextDatasets = buildDatasets(
     series,
@@ -409,6 +443,13 @@ export function syncForecastChart(
 
   chart.data.labels = series.labels;
   applyChrome(chart, chrome);
+  if (chart.options.plugins?.tooltip) {
+    chart.options.plugins.tooltip.callbacks = tooltipCallbacks(
+      precipType,
+      precipUnit,
+      temperatureUnit,
+    );
+  }
   chart.options.animation = false;
   chart.update("none");
 }

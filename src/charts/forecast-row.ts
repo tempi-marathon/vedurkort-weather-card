@@ -10,7 +10,7 @@ import {
 import { getMeteoconSvg } from "../icons/meteocons";
 import type { ForecastItem, HomeAssistant } from "../types";
 import { tipWrap } from "../ui/tooltip";
-import { isSunUp } from "../weather/adapter";
+import { formatConditionLabel, isSunUp } from "../weather/adapter";
 
 export function renderForecastRow(
   hass: HomeAssistant,
@@ -25,11 +25,14 @@ export function renderForecastRow(
     mode: "daily" | "hourly";
     language?: string;
     sunEntity?: string;
+    weatherEntityId: string;
   },
 ): TemplateResult | typeof nothing {
   if (!opts.showIcons && !opts.showWindSpeed && !opts.showWindDirection) {
     return nothing;
   }
+
+  const weatherEntity = hass.states[opts.weatherEntityId];
 
   return html`
     <div class="forecast-row" style="--cols: ${items.length}">
@@ -42,7 +45,11 @@ export function renderForecastRow(
             : isSunUp(hass, opts.sunEntity));
         const icon = conditionToMeteocon(item.condition, isDay);
         const svg = getMeteoconSvg(icon, opts.iconStyle, opts.animated);
-        const conditionLabel = (item.condition ?? "unknown").replace(/-/g, " ");
+        const conditionLabel = formatConditionLabel(
+          hass,
+          weatherEntity,
+          item.condition,
+        );
         const dirLabel = bearingToLabel(item.wind_bearing);
         const windDirIcon = bearingToWindIcon(item.wind_bearing);
         const windDirSvg = getMeteoconSvg(

@@ -121,9 +121,7 @@ export function getWeatherSnapshot(
   const nextRising = sun?.attributes.next_rising as string | undefined;
   const nextSetting = sun?.attributes.next_setting as string | undefined;
 
-  const conditionLabel =
-    hass.formatEntityState?.(entity) ??
-    entity.state.replace(/-/g, " ");
+  const conditionLabel = formatConditionLabel(hass, entity, entity.state);
 
   return {
     name:
@@ -309,6 +307,16 @@ export async function fetchForecast(
   const viaService = await fetchForecastViaService(hass, entityId, type);
   if (viaService.length) return viaService;
   return getLegacyForecast(hass, entityId);
+}
+
+export function formatConditionLabel(
+  hass: HomeAssistant,
+  entity: HassEntity | undefined,
+  condition: string | undefined,
+): string {
+  const raw = (condition ?? "unknown").replace(/-/g, " ");
+  if (!entity || !condition) return raw;
+  return hass.formatEntityState?.(entity, condition) ?? raw;
 }
 
 export function formatTemp(

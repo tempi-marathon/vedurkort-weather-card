@@ -197,6 +197,7 @@ export class VedurkortWeatherCard extends LitElement {
     const precipUnit =
       (snap?.entity.attributes.precipitation_unit as string | undefined) ??
       "mm";
+    const temperatureUnit = snap?.temperatureUnit ?? "°C";
 
     const language =
       this.hass.locale?.language ??
@@ -227,7 +228,7 @@ export class VedurkortWeatherCard extends LitElement {
       return;
     }
 
-    const modeKey = `${mode}:${precipType}:${precipUnit}:${this._config.animated_background}:${scene}`;
+    const modeKey = `${mode}:${precipType}:${precipUnit}:${temperatureUnit}:${this._config.animated_background}:${scene}`;
     const fingerprint = seriesFingerprint(series);
     if (
       this._chart &&
@@ -246,6 +247,7 @@ export class VedurkortWeatherCard extends LitElement {
         precipType,
         chrome,
         precipUnit,
+        temperatureUnit,
       );
       this._chartFingerprint = fingerprint;
       this._chartModeKey = modeKey;
@@ -261,6 +263,7 @@ export class VedurkortWeatherCard extends LitElement {
       precipType,
       chrome,
       precipUnit,
+      temperatureUnit,
     );
     this._chartFingerprint = fingerprint;
     this._chartModeKey = modeKey;
@@ -538,6 +541,7 @@ export class VedurkortWeatherCard extends LitElement {
                                 : "hourly",
                             language,
                             sunEntity: this._config.sun_entity,
+                            weatherEntityId: this._config.entity,
                           })}
                         </div>
                       `
