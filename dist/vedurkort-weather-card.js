@@ -288,14 +288,14 @@ function ue(e, t, i = e, a) {
   const n = ge(t) ? void 0 : t._$litDirective$;
   return r?.constructor !== n && (r?._$AO?.(!1), n === void 0 ? r = void 0 : (r = new n(e), r._$AT(e, i, a)), a !== void 0 ? (i._$Co ??= [])[a] = r : i._$Cl = r), r !== void 0 && (t = ue(e, r._$AS(e, t.values), r, a)), t;
 }
-var l0, et, Pe, Wt, tt, m1, it, ei, H1, ne, ge, N0, ti, o0, se, at, rt, q1, nt, st, lt, d0, q, R4, A4, Z1, S, ot, N1, ii, _0, ai, c0, Te, ri, ni, si, li, oi, Fa, Dt = O((() => {
+var l0, et, Pe, Wt, tt, m1, it, ei, H1, ne, ge, N0, ti, o0, se, at, rt, q1, nt, st, lt, d0, z, R4, A4, Z1, C, ot, N1, ii, _0, ai, c0, Te, ri, ni, si, li, oi, Fa, Dt = O((() => {
   l0 = globalThis, et = (e) => e, Pe = l0.trustedTypes, Wt = Pe ? Pe.createPolicy("lit-html", { createHTML: (e) => e }) : void 0, tt = "$lit$", m1 = `lit$${Math.random().toFixed(9).slice(2)}$`, it = "?" + m1, ei = `<${it}>`, H1 = document, ne = () => H1.createComment(""), ge = (e) => e === null || typeof e != "object" && typeof e != "function", N0 = Array.isArray, ti = (e) => N0(e) || typeof e?.[Symbol.iterator] == "function", o0 = `[ 	
 \f\r]`, se = /<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g, at = /-->/g, rt = />/g, q1 = RegExp(`>|${o0}(?:([^\\s"'>=/]+)(${o0}*=${o0}*(?:[^ 	
 \f\r"'\`<>=]|("|')|))|$)`, "g"), nt = /'/g, st = /"/g, lt = /^(?:script|style|textarea|title)$/i, d0 = (e) => (t, ...i) => ({
     _$litType$: e,
     strings: t,
     values: i
-  }), q = d0(1), R4 = d0(2), A4 = d0(3), Z1 = /* @__PURE__ */ Symbol.for("lit-noChange"), S = /* @__PURE__ */ Symbol.for("lit-nothing"), ot = /* @__PURE__ */ new WeakMap(), N1 = H1.createTreeWalker(H1, 129), ii = (e, t) => {
+  }), z = d0(1), R4 = d0(2), A4 = d0(3), Z1 = /* @__PURE__ */ Symbol.for("lit-noChange"), C = /* @__PURE__ */ Symbol.for("lit-nothing"), ot = /* @__PURE__ */ new WeakMap(), N1 = H1.createTreeWalker(H1, 129), ii = (e, t) => {
     const i = e.length - 1, a = [];
     let r, n = t === 2 ? "<svg>" : t === 3 ? "<math>" : "", s = se;
     for (let l = 0; l < i; l++) {
@@ -392,7 +392,7 @@ var l0, et, Pe, Wt, tt, m1, it, ei, H1, ne, ge, N0, ti, o0, se, at, rt, q1, nt, 
       return this._$AM?._$AU ?? this._$Cv;
     }
     constructor(t, i, a, r) {
-      this.type = 2, this._$AH = S, this._$AN = void 0, this._$AA = t, this._$AB = i, this._$AM = a, this.options = r, this._$Cv = r?.isConnected ?? !0;
+      this.type = 2, this._$AH = C, this._$AN = void 0, this._$AA = t, this._$AB = i, this._$AM = a, this.options = r, this._$Cv = r?.isConnected ?? !0;
     }
     get parentNode() {
       let t = this._$AA.parentNode;
@@ -406,7 +406,7 @@ var l0, et, Pe, Wt, tt, m1, it, ei, H1, ne, ge, N0, ti, o0, se, at, rt, q1, nt, 
       return this._$AB;
     }
     _$AI(t, i = this) {
-      t = ue(this, t, i), ge(t) ? t === S || t == null || t === "" ? (this._$AH !== S && this._$AR(), this._$AH = S) : t !== this._$AH && t !== Z1 && this._(t) : t._$litType$ !== void 0 ? this.$(t) : t.nodeType !== void 0 ? this.T(t) : ti(t) ? this.k(t) : this._(t);
+      t = ue(this, t, i), ge(t) ? t === C || t == null || t === "" ? (this._$AH !== C && this._$AR(), this._$AH = C) : t !== this._$AH && t !== Z1 && this._(t) : t._$litType$ !== void 0 ? this.$(t) : t.nodeType !== void 0 ? this.T(t) : ti(t) ? this.k(t) : this._(t);
     }
     O(t) {
       return this._$AA.parentNode.insertBefore(t, this._$AB);
@@ -415,7 +415,7 @@ var l0, et, Pe, Wt, tt, m1, it, ei, H1, ne, ge, N0, ti, o0, se, at, rt, q1, nt, 
       this._$AH !== t && (this._$AR(), this._$AH = this.O(t));
     }
     _(t) {
-      this._$AH !== S && ge(this._$AH) ? this._$AA.nextSibling.data = t : this.T(H1.createTextNode(t)), this._$AH = t;
+      this._$AH !== C && ge(this._$AH) ? this._$AA.nextSibling.data = t : this.T(H1.createTextNode(t)), this._$AH = t;
     }
     $(t) {
       const { values: i, _$litType$: a } = t, r = typeof a == "number" ? this._$AC(t) : (a.el === void 0 && (a.el = _0.createElement(Q2(a.h, a.h[0]), this.options)), a);
@@ -453,7 +453,7 @@ var l0, et, Pe, Wt, tt, m1, it, ei, H1, ne, ge, N0, ti, o0, se, at, rt, q1, nt, 
       return this._$AM._$AU;
     }
     constructor(e, t, i, a, r) {
-      this.type = 1, this._$AH = S, this._$AN = void 0, this.element = e, this.name = t, this._$AM = a, this.options = r, i.length > 2 || i[0] !== "" || i[1] !== "" ? (this._$AH = Array(i.length - 1).fill(/* @__PURE__ */ new String()), this.strings = i) : this._$AH = S;
+      this.type = 1, this._$AH = C, this._$AN = void 0, this.element = e, this.name = t, this._$AM = a, this.options = r, i.length > 2 || i[0] !== "" || i[1] !== "" ? (this._$AH = Array(i.length - 1).fill(/* @__PURE__ */ new String()), this.strings = i) : this._$AH = C;
     }
     _$AI(e, t = this, i, a) {
       const r = this.strings;
@@ -462,34 +462,34 @@ var l0, et, Pe, Wt, tt, m1, it, ei, H1, ne, ge, N0, ti, o0, se, at, rt, q1, nt, 
       else {
         const s = e;
         let l, o;
-        for (e = r[0], l = 0; l < r.length - 1; l++) o = ue(this, s[i + l], t, l), o === Z1 && (o = this._$AH[l]), n ||= !ge(o) || o !== this._$AH[l], o === S ? e = S : e !== S && (e += (o ?? "") + r[l + 1]), this._$AH[l] = o;
+        for (e = r[0], l = 0; l < r.length - 1; l++) o = ue(this, s[i + l], t, l), o === Z1 && (o = this._$AH[l]), n ||= !ge(o) || o !== this._$AH[l], o === C ? e = C : e !== C && (e += (o ?? "") + r[l + 1]), this._$AH[l] = o;
       }
       n && !a && this.j(e);
     }
     j(e) {
-      e === S ? this.element.removeAttribute(this.name) : this.element.setAttribute(this.name, e ?? "");
+      e === C ? this.element.removeAttribute(this.name) : this.element.setAttribute(this.name, e ?? "");
     }
   }, ri = class extends Te {
     constructor() {
       super(...arguments), this.type = 3;
     }
     j(e) {
-      this.element[this.name] = e === S ? void 0 : e;
+      this.element[this.name] = e === C ? void 0 : e;
     }
   }, ni = class extends Te {
     constructor() {
       super(...arguments), this.type = 4;
     }
     j(e) {
-      this.element.toggleAttribute(this.name, !!e && e !== S);
+      this.element.toggleAttribute(this.name, !!e && e !== C);
     }
   }, si = class extends Te {
     constructor(e, t, i, a, r) {
       super(e, t, i, a, r), this.type = 5;
     }
     _$AI(e, t = this) {
-      if ((e = ue(this, e, t, 0) ?? S) === Z1) return;
-      const i = this._$AH, a = e === S && i !== S || e.capture !== i.capture || e.once !== i.once || e.passive !== i.passive, r = e !== S && (i === S || a);
+      if ((e = ue(this, e, t, 0) ?? C) === Z1) return;
+      const i = this._$AH, a = e === C && i !== C || e.capture !== i.capture || e.once !== i.once || e.passive !== i.passive, r = e !== C && (i === C || a);
       a && this.element.removeEventListener(this.name, this, i), r && this.element.addEventListener(this.name, this, e), this._$AH = e;
     }
     handleEvent(e) {
@@ -636,9 +636,9 @@ function ci(e, t) {
   }
 }
 function X4(e, t, i = null) {
-  if (!e) return S;
+  if (!e) return C;
   const a = i == null || Number.isNaN(i) ? void 0 : Math.max(0.2, Math.min(1, i / 100));
-  return q`
+  return z`
     <div class="vk-bg vk-bg--${t}" aria-hidden="true">
       <div class="vk-bg__layer vk-bg__sky"></div>
       <div
@@ -1543,7 +1543,7 @@ var S1, a1, g0, t8, i8, He, a8, r8, n8, Et, It, f0, s8, U0, Y1, y2, g3 = O((() =
 }));
 function v1() {
 }
-function T(e) {
+function H(e) {
   return e == null;
 }
 function W(e) {
@@ -1560,7 +1560,7 @@ function E(e) {
 function r1(e, t) {
   return E(e) ? e : t;
 }
-function P(e, t) {
+function T(e, t) {
   return typeof e > "u" ? t : e;
 }
 function B(e, t, i) {
@@ -1795,7 +1795,7 @@ function P3(e, t, i) {
     const { iScale: s, vScale: l, _parsed: o } = e, d = e.dataset && e.dataset.options ? e.dataset.options.spanGaps : null, _ = s.axis, { min: c, max: h, minDefined: u, maxDefined: g } = s.getUserBounds();
     if (u) {
       if (r = Math.min(R1(o, _, c).lo, i ? a : R1(t, _, s.getPixelForValue(c)).lo), d) {
-        const f = o.slice(0, r + 1).reverse().findIndex((p) => !T(p[l.axis]));
+        const f = o.slice(0, r + 1).reverse().findIndex((p) => !H(p[l.axis]));
         r -= Math.max(0, f);
       }
       r = Z(r, 0, a - 1);
@@ -1803,7 +1803,7 @@ function P3(e, t, i) {
     if (g) {
       let f = Math.max(R1(o, s.axis, h, !0).hi + 1, i ? 0 : R1(t, _, s.getPixelForValue(h), !0).hi + 1);
       if (d) {
-        const p = o.slice(f - 1).findIndex((m) => !T(m[l.axis]));
+        const p = o.slice(f - 1).findIndex((m) => !H(m[l.axis]));
         f += Math.max(0, p);
       }
       n = Z(f, r, a) - r;
@@ -1981,7 +1981,7 @@ function _t(e, t, i) {
   return typeof t == "string" ? f1(Ke(e, t), i) : f1(Ke(e, ""), t);
 }
 function B3(e) {
-  return !e || T(e.size) || T(e.family) ? null : (e.style ? e.style + " " : "") + (e.weight ? e.weight + " " : "") + e.size + "px " + e.family;
+  return !e || H(e.size) || H(e.family) ? null : (e.style ? e.style + " " : "") + (e.weight ? e.weight + " " : "") + e.size + "px " + e.family;
 }
 function V0(e, t, i, a, r) {
   let n = t[r];
@@ -2087,7 +2087,7 @@ function R3(e, t, i, a) {
   e.bezierCurveTo(a ? t.cp1x : t.cp2x, a ? t.cp1y : t.cp2y, a ? i.cp2x : i.cp1x, a ? i.cp2y : i.cp1y, i.x, i.y);
 }
 function A3(e, t) {
-  t.translation && e.translate(t.translation[0], t.translation[1]), T(t.rotation) || e.rotate(t.rotation), t.color && (e.fillStyle = t.color), t.textAlign && (e.textAlign = t.textAlign), t.textBaseline && (e.textBaseline = t.textBaseline);
+  t.translation && e.translate(t.translation[0], t.translation[1]), H(t.rotation) || e.rotate(t.rotation), t.color && (e.fillStyle = t.color), t.textAlign && (e.textAlign = t.textAlign), t.textBaseline && (e.textBaseline = t.textBaseline);
 }
 function V3(e, t, i, a, r) {
   if (r.strikethrough || r.underline) {
@@ -2103,7 +2103,7 @@ function pe(e, t, i, a, r, n = {}) {
   const s = W(t) ? t : [t], l = n.strokeWidth > 0 && n.strokeColor !== "";
   let o, d;
   for (e.save(), e.font = r.string, A3(e, n), o = 0; o < s.length; ++o)
-    d = s[o], n.backdrop && W3(e, n.backdrop), l && (n.strokeColor && (e.strokeStyle = n.strokeColor), T(n.strokeWidth) || (e.lineWidth = n.strokeWidth), e.strokeText(d, i, a, n.maxWidth)), e.fillText(d, i, a, n.maxWidth), V3(e, i, a, d, n), a += Number(r.lineHeight);
+    d = s[o], n.backdrop && W3(e, n.backdrop), l && (n.strokeColor && (e.strokeStyle = n.strokeColor), H(n.strokeWidth) || (e.lineWidth = n.strokeWidth), e.strokeText(d, i, a, n.maxWidth)), e.fillText(d, i, a, n.maxWidth), V3(e, i, a, d, n), a += Number(r.lineHeight);
   e.restore();
 }
 function Ee(e, t) {
@@ -2123,7 +2123,7 @@ function D3(e, t) {
   return t * e;
 }
 function M2(e, t) {
-  const i = {}, a = N(t), r = a ? Object.keys(t) : t, n = N(e) ? a ? (s) => P(e[s], e[t[s]]) : (s) => e[s] : () => e;
+  const i = {}, a = N(t), r = a ? Object.keys(t) : t, n = N(e) ? a ? (s) => T(e[s], e[t[s]]) : (s) => e[s] : () => e;
   for (const s of r) i[s] = q8(n(s));
   return i;
 }
@@ -2149,16 +2149,16 @@ function K(e) {
 }
 function F(e, t) {
   e = e || {}, t = t || V.font;
-  let i = P(e.size, t.size);
+  let i = T(e.size, t.size);
   typeof i == "string" && (i = parseInt(i, 10));
-  let a = P(e.style, t.style);
+  let a = T(e.style, t.style);
   a && !("" + a).match(H8) && (console.warn('Invalid font style specified: "' + a + '"'), a = void 0);
   const r = {
-    family: P(e.family, t.family),
-    lineHeight: D3(P(e.lineHeight, t.lineHeight), i),
+    family: T(e.family, t.family),
+    lineHeight: D3(T(e.lineHeight, t.lineHeight), i),
     size: i,
     style: a,
-    weight: P(e.weight, t.weight),
+    weight: T(e.weight, t.weight),
     string: ""
   };
   return r.string = B3(r), r;
@@ -2572,14 +2572,14 @@ function v8(e, t, i) {
   const { property: a, start: r, end: n } = i, s = t.length, { compare: l, between: o, normalize: d } = m8(a), { start: _, end: c, loop: h, style: u } = dr(e, t, i), g = [];
   let f = !1, p = null, m, v, k;
   const w = () => o(r, k, m) && l(r, k) !== 0, y = () => l(n, m) === 0 || o(n, k, m), x = () => f || w(), b = () => !f || y();
-  for (let M = _, C = _; M <= c; ++M)
-    v = t[M % s], !v.skip && (m = d(v[a]), m !== k && (f = o(m, r, n), p === null && x() && (p = l(m, r) === 0 ? M : C), p !== null && b() && (g.push(Si({
+  for (let M = _, S = _; M <= c; ++M)
+    v = t[M % s], !v.skip && (m = d(v[a]), m !== k && (f = o(m, r, n), p === null && x() && (p = l(m, r) === 0 ? M : S), p !== null && b() && (g.push(Si({
       start: p,
       end: M,
       loop: h,
       count: s,
       style: u
-    })), p = null), C = M, k = m));
+    })), p = null), S = M, k = m));
   return p !== null && g.push(Si({
     start: p,
     end: c,
@@ -2863,7 +2863,7 @@ var k8, b8, Kt, we, T1, Xt, $, I, x8, Ze, M8, G, B1, Zt, C1, _1, R1, C8, T2, H2,
           enumerable: !0,
           get() {
             const l = this[s], o = n[a];
-            return N(l) ? Object.assign({}, o, l) : P(l, o);
+            return N(l) ? Object.assign({}, o, l) : T(l, o);
           },
           set(l) {
             this[s] = l;
@@ -3111,7 +3111,7 @@ function zr(e) {
 function Pr(e, t, i, a) {
   const r = i.barThickness;
   let n, s;
-  return T(r) ? (n = t.min * i.categoryPercentage, s = i.barPercentage) : (n = r * a, s = 1), {
+  return H(r) ? (n = t.min * i.categoryPercentage, s = i.barPercentage) : (n = r * a, s = 1), {
     chunk: n / a,
     ratio: s,
     start: t.pixels[e] - n / 2
@@ -3219,9 +3219,9 @@ function $r(e, t, i, a) {
     } else {
       const _ = d(n, t, i);
       if (o) {
-        const { vScale: c } = r._cachedMeta, { _parsed: h } = e, u = h.slice(0, _.lo + 1).reverse().findIndex((f) => !T(f[c.axis]));
+        const { vScale: c } = r._cachedMeta, { _parsed: h } = e, u = h.slice(0, _.lo + 1).reverse().findIndex((f) => !H(f[c.axis]));
         _.lo -= Math.max(0, u);
-        const g = h.slice(_.hi).findIndex((f) => !T(f[c.axis]));
+        const g = h.slice(_.hi).findIndex((f) => !H(f[c.axis]));
         _.hi += Math.max(0, g);
       }
       return _;
@@ -3562,8 +3562,8 @@ function nn(e, t) {
   if (s > 0) {
     let c, h;
     const u = s > 1 ? Math.round((o - l) / (s - 1)) : null;
-    for (w0(t, d, _, T(u) ? 0 : l - u, l), c = 0, h = s - 1; c < h; c++) w0(t, d, _, n[c], n[c + 1]);
-    return w0(t, d, _, o, T(u) ? t.length : o + u), d;
+    for (w0(t, d, _, H(u) ? 0 : l - u, l), c = 0, h = s - 1; c < h; c++) w0(t, d, _, n[c], n[c + 1]);
+    return w0(t, d, _, o, H(u) ? t.length : o + u), d;
   }
   return w0(t, d, _), d;
 }
@@ -3592,7 +3592,7 @@ function dn(e, t, i, a) {
   for (a = Math.ceil(a), s = 0; s < e.length; s++) s === n && (t.push(e[s]), r++, n = i[r * a]);
 }
 function w0(e, t, i, a, r) {
-  const n = P(a, 0), s = Math.min(P(r, e.length), e.length);
+  const n = T(a, 0), s = Math.min(T(r, e.length), e.length);
   let l = 0, o, d, _;
   for (i = Math.ceil(i), r && (o = r - a, i = o / Math.floor(o / i)), _ = n; _ < 0; )
     l++, _ = Math.round(n + l * i);
@@ -3797,7 +3797,7 @@ function Pn(e, t) {
 }
 function I8(e) {
   const t = e.options || (e.options = {});
-  t.plugins = P(t.plugins, {}), t.scales = Pn(e, t);
+  t.plugins = T(t.plugins, {}), t.scales = Pn(e, t);
 }
 function G8(e) {
   return e = e || {}, e.datasets = e.datasets || [], e.labels = e.labels || [], e;
@@ -3916,21 +3916,21 @@ function I0(e, t, i, a, r, n) {
     const j = ((_ > 0 ? _ - a : 0) + (c > 0 ? c - a : 0)) / 2;
     u = (g - (j !== 0 ? g * j / (j + a) : g)) / 2;
   }
-  const f = (g - Math.max(1e-3, g * c - i / $) / c) / 2, p = o + f + u, m = r - f - u, { outerStart: v, outerEnd: k, innerStart: w, innerEnd: y } = On(t, h, c, m - p), x = c - v, b = c - k, M = p + v / x, C = m - k / b, z = h + w, H = h + y, R = p + w / z, o1 = m - y / H;
+  const f = (g - Math.max(1e-3, g * c - i / $) / c) / 2, p = o + f + u, m = r - f - u, { outerStart: v, outerEnd: k, innerStart: w, innerEnd: y } = On(t, h, c, m - p), x = c - v, b = c - k, M = p + v / x, S = m - k / b, P = h + w, q = h + y, R = p + w / P, o1 = m - y / q;
   if (e.beginPath(), n) {
-    const j = (M + C) / 2;
-    if (e.arc(s, l, c, M, j), e.arc(s, l, c, j, C), k > 0) {
-      const Y = oe(b, C, s, l);
-      e.arc(Y.x, Y.y, k, C, m + G);
+    const j = (M + S) / 2;
+    if (e.arc(s, l, c, M, j), e.arc(s, l, c, j, S), k > 0) {
+      const Y = oe(b, S, s, l);
+      e.arc(Y.x, Y.y, k, S, m + G);
     }
-    const U = oe(H, m, s, l);
+    const U = oe(q, m, s, l);
     if (e.lineTo(U.x, U.y), y > 0) {
-      const Y = oe(H, o1, s, l);
+      const Y = oe(q, o1, s, l);
       e.arc(Y.x, Y.y, y, m + G, o1 + Math.PI);
     }
     const D = (m - y / h + (p + w / h)) / 2;
     if (e.arc(s, l, h, m - y / h, D, !0), e.arc(s, l, h, D, p + w / h, !0), w > 0) {
-      const Y = oe(z, R, s, l);
+      const Y = oe(P, R, s, l);
       e.arc(Y.x, Y.y, w, R + Math.PI, p - G);
     }
     const p1 = oe(x, p, s, l);
@@ -3942,7 +3942,7 @@ function I0(e, t, i, a, r, n) {
     e.moveTo(s, l);
     const j = Math.cos(M) * c + s, U = Math.sin(M) * c + l;
     e.lineTo(j, U);
-    const D = Math.cos(C) * c + s, p1 = Math.sin(C) * c + l;
+    const D = Math.cos(S) * c + s, p1 = Math.sin(S) * c + l;
     e.lineTo(D, p1);
   }
   e.closePath();
@@ -3970,7 +3970,7 @@ function An(e, t, i, a, r) {
   g && Bn(e, t, f), o.selfJoin && f - s >= $ && u === 0 && _ !== "miter" && Ln(e, t, f), n || (I0(e, t, i, a, f, r), e.stroke());
 }
 function F8(e, t, i = t) {
-  e.lineCap = P(i.borderCapStyle, t.borderCapStyle), e.setLineDash(P(i.borderDash, t.borderDash)), e.lineDashOffset = P(i.borderDashOffset, t.borderDashOffset), e.lineJoin = P(i.borderJoinStyle, t.borderJoinStyle), e.lineWidth = P(i.borderWidth, t.borderWidth), e.strokeStyle = P(i.borderColor, t.borderColor);
+  e.lineCap = T(i.borderCapStyle, t.borderCapStyle), e.setLineDash(T(i.borderDash, t.borderDash)), e.lineDashOffset = T(i.borderDashOffset, t.borderDashOffset), e.lineJoin = T(i.borderJoinStyle, t.borderJoinStyle), e.lineWidth = T(i.borderWidth, t.borderWidth), e.strokeStyle = T(i.borderColor, t.borderColor);
 }
 function Vn(e, t, i) {
   e.lineTo(i.x, i.y);
@@ -4231,7 +4231,7 @@ function ns(e, t, i) {
 }
 function ss(e) {
   const t = e.options, i = t.fill;
-  let a = P(i && i.target, i);
+  let a = T(i && i.target, i);
   return a === void 0 && (a = !!t.backgroundColor), a === !1 || a === null ? !1 : a === !0 ? "origin" : a;
 }
 function ls(e) {
@@ -4544,15 +4544,15 @@ function da(e) {
   return e >= 0 && e < t.length ? t[e] : e;
 }
 function Hs(e, t) {
-  const i = [], { bounds: r, step: n, min: s, max: l, precision: o, count: d, maxTicks: _, maxDigits: c, includeBounds: h } = e, u = n || 1, g = _ - 1, { min: f, max: p } = t, m = !T(s), v = !T(l), k = !T(d), w = (p - f) / (c + 1);
-  let y = gi((p - f) / g / u) * u, x, b, M, C;
+  const i = [], { bounds: r, step: n, min: s, max: l, precision: o, count: d, maxTicks: _, maxDigits: c, includeBounds: h } = e, u = n || 1, g = _ - 1, { min: f, max: p } = t, m = !H(s), v = !H(l), k = !H(d), w = (p - f) / (c + 1);
+  let y = gi((p - f) / g / u) * u, x, b, M, S;
   if (y < 1e-14 && !m && !v) return [{ value: f }, { value: p }];
-  C = Math.ceil(p / y) - Math.floor(f / y), C > g && (y = gi(C * y / g / u) * u), T(o) || (x = Math.pow(10, o), y = Math.ceil(y * x) / x), r === "ticks" ? (b = Math.floor(f / y) * y, M = Math.ceil(p / y) * y) : (b = f, M = p), m && v && n && b3((l - s) / n, y / 1e3) ? (C = Math.round(Math.min((l - s) / y, _)), y = (l - s) / C, b = s, M = l) : k ? (b = m ? s : b, M = v ? l : M, C = d - 1, y = (M - b) / C) : (C = (M - b) / y, Ye(C, Math.round(C), y / 1e3) ? C = Math.round(C) : C = Math.ceil(C));
-  const z = Math.max(pi(y), pi(b));
-  x = Math.pow(10, T(o) ? z : o), b = Math.round(b * x) / x, M = Math.round(M * x) / x;
-  let H = 0;
-  for (m && (h && b !== s ? (i.push({ value: s }), b < s && H++, Ye(Math.round((b + H * y) * x) / x, s, _a(s, w, e)) && H++) : b < s && H++); H < C; ++H) {
-    const R = Math.round((b + H * y) * x) / x;
+  S = Math.ceil(p / y) - Math.floor(f / y), S > g && (y = gi(S * y / g / u) * u), H(o) || (x = Math.pow(10, o), y = Math.ceil(y * x) / x), r === "ticks" ? (b = Math.floor(f / y) * y, M = Math.ceil(p / y) * y) : (b = f, M = p), m && v && n && b3((l - s) / n, y / 1e3) ? (S = Math.round(Math.min((l - s) / y, _)), y = (l - s) / S, b = s, M = l) : k ? (b = m ? s : b, M = v ? l : M, S = d - 1, y = (M - b) / S) : (S = (M - b) / y, Ye(S, Math.round(S), y / 1e3) ? S = Math.round(S) : S = Math.ceil(S));
+  const P = Math.max(pi(y), pi(b));
+  x = Math.pow(10, H(o) ? P : o), b = Math.round(b * x) / x, M = Math.round(M * x) / x;
+  let q = 0;
+  for (m && (h && b !== s ? (i.push({ value: s }), b < s && q++, Ye(Math.round((b + q * y) * x) / x, s, _a(s, w, e)) && q++) : b < s && q++); q < S; ++q) {
+    const R = Math.round((b + q * y) * x) / x;
     if (v && R > l) break;
     i.push({ value: R });
   }
@@ -4599,7 +4599,7 @@ function a2(e) {
   const t = e.ticks;
   if (t.display && e.display) {
     const i = K(t.backdropPadding);
-    return P(t.font && t.font.size, V.font.size) + i.height;
+    return T(t.font && t.font.size, V.font.size) + i.height;
   }
   return 0;
 }
@@ -4697,7 +4697,7 @@ function Ws(e, t, i) {
 }
 function Ds(e, t, i) {
   const { left: a, top: r, right: n, bottom: s } = i, { backdropColor: l } = t;
-  if (!T(l)) {
+  if (!H(l)) {
     const o = Q1(t.borderRadius), d = K(t.backdropPadding);
     e.fillStyle = l;
     const _ = a - d.left, c = r - d.top, h = n - a + d.width, u = s - r + d.height;
@@ -4750,7 +4750,7 @@ function ga(e, t) {
   return e - t;
 }
 function fa(e, t) {
-  if (T(t)) return null;
+  if (H(t)) return null;
   const i = e._adapter, { parser: a, round: r, isoWeekday: n } = e._parseOpts;
   let s = t;
   return typeof a == "function" && (s = a(s)), E(s) || (s = typeof a == "string" ? i.parse(s, a) : i.parse(s)), s === null ? null : (r && (s = r === "week" && (De(n) || n === !0) ? i.startOf(s, "isoWeek", n) : i.startOf(s, r)), +s);
@@ -5028,7 +5028,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       this.index !== e && Ne(this._cachedMeta), this.index = e;
     }
     linkScales() {
-      const e = this.chart, t = this._cachedMeta, i = this.getDataset(), a = (_, c, h, u) => _ === "x" ? c : _ === "r" ? u : h, r = t.xAxisID = P(i.xAxisID, pt(e, "x")), n = t.yAxisID = P(i.yAxisID, pt(e, "y")), s = t.rAxisID = P(i.rAxisID, pt(e, "r")), l = t.indexAxis, o = t.iAxisID = a(l, r, n, s), d = t.vAxisID = a(l, n, r, s);
+      const e = this.chart, t = this._cachedMeta, i = this.getDataset(), a = (_, c, h, u) => _ === "x" ? c : _ === "r" ? u : h, r = t.xAxisID = T(i.xAxisID, pt(e, "x")), n = t.yAxisID = T(i.yAxisID, pt(e, "y")), s = t.rAxisID = T(i.rAxisID, pt(e, "r")), l = t.indexAxis, o = t.iAxisID = a(l, r, n, s), d = t.vAxisID = a(l, n, r, s);
       t.xScale = this.getScaleForId(r), t.yScale = this.getScaleForId(n), t.rScale = this.getScaleForId(s), t.iScale = this.getScaleForId(o), t.vScale = this.getScaleForId(d);
     }
     getDataset() {
@@ -5184,7 +5184,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
     }
     _update(e) {
       const t = this._cachedMeta;
-      this.update(e || "default"), t._clip = yr(P(this.options.clip, vr(t.xScale, t.yScale, this.getMaxOverflow())));
+      this.update(e || "default"), t._clip = yr(T(this.options.clip, vr(t.xScale, t.yScale, this.getMaxOverflow())));
     }
     update(e) {
     }
@@ -5424,7 +5424,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
     updateElements(e, t, i, a) {
       const r = a === "reset", { index: n, _cachedMeta: { vScale: s } } = this, l = s.getBasePixel(), o = s.isHorizontal(), d = this._getRuler(), { sharedOptions: _, includeOptions: c } = this._getSharedOptions(t, a);
       for (let h = t; h < t + i; h++) {
-        const u = this.getParsed(h), g = r || T(u[s.axis]) ? {
+        const u = this.getParsed(h), g = r || H(u[s.axis]) ? {
           base: l,
           head: l
         } : this._calculateBarValuePixels(h), f = this._calculateBarIndexPixels(h, d), p = (u._stacks || {})[s.axis], m = {
@@ -5444,7 +5444,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
     _getStacks(e, t) {
       const { iScale: i } = this._cachedMeta, a = i.getMatchingVisibleMetas(this._type).filter((d) => d.controller.options.grouped), r = i.options.stacked, n = [], s = this._cachedMeta.controller.getParsed(t), l = s && s[i.axis], o = (d) => {
         const _ = d._parsed.find((h) => h[i.axis] === l), c = _ && _[d.vScale.axis];
-        if (T(c) || isNaN(c)) return !0;
+        if (H(c) || isNaN(c)) return !0;
       };
       for (const d of a)
         if (!(t !== void 0 && o(d)) && ((r === !1 || n.indexOf(d.stack) === -1 || r === void 0 && d.stack === void 0) && n.push(d.stack), d.index === e))
@@ -5463,7 +5463,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
     }
     _getAxis() {
       const e = {}, t = this.getFirstScaleIdForIndexAxis();
-      for (const i of this.chart.data.datasets) e[P(this.chart.options.indexAxis === "x" ? i.xAxisID : i.yAxisID, t)] = !0;
+      for (const i of this.chart.data.datasets) e[T(this.chart.options.indexAxis === "x" ? i.xAxisID : i.yAxisID, t)] = !0;
       return Object.keys(e);
     }
     _getStackIndex(e, t, i) {
@@ -5490,7 +5490,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       const { _cachedMeta: { vScale: t, _stacked: i, index: a }, options: { base: r, minBarLength: n } } = this, s = r || 0, l = this.getParsed(e), o = l._custom, d = mt(o);
       let _ = l[t.axis], c = 0, h = i ? this.applyStack(t, l, i) : _, u, g;
       h !== _ && (c = h - _, h = _), d && (_ = o.barStart, h = o.barEnd - o.barStart, _ !== 0 && _1(_) !== _1(o.barEnd) && (c = 0), c += _);
-      const f = !T(r) && !d ? r : c;
+      const f = !H(r) && !d ? r : c;
       let p = t.getPixelForValue(f);
       if (this.chart.getDataVisibility(e) ? u = t.getPixelForValue(c + h) : u = p, g = u - p, Math.abs(g) < n) {
         g = qr(g, t, s) * n, _ === s && (p -= g / 2);
@@ -5509,11 +5509,11 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       };
     }
     _calculateBarIndexPixels(e, t) {
-      const i = t.scale, a = this.options, r = a.skipNull, n = P(a.maxBarThickness, 1 / 0);
+      const i = t.scale, a = this.options, r = a.skipNull, n = T(a.maxBarThickness, 1 / 0);
       let s, l;
       const o = this._getAxisCount();
       if (t.grouped) {
-        const d = r ? this._getStackCount(e) : t.stackCount, _ = a.barThickness === "flex" ? Tr(e, t, a, d * o) : Pr(e, t, a, d * o), c = this.chart.options.indexAxis === "x" ? this.getDataset().xAxisID : this.getDataset().yAxisID, h = this._getAxis().indexOf(P(c, this.getFirstScaleIdForIndexAxis())), u = this._getStackIndex(this.index, this._cachedMeta.stack, r ? e : void 0) + h;
+        const d = r ? this._getStackCount(e) : t.stackCount, _ = a.barThickness === "flex" ? Tr(e, t, a, d * o) : Pr(e, t, a, d * o), c = this.chart.options.indexAxis === "x" ? this.getDataset().xAxisID : this.getDataset().yAxisID, h = this._getAxis().indexOf(T(c, this.getFirstScaleIdForIndexAxis())), u = this._getStackIndex(this.index, this._cachedMeta.stack, r ? e : void 0) + h;
         s = _.start + _.chunk * u + _.chunk / 2, l = Math.min(n, _.chunk * _.ratio);
       } else
         s = i.getPixelForValue(this.getParsed(e)[i.axis], e), l = Math.min(n, t.min * t.ratio);
@@ -5563,8 +5563,8 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
           x.skip = !0;
           continue;
         }
-        const b = this.getParsed(w), M = T(b[h]), C = x[c] = n.getPixelForValue(b[c], w), z = x[h] = r || M ? s.getBasePixel() : s.getPixelForValue(l ? this.applyStack(s, b, l) : b[h], w);
-        x.skip = isNaN(C) || isNaN(z) || M, x.stop = w > 0 && Math.abs(b[c] - k[c]) > f, g && (x.parsed = b, x.raw = o.data[w]), _ && (x.options = d || this.resolveDataElementOptions(w, y.active ? "active" : a)), p || this.updateElement(y, w, x, a), k = b;
+        const b = this.getParsed(w), M = H(b[h]), S = x[c] = n.getPixelForValue(b[c], w), P = x[h] = r || M ? s.getBasePixel() : s.getPixelForValue(l ? this.applyStack(s, b, l) : b[h], w);
+        x.skip = isNaN(S) || isNaN(P) || M, x.stop = w > 0 && Math.abs(b[c] - k[c]) > f, g && (x.parsed = b, x.raw = o.data[w]), _ && (x.options = d || this.resolveDataElementOptions(w, y.active ? "active" : a)), p || this.updateElement(y, w, x, a), k = b;
       }
     }
     getMaxOverflow() {
@@ -5765,7 +5765,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       const i = t[Ge].initial;
       ["height", "width"].forEach((r) => {
         const n = i[r];
-        T(n) ? t.removeAttribute(r) : t.setAttribute(r, n);
+        H(n) ? t.removeAttribute(r) : t.setAttribute(r, n);
       });
       const a = i.style || {};
       return Object.keys(a).forEach((r) => {
@@ -6019,7 +6019,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
     _convertTicksToLabels(t) {
       this.beforeTickToLabelConversion(), this.generateTickLabels(t);
       let i, a;
-      for (i = 0, a = t.length; i < a; i++) T(t[i].label) && (t.splice(i, 1), a--, i--);
+      for (i = 0, a = t.length; i < a; i++) H(t[i].label) && (t.splice(i, 1), a--, i--);
       this.afterTickToLabelConversion();
     }
     _getLabelSizes() {
@@ -6038,16 +6038,16 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
         if (g = t[c].label, f = this._resolveTickFontOptions(c), r.font = p = f.string, m = n[p] = n[p] || {
           data: {},
           gc: []
-        }, v = f.lineHeight, k = w = 0, !T(g) && !W(g))
+        }, v = f.lineHeight, k = w = 0, !H(g) && !W(g))
           k = V0(r, m.data, m.gc, k, g), w = v;
         else if (W(g)) for (h = 0, u = g.length; h < u; ++h)
-          y = g[h], !T(y) && !W(y) && (k = V0(r, m.data, m.gc, k, y), w += v);
+          y = g[h], !H(y) && !W(y) && (k = V0(r, m.data, m.gc, k, y), w += v);
         s.push(k), l.push(w), d = Math.max(k, d), _ = Math.max(w, _);
       }
       hn(n, i);
-      const x = s.indexOf(d), b = l.indexOf(_), M = (C) => ({
-        width: s[C] || 0,
-        height: l[C] || 0
+      const x = s.indexOf(d), b = l.indexOf(_), M = (S) => ({
+        width: s[S] || 0,
+        height: l[S] || 0
       });
       return {
         first: M(0),
@@ -6106,41 +6106,41 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       const i = this.axis, a = this.chart, r = this.options, { grid: n, position: s, border: l } = r, o = n.offset, d = this.isHorizontal(), _ = this.ticks.length + (o ? 1 : 0), c = Be(n), h = [], u = l.setContext(this.getContext()), g = u.display ? u.width : 0, f = g / 2, p = function(U) {
         return I1(a, U, g);
       };
-      let m, v, k, w, y, x, b, M, C, z, H, R;
+      let m, v, k, w, y, x, b, M, S, P, q, R;
       if (s === "top")
-        m = p(this.bottom), x = this.bottom - c, M = m - f, z = p(t.top) + f, R = t.bottom;
+        m = p(this.bottom), x = this.bottom - c, M = m - f, P = p(t.top) + f, R = t.bottom;
       else if (s === "bottom")
-        m = p(this.top), z = t.top, R = p(t.bottom) - f, x = m + f, M = this.top + c;
+        m = p(this.top), P = t.top, R = p(t.bottom) - f, x = m + f, M = this.top + c;
       else if (s === "left")
-        m = p(this.right), y = this.right - c, b = m - f, C = p(t.left) + f, H = t.right;
+        m = p(this.right), y = this.right - c, b = m - f, S = p(t.left) + f, q = t.right;
       else if (s === "right")
-        m = p(this.left), C = t.left, H = p(t.right) - f, y = m + f, b = this.left + c;
+        m = p(this.left), S = t.left, q = p(t.right) - f, y = m + f, b = this.left + c;
       else if (i === "x") {
         if (s === "center") m = p((t.top + t.bottom) / 2 + 0.5);
         else if (N(s)) {
           const U = Object.keys(s)[0], D = s[U];
           m = p(this.chart.scales[U].getPixelForValue(D));
         }
-        z = t.top, R = t.bottom, x = m + f, M = x + c;
+        P = t.top, R = t.bottom, x = m + f, M = x + c;
       } else if (i === "y") {
         if (s === "center") m = p((t.left + t.right) / 2);
         else if (N(s)) {
           const U = Object.keys(s)[0], D = s[U];
           m = p(this.chart.scales[U].getPixelForValue(D));
         }
-        y = m - f, b = y - c, C = t.left, H = t.right;
+        y = m - f, b = y - c, S = t.left, q = t.right;
       }
-      const o1 = P(r.ticks.maxTicksLimit, _), j = Math.max(1, Math.ceil(_ / o1));
+      const o1 = T(r.ticks.maxTicksLimit, _), j = Math.max(1, Math.ceil(_ / o1));
       for (v = 0; v < _; v += j) {
         const U = this.getContext(v), D = n.setContext(U), p1 = l.setContext(U), Y = D.lineWidth, K0 = D.color, ie = p1.dash || [], r0 = p1.dashOffset, ae = D.tickWidth, xe = D.tickColor, E1 = D.tickBorderDash || [], Me = D.tickBorderDashOffset;
-        k = cn(this, v, o), k !== void 0 && (w = I1(a, k, Y), d ? y = b = C = H = w : x = M = z = R = w, h.push({
+        k = cn(this, v, o), k !== void 0 && (w = I1(a, k, Y), d ? y = b = S = q = w : x = M = P = R = w, h.push({
           tx1: y,
           ty1: x,
           tx2: b,
           ty2: M,
-          x1: C,
-          y1: z,
-          x2: H,
+          x1: S,
+          y1: P,
+          x2: q,
           y2: R,
           width: Y,
           color: K0,
@@ -6156,7 +6156,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
     }
     _computeLabelItems(t) {
       const i = this.axis, a = this.options, { position: r, ticks: n } = a, s = this.isHorizontal(), l = this.ticks, { align: o, crossAlign: d, padding: _, mirror: c } = n, h = Be(a.grid), u = h + _, g = c ? -_ : u, f = -L1(this.labelRotation), p = [];
-      let m, v, k, w, y, x, b, M, C, z, H, R, o1 = "middle";
+      let m, v, k, w, y, x, b, M, S, P, q, R, o1 = "middle";
       if (r === "top")
         x = this.bottom - g, b = this._getXAxisLabelAlignment();
       else if (r === "bottom")
@@ -6187,10 +6187,10 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       for (m = 0, v = l.length; m < v; ++m) {
         k = l[m], w = k.label;
         const U = n.setContext(this.getContext(m));
-        M = this.getPixelForTick(m) + n.labelOffset, C = this._resolveTickFontOptions(m), z = C.lineHeight, H = W(w) ? w.length : 1;
-        const D = H / 2, p1 = U.color, Y = U.textStrokeColor, K0 = U.textStrokeWidth;
+        M = this.getPixelForTick(m) + n.labelOffset, S = this._resolveTickFontOptions(m), P = S.lineHeight, q = W(w) ? w.length : 1;
+        const D = q / 2, p1 = U.color, Y = U.textStrokeColor, K0 = U.textStrokeWidth;
         let ie = b;
-        s ? (y = M, b === "inner" && (m === v - 1 ? ie = this.options.reverse ? "left" : "right" : m === 0 ? ie = this.options.reverse ? "right" : "left" : ie = "center"), r === "top" ? d === "near" || f !== 0 ? R = -H * z + z / 2 : d === "center" ? R = -j.highest.height / 2 - D * z + z : R = -j.highest.height + z / 2 : d === "near" || f !== 0 ? R = z / 2 : d === "center" ? R = j.highest.height / 2 - D * z : R = j.highest.height - H * z, c && (R *= -1), f !== 0 && !U.showLabelBackdrop && (y += z / 2 * Math.sin(f))) : (x = M, R = (1 - H) * z / 2);
+        s ? (y = M, b === "inner" && (m === v - 1 ? ie = this.options.reverse ? "left" : "right" : m === 0 ? ie = this.options.reverse ? "right" : "left" : ie = "center"), r === "top" ? d === "near" || f !== 0 ? R = -q * P + P / 2 : d === "center" ? R = -j.highest.height / 2 - D * P + P : R = -j.highest.height + P / 2 : d === "near" || f !== 0 ? R = P / 2 : d === "center" ? R = j.highest.height / 2 - D * P : R = j.highest.height - q * P, c && (R *= -1), f !== 0 && !U.showLabelBackdrop && (y += P / 2 * Math.sin(f))) : (x = M, R = (1 - q) * P / 2);
         let r0;
         if (U.showLabelBackdrop) {
           const ae = K(U.backdropPadding), xe = j.heights[m], E1 = j.widths[m];
@@ -6224,7 +6224,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
         }
         p.push({
           label: w,
-          font: C,
+          font: S,
           textOffset: R,
           options: {
             rotation: f,
@@ -6346,7 +6346,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       this._isVisible() && (this.drawBackground(), this.drawGrid(t), this.drawBorder(), this.drawTitle(), this.drawLabels(t));
     }
     _layers() {
-      const t = this.options, i = t.ticks && t.ticks.z || 0, a = P(t.grid && t.grid.z, -1), r = P(t.border && t.border.z, 0);
+      const t = this.options, i = t.ticks && t.ticks.z || 0, a = T(t.grid && t.grid.z, -1), r = T(t.border && t.border.z, 0);
       return !this._isVisible() || this.draw !== p4.prototype.draw ? [{
         z: i,
         draw: (n) => {
@@ -6508,7 +6508,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       return !0;
     }
     invalidate() {
-      T(this._cache) || (this._oldCache = this._cache, this._cache = void 0);
+      H(this._cache) || (this._oldCache = this._cache, this._cache = void 0);
     }
     _descriptors(e) {
       if (this._cache) return this._cache;
@@ -6516,7 +6516,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       return this._notifyStateChanges(e), t;
     }
     _createDescriptors(e, t) {
-      const i = e && e.config, a = P(i.options && i.options.plugins, {}), r = wn(i);
+      const i = e && e.config, a = T(i.options && i.options.plugins, {}), r = wn(i);
       return a === !1 && !t ? [] : bn(e, r, a, t);
     }
     _notifyStateChanges(e) {
@@ -6656,7 +6656,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
     }
     get aspectRatio() {
       const { options: { aspectRatio: e, maintainAspectRatio: t }, width: i, height: a, _aspectRatio: r } = this;
-      return T(e) ? t && r ? r : a ? i / a : null : e;
+      return H(e) ? t && r ? r : a ? i / a : null : e;
     }
     get data() {
       return this.config.data;
@@ -6708,7 +6708,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
           dtype: o ? "radialLinear" : d ? "category" : "linear"
         };
       }))), L(r, (n) => {
-        const s = n.options, l = s.id, o = e2(l, s), d = P(s.type, n.dtype);
+        const s = n.options, l = s.id, o = e2(l, s), d = T(s.type, n.dtype);
         (s.position === void 0 || ji(s.position, o) !== ji(n.dposition)) && (s.position = n.dposition), a[l] = !0;
         let _ = null;
         l in i && i[l].type === d ? _ = i[l] : (_ = new (d1.getScale(d))({
@@ -7097,7 +7097,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
         "innerRadius",
         "outerRadius",
         "circumference"
-      ], i), _ = (this.options.spacing + this.options.borderWidth) / 2, c = P(d, s - n), h = b2(a, n, s) && n !== s, u = c >= I || h, g = M1(r, l + _, o + _);
+      ], i), _ = (this.options.spacing + this.options.borderWidth) / 2, c = T(d, s - n), h = b2(a, n, s) && n !== s, u = c >= I || h, g = M1(r, l + _, o + _);
       return u && g;
     }
     getCenterPoint(e) {
@@ -7467,24 +7467,24 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       const { boxWidth: u, boxHeight: g, itemHeight: f } = qt(n, _), p = function(y, x, b) {
         if (isNaN(u) || u <= 0 || isNaN(g) || g < 0) return;
         a.save();
-        const M = P(b.lineWidth, 1);
-        if (a.fillStyle = P(b.fillStyle, s), a.lineCap = P(b.lineCap, "butt"), a.lineDashOffset = P(b.lineDashOffset, 0), a.lineJoin = P(b.lineJoin, "miter"), a.lineWidth = M, a.strokeStyle = P(b.strokeStyle, s), a.setLineDash(P(b.lineDash, [])), n.usePointStyle) {
-          const C = {
+        const M = T(b.lineWidth, 1);
+        if (a.fillStyle = T(b.fillStyle, s), a.lineCap = T(b.lineCap, "butt"), a.lineDashOffset = T(b.lineDashOffset, 0), a.lineJoin = T(b.lineJoin, "miter"), a.lineWidth = M, a.strokeStyle = T(b.strokeStyle, s), a.setLineDash(T(b.lineDash, [])), n.usePointStyle) {
+          const S = {
             radius: g * Math.SQRT2 / 2,
             pointStyle: b.pointStyle,
             rotation: b.rotation,
             borderWidth: M
-          }, z = l.xPlus(y, u / 2), H = x + c;
-          c8(a, C, z, H, n.pointStyleWidth && u);
+          }, P = l.xPlus(y, u / 2), q = x + c;
+          c8(a, S, P, q, n.pointStyleWidth && u);
         } else {
-          const C = x + Math.max((_ - g) / 2, 0), z = l.leftForLtr(y, u), H = Q1(b.borderRadius);
-          a.beginPath(), Object.values(H).some((R) => R !== 0) ? Ee(a, {
-            x: z,
-            y: C,
+          const S = x + Math.max((_ - g) / 2, 0), P = l.leftForLtr(y, u), q = Q1(b.borderRadius);
+          a.beginPath(), Object.values(q).some((R) => R !== 0) ? Ee(a, {
+            x: P,
+            y: S,
             w: u,
             h: g,
-            radius: H
-          }) : a.rect(z, C, u, g), a.fill(), M !== 0 && a.stroke();
+            radius: q
+          }) : a.rect(P, S, u, g), a.fill(), M !== 0 && a.stroke();
         }
         a.restore();
       }, m = function(y, x, b) {
@@ -7505,11 +7505,11 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       const w = f + d;
       this.legendItems.forEach((y, x) => {
         a.strokeStyle = y.fontColor, a.fillStyle = y.fontColor;
-        const b = a.measureText(y.text).width, M = l.textAlign(y.textAlign || (y.textAlign = n.textAlign)), C = u + c + b;
-        let z = h.x, H = h.y;
-        l.setWidth(this.width), v ? x > 0 && z + C + d > this.right && (H = h.y += w, h.line++, z = h.x = i1(r, this.left + d, this.right - i[h.line])) : x > 0 && H + w > this.bottom && (z = h.x = z + t[h.line].width + d, h.line++, H = h.y = i1(r, this.top + k + d, this.bottom - t[h.line].height));
-        const R = l.x(z);
-        if (p(R, H, y), z = S8(M, z + u + c, v ? z + C : this.right, e.rtl), m(l.x(z), H, y), v) h.x += C + d;
+        const b = a.measureText(y.text).width, M = l.textAlign(y.textAlign || (y.textAlign = n.textAlign)), S = u + c + b;
+        let P = h.x, q = h.y;
+        l.setWidth(this.width), v ? x > 0 && P + S + d > this.right && (q = h.y += w, h.line++, P = h.x = i1(r, this.left + d, this.right - i[h.line])) : x > 0 && q + w > this.bottom && (P = h.x = P + t[h.line].width + d, h.line++, q = h.y = i1(r, this.top + k + d, this.bottom - t[h.line].height));
+        const R = l.x(P);
+        if (p(R, q, y), P = S8(M, P + u + c, v ? P + S : this.right, e.rtl), m(l.x(P), q, y), v) h.x += S + d;
         else if (typeof y.text != "string") {
           const o1 = o.lineHeight;
           h.y += X8(y, o1) + d;
@@ -7698,7 +7698,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       let t = e.dataset.label || "";
       t && (t += ": ");
       const i = e.formattedValue;
-      return T(i) || (t += i), t;
+      return H(i) || (t += i), t;
     },
     labelColor(e) {
       const t = e.chart.getDatasetMeta(e.datasetIndex).controller.getStyle(e.dataIndex);
@@ -8069,9 +8069,9 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       super.init(e);
     }
     parse(e, t) {
-      if (T(e)) return null;
+      if (H(e)) return null;
       const i = this.getLabels();
-      return t = isFinite(t) && i[t] === e ? t : Ts(i, e, P(t, e), this._addedLabels), qa(t, i.length - 1);
+      return t = isFinite(t) && i[t] === e ? t : Ts(i, e, T(t, e), this._addedLabels), qa(t, i.length - 1);
     }
     determineDataLimits() {
       const { minDefined: e, maxDefined: t } = this.getUserBounds();
@@ -8109,7 +8109,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       super(e), this.start = void 0, this.end = void 0, this._startValue = void 0, this._endValue = void 0, this._valueRange = 0;
     }
     parse(e, t) {
-      return T(e) || (typeof e == "number" || e instanceof Number) && !isFinite(+e) ? null : +e;
+      return H(e) || (typeof e == "number" || e instanceof Number) && !isFinite(+e) ? null : +e;
     }
     handleTickRangeOptions() {
       const { beginAtZero: e } = this.options, { minDefined: t, maxDefined: i } = this.getUserBounds();
@@ -8296,12 +8296,12 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       return X(e * t + L1(i));
     }
     getDistanceFromCenterForValue(e) {
-      if (T(e)) return NaN;
+      if (H(e)) return NaN;
       const t = this.drawingArea / (this.max - this.min);
       return this.options.reverse ? (this.max - e) * t : (e - this.min) * t;
     }
     getValueForDistanceFromCenter(e) {
-      if (T(e)) return NaN;
+      if (H(e)) return NaN;
       const t = e / (this.drawingArea / (this.max - this.min));
       return this.options.reverse ? this.max - t : this.min + t;
     }
@@ -8508,7 +8508,7 @@ var ya, c1, Ct, wa, ka, St, M0, zt, ba, C0, J8, Q8, xa, Ma, Ca, U2, y1, Pt, e4, 
       };
     }
     _generate() {
-      const e = this._adapter, t = this.min, i = this.max, a = this.options, r = a.time, n = r.unit || pa(r.minUnit, t, i, this._getLabelCapacity(t)), s = P(a.ticks.stepSize, 1), l = n === "week" ? r.isoWeekday : !1, o = De(l) || l === !0, d = {};
+      const e = this._adapter, t = this.min, i = this.max, a = this.options, r = a.time, n = r.unit || pa(r.minUnit, t, i, this._getLabelCapacity(t)), s = T(a.ticks.stepSize, 1), l = n === "week" ? r.isoWeekday : !1, o = De(l) || l === !0, d = {};
       let _ = t, c, h;
       if (o && (_ = +e.startOf(_, "isoWeek", l)), _ = +e.startOf(_, o ? "day" : n), e.diff(i, t, n) > 1e5 * s) throw new Error(t + " and " + i + " are too far apart with stepSize of " + s + " " + n);
       const u = a.ticks.source === "data" && this.getDataTimestamps();
@@ -8875,7 +8875,7 @@ var $t, he, v4, R2, A2, V2, W2, Fe, g1, Ot, y4, w4, Rt, ve, Ua, La, Q, c2, k4, p
       var t = [], i;
       for (e = [].concat(e); e.length; )
         i = e.pop(), typeof i == "string" ? t.unshift.apply(t, i.split(`
-`)) : Array.isArray(i) ? e.push.apply(e, i) : T(e) || t.unshift("" + i);
+`)) : Array.isArray(i) ? e.push.apply(e, i) : H(e) || t.unshift("" + i);
       return t;
     },
     textSize: function(e, t, i) {
@@ -8980,7 +8980,7 @@ var $t, he, v4, R2, A2, V2, W2, Fe, g1, Ot, y4, w4, Rt, ve, Ua, La, Q, c2, k4, p
     },
     update: function(e) {
       var t = this, i = null, a = null, r = t._index, n = t._config, s, l, o, d = A([n.display, !0], e, r);
-      d && (s = e.dataset.data[r], l = P(B(n.formatter, [s, e]), s), o = T(l) ? [] : he.toTextLines(l), o.length && (i = t._modelize(d, o, n, e), a = i6(i))), t._model = i, t._rects = a;
+      d && (s = e.dataset.data[r], l = T(B(n.formatter, [s, e]), s), o = H(l) ? [] : he.toTextLines(l), o.length && (i = t._modelize(d, o, n, e), a = i6(i))), t._model = i, t._rects = a;
     },
     geometry: function() {
       return this._rects ? this._rects.frame : {};
@@ -9086,10 +9086,10 @@ var $t, he, v4, R2, A2, V2, W2, Fe, g1, Ot, y4, w4, Rt, ve, Ua, La, Q, c2, k4, p
         r = t[i], n = r.$layout, n._visible && (s = r.geometry(), l = m4(r._el, r.model(), s), n._box.update(l, s, r.rotation()), r.draw(e, l));
     }
   }, Ua = function(e) {
-    if (T(e)) return null;
+    if (H(e)) return null;
     var t = e, i, a, r;
-    if (N(e)) if (!T(e.label)) t = e.label;
-    else if (!T(e.r)) t = e.r;
+    if (N(e)) if (!H(e.label)) t = e.label;
+    else if (!H(e.r)) t = e.r;
     else
       for (t = "", i = Object.keys(e), r = 0, a = i.length; r < a; ++r) t += (r !== 0 ? ", " : "") + i[r] + ": " + e[i[r]];
     return "" + t;
@@ -10212,7 +10212,7 @@ function $0(e, t, i) {
 }
 e0();
 function O1(e, t, i = "") {
-  return q`
+  return z`
     <span class="tip ${i}" data-tip=${e} aria-label=${e}>
       ${t}
     </span>
@@ -10239,11 +10239,11 @@ function H4(e, t = "sun.sun") {
 function Aa(e, t) {
   const i = e.states[t.entity];
   if (!i) return null;
-  const a = t.temperature_entity ? e.states[t.temperature_entity] : void 0, r = t.humidity_entity ? e.states[t.humidity_entity] : void 0, n = t.wind_speed_entity ? e.states[t.wind_speed_entity] : void 0, s = t.wind_bearing_entity ? e.states[t.wind_bearing_entity] : void 0, l = t.uv_index_entity ? e.states[t.uv_index_entity] : void 0, o = t.pressure_entity ? e.states[t.pressure_entity] : void 0, d = t.cloud_coverage_entity ? e.states[t.cloud_coverage_entity] : void 0, _ = t.feels_like_entity ? e.states[t.feels_like_entity] : void 0, c = t.dew_point_entity ? e.states[t.dew_point_entity] : void 0, h = t.visibility_entity ? e.states[t.visibility_entity] : void 0, u = e.states[t.sun_entity ?? "sun.sun"], g = h1(a) ?? k1(i, "temperature"), f = h1(r) ?? k1(i, "humidity"), p = h1(n) ?? k1(i, "wind_speed"), m = h1(s) ?? i.attributes.wind_bearing ?? null, v = h1(l) ?? k1(i, "uv_index"), k = h1(o) ?? k1(i, "pressure"), w = h1(d) ?? k1(i, "cloud_coverage"), y = h1(_) ?? k1(i, "apparent_temperature"), x = h1(c) ?? k1(i, "dew_point"), b = h1(h) ?? k1(i, "visibility"), M = e.config.unit_system.length || "", C = u?.attributes.next_rising, z = u?.attributes.next_setting, H = N4(e, i, i.state);
+  const a = t.temperature_entity ? e.states[t.temperature_entity] : void 0, r = t.humidity_entity ? e.states[t.humidity_entity] : void 0, n = t.wind_speed_entity ? e.states[t.wind_speed_entity] : void 0, s = t.wind_bearing_entity ? e.states[t.wind_bearing_entity] : void 0, l = t.uv_index_entity ? e.states[t.uv_index_entity] : void 0, o = t.pressure_entity ? e.states[t.pressure_entity] : void 0, d = t.cloud_coverage_entity ? e.states[t.cloud_coverage_entity] : void 0, _ = t.feels_like_entity ? e.states[t.feels_like_entity] : void 0, c = t.dew_point_entity ? e.states[t.dew_point_entity] : void 0, h = t.visibility_entity ? e.states[t.visibility_entity] : void 0, u = e.states[t.sun_entity ?? "sun.sun"], g = h1(a) ?? k1(i, "temperature"), f = h1(r) ?? k1(i, "humidity"), p = h1(n) ?? k1(i, "wind_speed"), m = h1(s) ?? i.attributes.wind_bearing ?? null, v = h1(l) ?? k1(i, "uv_index"), k = h1(o) ?? k1(i, "pressure"), w = h1(d) ?? k1(i, "cloud_coverage"), y = h1(_) ?? k1(i, "apparent_temperature"), x = h1(c) ?? k1(i, "dew_point"), b = h1(h) ?? k1(i, "visibility"), M = e.config.unit_system.length || "", S = u?.attributes.next_rising, P = u?.attributes.next_setting, q = N4(e, i, i.state);
   return {
     name: t.name ?? i.attributes.friendly_name ?? t.entity,
     condition: i.state,
-    conditionLabel: H,
+    conditionLabel: q,
     temperature: g,
     humidity: f,
     windSpeed: p,
@@ -10259,8 +10259,8 @@ function Aa(e, t) {
     pressureUnit: T0(o) ?? i.attributes.pressure_unit ?? e.config.unit_system.pressure ?? (M === "km" ? "hPa" : "inHg"),
     visibilityUnit: T0(h) ?? i.attributes.visibility_unit ?? M ?? "km",
     isDay: H4(e, t.sun_entity ?? "sun.sun"),
-    sunrise: C ?? null,
-    sunset: z ?? null,
+    sunrise: S ?? null,
+    sunset: P ?? null,
     entity: i
   };
 }
@@ -10347,18 +10347,18 @@ var D2 = O((() => {
 e0();
 D2();
 function Bg(e, t, i) {
-  if (!i.showIcons && !i.showWindSpeed && !i.showWindDirection) return S;
+  if (!i.showIcons && !i.showWindSpeed && !i.showWindDirection) return C;
   const a = e.states[i.weatherEntityId];
-  return q`
+  return z`
     <div class="forecast-row" style="--cols: ${t.length}">
       ${t.map((r) => {
     const n = new Date(r.datetime).getHours(), s = r.is_daytime ?? (i.mode === "hourly" ? n >= 6 && n < 20 : H4(e, i.sunEntity)), l = $0(S4(r.condition, s), i.iconStyle, i.animated), o = N4(e, a, r.condition), d = h2(r.wind_bearing), _ = $0(z4(r.wind_bearing), i.iconStyle, i.animated), c = P4(r.wind_speed, i.windSpeedUnit), h = $0(T4(c), i.iconStyle, i.animated), u = `Wind ${r.wind_speed != null ? `${Math.round(r.wind_speed)} ${i.windSpeedUnit}` : "—"} (Beaufort ${c})`, g = `Wind direction ${d}`, f = i.showWindSpeed || i.showWindDirection;
-    return q`
+    return z`
           <div class="forecast-col">
-            ${i.showIcons ? O1(o, q`<div class="forecast-icon" .innerHTML=${l}></div>`) : S}
-            ${f ? q`
+            ${i.showIcons ? O1(o, z`<div class="forecast-icon" .innerHTML=${l}></div>`) : C}
+            ${f ? z`
                   <div class="forecast-wind">
-                    ${i.showWindSpeed ? O1(u, q`
+                    ${i.showWindSpeed ? O1(u, z`
                             <div class="wind-pair">
                               <span
                                 class="wind-icon"
@@ -10368,8 +10368,8 @@ function Bg(e, t, i) {
                                 >${r.wind_speed != null ? Math.round(r.wind_speed) : "—"}</span
                               >
                             </div>
-                          `) : S}
-                    ${i.showWindDirection ? O1(g, q`
+                          `) : C}
+                    ${i.showWindDirection ? O1(g, z`
                             <div class="wind-pair">
                               <span
                                 class="wind-icon"
@@ -10377,9 +10377,9 @@ function Bg(e, t, i) {
                               ></span>
                               <span class="wind-meta">${d}</span>
                             </div>
-                          `) : S}
+                          `) : C}
                   </div>
-                ` : S}
+                ` : C}
           </div>
         `;
   })}
@@ -10395,13 +10395,11 @@ function O0(e) {
     ...n1.hourly,
     ...e.hourly ?? {}
   };
-  t.days = Da(t.days, 2, 7, n1.daily.days), i.hours = Da(i.hours, 2, 48, n1.hourly.hours), t.enabled = !!t.enabled, i.enabled = !!i.enabled;
-  const a = e.show_current ?? n1.show_current, r = a || t.enabled || i.enabled ? !!a : !0;
-  return {
+  return t.days = Da(t.days, 2, 7, n1.daily.days), i.hours = Da(i.hours, 2, 48, n1.hourly.hours), t.enabled = !!t.enabled, i.enabled = !!i.enabled, {
     ...n1,
     ...e,
     entity: e.entity,
-    show_current: r,
+    show_current: !!(e.show_current ?? n1.show_current),
     daily: t,
     hourly: i,
     icon_style: e.icon_style ?? n1.icon_style,
@@ -10600,7 +10598,7 @@ var L4 = O((() => {
     }
     _picker(t, i, a, r = !0) {
       const n = this._config[i] ?? "";
-      return q`
+      return z`
       <div class="field">
         <span class="label">${t}</span>
         <ha-entity-picker
@@ -10626,8 +10624,8 @@ var L4 = O((() => {
         const o = this._config.sun_entity ?? "sun.sun", d = this.hass?.states[o];
         s = d ? a.some((_) => d.attributes[_] != null) || d.state != null : null;
       } else s = this._entityHasAttr(a);
-      const l = s === !1 ? q`<span class="avail missing">not on weather entity</span>` : s === !0 ? q`<span class="avail ok">on weather entity</span>` : S;
-      return q`
+      const l = s === !1 ? z`<span class="avail missing">not on weather entity</span>` : s === !0 ? z`<span class="avail ok">on weather entity</span>` : C;
+      return z`
       <label class="row">
         <input
           type="checkbox"
@@ -10642,106 +10640,229 @@ var L4 = O((() => {
     `;
     }
     render() {
-      if (!this._config || !this.hass) return S;
+      if (!this._config || !this.hass) return C;
       const t = this._config;
-      return q`
+      return z`
       <div class="form">
-        ${this._picker("Weather entity", "entity", "weather", !1)}
+        <fieldset>
+          <legend>General</legend>
+          ${this._picker("Weather entity", "entity", "weather", !1)}
+          <label>
+            Name (optional)
+            <input
+              type="text"
+              .value=${t.name ?? ""}
+              data-config="name"
+              @change=${this._value}
+            />
+          </label>
+          <label>
+            Icon style
+            <select
+              .value=${t.icon_style}
+              data-config="icon_style"
+              @change=${this._value}
+            >
+              ${B4.map((i) => z`<option value=${i}>${i}</option>`)}
+            </select>
+          </label>
+          <label class="row">
+            <input
+              type="checkbox"
+              .checked=${t.animated_icons}
+              data-config="animated_icons"
+              @change=${this._value}
+            />
+            Animated icons
+          </label>
+          <label class="row">
+            <input
+              type="checkbox"
+              .checked=${t.animated_background}
+              data-config="animated_background"
+              @change=${this._value}
+            />
+            Animated background
+          </label>
+        </fieldset>
 
         <fieldset>
-          <legend>Sections</legend>
-          <label class="row"
-            ><input
+          <legend>Current weather</legend>
+          <label class="row enable">
+            <input
               type="checkbox"
               .checked=${t.show_current}
               data-config="show_current"
               @change=${this._value}
             />
-            Current weather</label
-          >
-          <label class="row"
-            ><input
+            Show current weather
+          </label>
+          ${t.show_current ? z`
+                <p class="hint">
+                  Detail chips only appear on the card when the weather entity
+                  or an override sensor provides a value. Availability varies
+                  by integration.
+                </p>
+                ${this._detailToggle("show_sun", "Sunrise / sunset", ["next_rising"], !0)}
+                ${this._detailToggle("show_humidity", "Humidity", ["humidity"])}
+                ${this._detailToggle("show_wind_speed", "Wind speed (Beaufort icon)", ["wind_speed"])}
+                ${this._detailToggle("show_wind_direction", "Wind direction", ["wind_bearing"])}
+                ${this._detailToggle("show_uv_index", "UV index", ["uv_index"])}
+                ${this._detailToggle("show_pressure", "Pressure", ["pressure"])}
+                ${this._detailToggle("show_cloud_coverage", "Cloud coverage", ["cloud_coverage"])}
+                ${this._detailToggle("show_feels_like", "Feels like", ["apparent_temperature"])}
+                ${this._detailToggle("show_dew_point", "Dew point", ["dew_point"])}
+                ${this._detailToggle("show_visibility", "Visibility", ["visibility"])}
+              ` : C}
+        </fieldset>
+
+        <fieldset>
+          <legend>Daily forecast</legend>
+          <label class="row enable">
+            <input
               type="checkbox"
               .checked=${t.daily.enabled}
               data-config="daily.enabled"
               @change=${this._value}
             />
-            Daily forecast</label
-          >
-          <label class="row"
-            ><input
+            Show daily forecast
+          </label>
+          ${t.daily.enabled ? z`
+                <label>
+                  Days
+                  <input
+                    type="number"
+                    min="2"
+                    max="7"
+                    .value=${String(t.daily.days)}
+                    data-config="daily.days"
+                    @change=${this._value}
+                  />
+                </label>
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${t.daily.show_condition_icons}
+                    data-config="daily.show_condition_icons"
+                    @change=${this._value}
+                  />
+                  Condition icons</label
+                >
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${t.daily.show_wind_speed}
+                    data-config="daily.show_wind_speed"
+                    @change=${this._value}
+                  />
+                  Wind speed</label
+                >
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${t.daily.show_wind_direction}
+                    data-config="daily.show_wind_direction"
+                    @change=${this._value}
+                  />
+                  Wind direction</label
+                >
+                <label>
+                  <span class="row-text"
+                    >Precipitation
+                    ${t.daily.precip_type === "probability" ? this._dailyHasProbability === !1 ? z`<span class="avail missing"
+                            >probability not in forecast</span
+                          >` : this._dailyHasProbability === !0 ? z`<span class="avail ok"
+                              >probability in forecast</span
+                            >` : C : C}</span
+                  >
+                  <select
+                    .value=${t.daily.precip_type}
+                    data-config="daily.precip_type"
+                    @change=${this._value}
+                  >
+                    <option value="rainfall">rainfall</option>
+                    <option value="probability">probability</option>
+                  </select>
+                </label>
+              ` : C}
+        </fieldset>
+
+        <fieldset>
+          <legend>Hourly forecast</legend>
+          <label class="row enable">
+            <input
               type="checkbox"
               .checked=${t.hourly.enabled}
               data-config="hourly.enabled"
               @change=${this._value}
             />
-            Hourly forecast</label
-          >
-        </fieldset>
-
-        <label>
-          Name (optional)
-          <input
-            type="text"
-            .value=${t.name ?? ""}
-            data-config="name"
-            @change=${this._value}
-          />
-        </label>
-
-        <label>
-          Icon style
-          <select
-            .value=${t.icon_style}
-            data-config="icon_style"
-            @change=${this._value}
-          >
-            ${B4.map((i) => q`<option value=${i}>${i}</option>`)}
-          </select>
-        </label>
-
-        <label class="row">
-          <input
-            type="checkbox"
-            .checked=${t.animated_icons}
-            data-config="animated_icons"
-            @change=${this._value}
-          />
-          Animated icons
-        </label>
-
-        <label class="row">
-          <input
-            type="checkbox"
-            .checked=${t.animated_background}
-            data-config="animated_background"
-            @change=${this._value}
-          />
-          Animated background
-        </label>
-
-        <fieldset>
-          <legend>Details</legend>
-          <p class="hint">
-            Detail chips only appear on the card when the weather entity or an
-            override sensor provides a value. Availability varies by
-            integration (e.g. Meteorologisk institutt often has no feels-like
-            or visibility).
-          </p>
-          ${this._detailToggle("show_sun", "Sunrise / sunset", ["next_rising"], !0)}
-          ${this._detailToggle("show_humidity", "Humidity", ["humidity"])}
-          ${this._detailToggle("show_wind_speed", "Wind speed (Beaufort icon)", ["wind_speed"])}
-          ${this._detailToggle("show_wind_direction", "Wind direction", ["wind_bearing"])}
-          ${this._detailToggle("show_uv_index", "UV index", ["uv_index"])}
-          ${this._detailToggle("show_pressure", "Pressure", ["pressure"])}
-          ${this._detailToggle("show_cloud_coverage", "Cloud coverage", ["cloud_coverage"])}
-          ${this._detailToggle("show_feels_like", "Feels like", ["apparent_temperature"])}
-          ${this._detailToggle("show_dew_point", "Dew point", ["dew_point"])}
-          ${this._detailToggle("show_visibility", "Visibility", ["visibility"])}
+            Show hourly forecast
+          </label>
+          ${t.hourly.enabled ? z`
+                <label>
+                  Hours
+                  <input
+                    type="number"
+                    min="2"
+                    max="48"
+                    .value=${String(t.hourly.hours)}
+                    data-config="hourly.hours"
+                    @change=${this._value}
+                  />
+                </label>
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${t.hourly.show_condition_icons}
+                    data-config="hourly.show_condition_icons"
+                    @change=${this._value}
+                  />
+                  Condition icons</label
+                >
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${t.hourly.show_wind_speed}
+                    data-config="hourly.show_wind_speed"
+                    @change=${this._value}
+                  />
+                  Wind speed</label
+                >
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${t.hourly.show_wind_direction}
+                    data-config="hourly.show_wind_direction"
+                    @change=${this._value}
+                  />
+                  Wind direction</label
+                >
+                <label>
+                  <span class="row-text"
+                    >Precipitation
+                    ${t.hourly.precip_type === "probability" ? this._hourlyHasProbability === !1 ? z`<span class="avail missing"
+                            >probability not in forecast</span
+                          >` : this._hourlyHasProbability === !0 ? z`<span class="avail ok"
+                              >probability in forecast</span
+                            >` : C : C}</span
+                  >
+                  <select
+                    .value=${t.hourly.precip_type}
+                    data-config="hourly.precip_type"
+                    @change=${this._value}
+                  >
+                    <option value="rainfall">rainfall</option>
+                    <option value="probability">probability</option>
+                  </select>
+                </label>
+              ` : C}
         </fieldset>
 
         <fieldset>
           <legend>Optional sensors</legend>
+          <p class="hint">
+            Override values from the weather entity with dedicated sensors.
+          </p>
           ${this._picker("Temperature", "temperature_entity", "sensor")}
           ${this._picker("Humidity", "humidity_entity", "sensor")}
           ${this._picker("Wind speed", "wind_speed_entity", "sensor")}
@@ -10753,126 +10874,6 @@ var L4 = O((() => {
           ${this._picker("Dew point", "dew_point_entity", "sensor")}
           ${this._picker("Visibility", "visibility_entity", "sensor")}
           ${this._picker("Sun", "sun_entity", "sun")}
-        </fieldset>
-
-        <fieldset>
-          <legend>Daily forecast</legend>
-          <label>
-            Days
-            <input
-              type="number"
-              min="2"
-              max="7"
-              .value=${String(t.daily.days)}
-              data-config="daily.days"
-              @change=${this._value}
-            />
-          </label>
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${t.daily.show_condition_icons}
-              data-config="daily.show_condition_icons"
-              @change=${this._value}
-            />
-            Condition icons</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${t.daily.show_wind_speed}
-              data-config="daily.show_wind_speed"
-              @change=${this._value}
-            />
-            Wind speed</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${t.daily.show_wind_direction}
-              data-config="daily.show_wind_direction"
-              @change=${this._value}
-            />
-            Wind direction</label
-          >
-          <label>
-            <span class="row-text"
-              >Precipitation
-              ${t.daily.precip_type === "probability" ? this._dailyHasProbability === !1 ? q`<span class="avail missing"
-                      >probability not in forecast</span
-                    >` : this._dailyHasProbability === !0 ? q`<span class="avail ok"
-                        >probability in forecast</span
-                      >` : S : S}</span
-            >
-            <select
-              .value=${t.daily.precip_type}
-              data-config="daily.precip_type"
-              @change=${this._value}
-            >
-              <option value="rainfall">rainfall</option>
-              <option value="probability">probability</option>
-            </select>
-          </label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Hourly forecast</legend>
-          <label>
-            Hours
-            <input
-              type="number"
-              min="2"
-              max="48"
-              .value=${String(t.hourly.hours)}
-              data-config="hourly.hours"
-              @change=${this._value}
-            />
-          </label>
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${t.hourly.show_condition_icons}
-              data-config="hourly.show_condition_icons"
-              @change=${this._value}
-            />
-            Condition icons</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${t.hourly.show_wind_speed}
-              data-config="hourly.show_wind_speed"
-              @change=${this._value}
-            />
-            Wind speed</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${t.hourly.show_wind_direction}
-              data-config="hourly.show_wind_direction"
-              @change=${this._value}
-            />
-            Wind direction</label
-          >
-          <label>
-            <span class="row-text"
-              >Precipitation
-              ${t.hourly.precip_type === "probability" ? this._hourlyHasProbability === !1 ? q`<span class="avail missing"
-                      >probability not in forecast</span
-                    >` : this._hourlyHasProbability === !0 ? q`<span class="avail ok"
-                        >probability in forecast</span
-                      >` : S : S}</span
-            >
-            <select
-              .value=${t.hourly.precip_type}
-              data-config="hourly.precip_type"
-              @change=${this._value}
-            >
-              <option value="rainfall">rainfall</option>
-              <option value="probability">probability</option>
-            </select>
-          </label>
         </fieldset>
       </div>
     `;
@@ -10900,6 +10901,9 @@ var L4 = O((() => {
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+    label.enable {
+      font-weight: 600;
     }
     input[type="text"],
     input[type="number"],
@@ -11026,18 +11030,22 @@ var l1 = class extends J1 {
     }
     this._config.daily.enabled ? this._renderOneChart("daily") : this._destroyChart("daily"), this._config.hourly.enabled ? this._renderOneChart("hourly") : this._destroyChart("hourly");
   }
+  _chartTextColor() {
+    const t = this.renderRoot.querySelector(".content") ?? this.renderRoot.querySelector("ha-card") ?? this, i = getComputedStyle(t);
+    return i.getPropertyValue("--primary-text-color").trim() || i.color || getComputedStyle(this).color;
+  }
   _renderOneChart(t) {
     const i = this.renderRoot.querySelector(`canvas.forecast-canvas-${t}`);
     if (!i) {
       this._destroyChart(t);
       return;
     }
-    const a = Aa(this.hass, this._config), r = ci(a?.condition, a?.isDay ?? !0), n = getComputedStyle(this).color, s = v6(this._config.animated_background, r, n), l = a?.entity.attributes.precipitation_unit ?? "mm", o = a?.temperatureUnit ?? "°C", d = this.hass.locale?.language ?? this.hass.language ?? this.hass.config.language, _ = t === "daily" ? this._config.daily.precip_type : this._config.hourly.precip_type, c = t === "daily" ? this._dailyForecast : this._hourlyForecast, h = t === "daily" ? y6(c, this._config.daily.days, _, d) : w6(c, this._config.hourly.hours, _, d);
+    const a = Aa(this.hass, this._config), r = ci(a?.condition, a?.isDay ?? !0), n = this._chartTextColor(), s = v6(this._config.animated_background, r, n), l = a?.entity.attributes.precipitation_unit ?? "mm", o = a?.temperatureUnit ?? "°C", d = this.hass.locale?.language ?? this.hass.language ?? this.hass.config.language, _ = t === "daily" ? this._config.daily.precip_type : this._config.hourly.precip_type, c = t === "daily" ? this._dailyForecast : this._hourlyForecast, h = t === "daily" ? y6(c, this._config.daily.days, _, d) : w6(c, this._config.hourly.hours, _, d);
     if (!h.labels.length) {
       this._destroyChart(t);
       return;
     }
-    const u = `${t}:${_}:${l}:${o}:${this._config.animated_background}:${r}`, g = C6(h), f = t === "daily" ? this._dailyChart : this._hourlyChart, p = t === "daily" ? this._dailyChartModeKey : this._hourlyChartModeKey, m = t === "daily" ? this._dailyChartFingerprint : this._hourlyChartFingerprint;
+    const u = `${t}:${_}:${l}:${o}:${n}:${this._config.animated_background}:${r}`, g = C6(h), f = t === "daily" ? this._dailyChart : this._hourlyChart, p = t === "daily" ? this._dailyChartModeKey : this._hourlyChartModeKey, m = t === "daily" ? this._dailyChartFingerprint : this._hourlyChartFingerprint;
     if (f && p === u && m === g) {
       this._syncPlotArea(t);
       return;
@@ -11054,23 +11062,23 @@ var l1 = class extends J1 {
     return $0(t, this._config.icon_style, this._config.animated_icons);
   }
   _detail(t, i, a) {
-    return i ? O1(`${a}: ${i}`, q`
+    return i ? O1(`${a}: ${i}`, z`
         <span class="detail-icon" .innerHTML=${this._icon(t)}></span>
         <span>${i}</span>
-      `, "detail") : S;
+      `, "detail") : C;
   }
   _renderForecastSection(t, i, a) {
     const r = t === "daily" ? this._config.daily : this._config.hourly;
-    if (!r.enabled) return S;
+    if (!r.enabled) return C;
     const n = t === "daily" ? this._dailyForecast : this._hourlyForecast, s = t === "daily" ? this._dailyError : this._hourlyError, l = t === "daily" ? n.slice(0, this._config.daily.days) : n.slice(0, this._config.hourly.hours), o = t === "daily" ? this._dailyPlotLeft : this._hourlyPlotLeft, d = t === "daily" ? this._dailyPlotWidth : this._hourlyPlotWidth;
-    return q`
+    return z`
       <div class="forecast forecast-${t}">
-        ${s ? q`<div class="warn">${s}</div>` : S}
-        ${!s && !l.length ? q`<div class="warn">
+        ${s ? z`<div class="warn">${s}</div>` : C}
+        ${!s && !l.length ? z`<div class="warn">
               No ${t} forecast data available on
               <code>${this._config.entity}</code>
-            </div>` : S}
-        ${l.length ? q`
+            </div>` : C}
+        ${l.length ? z`
               <div class="chart-wrap">
                 <canvas class="forecast-canvas-${t}"></canvas>
               </div>
@@ -11091,99 +11099,119 @@ var l1 = class extends J1 {
       weatherEntityId: this._config.entity
     })}
               </div>
-            ` : S}
+            ` : C}
       </div>
     `;
   }
   render() {
-    if (!this._config) return q``;
-    if (!this.hass) return q`<ha-card
+    if (!this._config) return z``;
+    if (!this.hass) return z`<ha-card
         ><div class="pad">Waiting for Home Assistant…</div></ha-card
       >`;
     const t = Aa(this.hass, this._config);
-    if (!t) return q`
+    if (!t) return z`
         <ha-card>
           <div class="pad warn">
             Entity not found: <code>${this._config.entity}</code>
           </div>
         </ha-card>
       `;
-    const i = S4(t.condition, t.isDay), a = ci(t.condition, t.isDay), r = this.hass.locale?.language ?? this.hass.language ?? this.hass.config.language, n = P4(t.windSpeed, t.windSpeedUnit), s = this._config.show_current && (this._config.show_sun || this._config.show_humidity || this._config.show_wind_speed || this._config.show_wind_direction || this._config.show_uv_index || this._config.show_pressure || this._config.show_cloud_coverage || this._config.show_feels_like || this._config.show_dew_point || this._config.show_visibility);
-    return q`
+    const i = S4(t.condition, t.isDay), a = ci(t.condition, t.isDay), r = this.hass.locale?.language ?? this.hass.language ?? this.hass.config.language, n = P4(t.windSpeed, t.windSpeedUnit), s = this._config.show_current, l = this._config.daily.enabled, o = this._config.hourly.enabled, d = s && (this._config.show_sun || this._config.show_humidity || this._config.show_wind_speed || this._config.show_wind_direction || this._config.show_uv_index || this._config.show_pressure || this._config.show_cloud_coverage || this._config.show_feels_like || this._config.show_dew_point || this._config.show_visibility);
+    return !s && !l && !o ? z`
+        <ha-card>
+          <div class="pad empty">
+            Enable a section in the card configuration to show weather content.
+          </div>
+        </ha-card>
+      ` : z`
       <ha-card class=${this._config.animated_background ? "has-bg" : ""}>
         ${X4(this._config.animated_background, a, t.cloudCoverage)}
         <div class="content">
-          ${this._config.show_current ? q`
-                <div class="main">
-                  <div class="main-text">
-                    <div class="location">${t.name}</div>
-                    <div class="condition">${t.conditionLabel}</div>
-                    <div class="temp">
-                      ${Lg(t.temperature, t.temperatureUnit)}
+          ${s ? z`
+                <div class="section section-current">
+                  <div class="main">
+                    <div class="main-text">
+                      <div class="location">${t.name}</div>
+                      <div class="condition">${t.conditionLabel}</div>
+                      <div class="temp">
+                        ${Lg(t.temperature, t.temperatureUnit)}
+                      </div>
                     </div>
+                    <div
+                      class="main-icon"
+                      .innerHTML=${this._icon(i)}
+                    ></div>
                   </div>
-                  <div
-                    class="main-icon"
-                    .innerHTML=${this._icon(i)}
-                  ></div>
-                </div>
-              ` : S}
 
-          ${s ? q`
-                <div class="details">
-                  ${this._config.show_sun ? q`
-                        <span class="detail">
-                          ${O1(`Sunrise ${H0(t.sunrise, r)}`, q`<span
-                              class="detail-icon"
-                              .innerHTML=${this._icon("sunrise")}
-                            ></span>`)}
-                          <span>${H0(t.sunrise, r)}</span>
-                          ${O1(`Sunset ${H0(t.sunset, r)}`, q`<span
-                              class="detail-icon"
-                              .innerHTML=${this._icon("sunset")}
-                            ></span>`)}
-                          <span>${H0(t.sunset, r)}</span>
-                        </span>
-                      ` : S}
-                  ${this._config.show_humidity ? this._detail("humidity", F1(t.humidity, "%", 0), "Humidity") : S}
-                  ${this._config.show_wind_speed || this._config.show_wind_direction ? q`
-                        <span class="detail wind-detail">
-                          ${this._config.show_wind_speed && t.windSpeed != null ? O1(`Wind ${Math.round(t.windSpeed)} ${t.windSpeedUnit} (Beaufort ${n})`, q`
-                                  <span class="wind-pair">
-                                    <span
+                  ${d ? z`
+                        <div class="details">
+                          ${this._config.show_sun ? z`
+                                <span class="detail">
+                                  ${O1(`Sunrise ${H0(t.sunrise, r)}`, z`<span
                                       class="detail-icon"
-                                      .innerHTML=${this._icon(T4(n))}
-                                    ></span>
-                                    <span
-                                      >${Math.round(t.windSpeed)}
-                                      ${t.windSpeedUnit}</span
-                                    >
-                                  </span>
-                                `) : S}
-                          ${this._config.show_wind_direction ? O1(`Wind direction ${h2(t.windBearing ?? void 0)}`, q`
-                                  <span class="wind-pair">
-                                    <span
+                                      .innerHTML=${this._icon("sunrise")}
+                                    ></span>`)}
+                                  <span
+                                    >${H0(t.sunrise, r)}</span
+                                  >
+                                  ${O1(`Sunset ${H0(t.sunset, r)}`, z`<span
                                       class="detail-icon"
-                                      .innerHTML=${this._icon(z4(t.windBearing ?? void 0))}
-                                    ></span>
-                                    <span
-                                      >${h2(t.windBearing ?? void 0)}</span
-                                    >
-                                  </span>
-                                `) : S}
-                        </span>
-                      ` : S}
-                  ${this._config.show_uv_index ? this._detail(S6(t.uvIndex), F1(t.uvIndex, "", 0), "UV index") : S}
-                  ${this._config.show_pressure ? this._detail("barometer", F1(t.pressure, ` ${t.pressureUnit}`, 0), "Pressure") : S}
-                  ${this._config.show_cloud_coverage ? this._detail("cloudy", F1(t.cloudCoverage, "%", 0), "Cloud coverage") : S}
-                  ${this._config.show_feels_like ? this._detail("thermometer", F1(t.feelsLike, t.temperatureUnit), "Feels like") : S}
-                  ${this._config.show_dew_point ? this._detail("thermometer-raindrop", F1(t.dewPoint, t.temperatureUnit), "Dew point") : S}
-                  ${this._config.show_visibility ? this._detail("fog", F1(t.visibility, ` ${t.visibilityUnit}`, 0), "Visibility") : S}
+                                      .innerHTML=${this._icon("sunset")}
+                                    ></span>`)}
+                                  <span
+                                    >${H0(t.sunset, r)}</span
+                                  >
+                                </span>
+                              ` : C}
+                          ${this._config.show_humidity ? this._detail("humidity", F1(t.humidity, "%", 0), "Humidity") : C}
+                          ${this._config.show_wind_speed || this._config.show_wind_direction ? z`
+                                <span class="detail wind-detail">
+                                  ${this._config.show_wind_speed && t.windSpeed != null ? O1(`Wind ${Math.round(t.windSpeed)} ${t.windSpeedUnit} (Beaufort ${n})`, z`
+                                          <span class="wind-pair">
+                                            <span
+                                              class="detail-icon"
+                                              .innerHTML=${this._icon(T4(n))}
+                                            ></span>
+                                            <span
+                                              >${Math.round(t.windSpeed)}
+                                              ${t.windSpeedUnit}</span
+                                            >
+                                          </span>
+                                        `) : C}
+                                  ${this._config.show_wind_direction ? O1(`Wind direction ${h2(t.windBearing ?? void 0)}`, z`
+                                          <span class="wind-pair">
+                                            <span
+                                              class="detail-icon"
+                                              .innerHTML=${this._icon(z4(t.windBearing ?? void 0))}
+                                            ></span>
+                                            <span
+                                              >${h2(t.windBearing ?? void 0)}</span
+                                            >
+                                          </span>
+                                        `) : C}
+                                </span>
+                              ` : C}
+                          ${this._config.show_uv_index ? this._detail(S6(t.uvIndex), F1(t.uvIndex, "", 0), "UV index") : C}
+                          ${this._config.show_pressure ? this._detail("barometer", F1(t.pressure, ` ${t.pressureUnit}`, 0), "Pressure") : C}
+                          ${this._config.show_cloud_coverage ? this._detail("cloudy", F1(t.cloudCoverage, "%", 0), "Cloud coverage") : C}
+                          ${this._config.show_feels_like ? this._detail("thermometer", F1(t.feelsLike, t.temperatureUnit), "Feels like") : C}
+                          ${this._config.show_dew_point ? this._detail("thermometer-raindrop", F1(t.dewPoint, t.temperatureUnit), "Dew point") : C}
+                          ${this._config.show_visibility ? this._detail("fog", F1(t.visibility, ` ${t.visibilityUnit}`, 0), "Visibility") : C}
+                        </div>
+                      ` : C}
                 </div>
-              ` : S}
+              ` : C}
 
-          ${this._renderForecastSection("daily", t, r)}
-          ${this._renderForecastSection("hourly", t, r)}
+          ${l ? z`
+                <div class="section section-daily">
+                  ${this._renderForecastSection("daily", t, r)}
+                </div>
+              ` : C}
+          ${o ? z`
+                <div class="section section-hourly">
+                  ${this._renderForecastSection("hourly", t, r)}
+                </div>
+              ` : C}
         </div>
       </ha-card>
     `;
@@ -11210,9 +11238,20 @@ var l1 = class extends J1 {
       .pad {
         padding: 16px;
       }
+      .empty {
+        opacity: 0.75;
+        text-align: center;
+        font-size: 0.95rem;
+      }
       .warn {
         opacity: 0.9;
         font-size: 0.9rem;
+      }
+      .section + .section {
+        margin-top: 18px;
+        padding-top: 16px;
+        border-top: 1px solid
+          color-mix(in srgb, currentColor 18%, transparent);
       }
       .main {
         display: flex;
@@ -11314,7 +11353,7 @@ var l1 = class extends J1 {
         color: #111;
       }
       .forecast {
-        margin-top: 12px;
+        margin-top: 0;
       }
       .chart-wrap {
         height: 180px;

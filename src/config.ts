@@ -107,20 +107,13 @@ export function normalizeConfig(
   daily.enabled = Boolean(daily.enabled);
   hourly.enabled = Boolean(hourly.enabled);
 
-  const show_current =
-    input.show_current ?? DEFAULT_CONFIG.show_current;
-
-  // Avoid an empty card: keep current weather if nothing else is enabled.
-  const resolvedCurrent =
-    show_current || daily.enabled || hourly.enabled
-      ? Boolean(show_current)
-      : true;
-
   return {
     ...DEFAULT_CONFIG,
     ...input,
     entity: input.entity,
-    show_current: resolvedCurrent,
+    show_current: Boolean(
+      input.show_current ?? DEFAULT_CONFIG.show_current,
+    ),
     daily,
     hourly,
     icon_style: input.icon_style ?? DEFAULT_CONFIG.icon_style,

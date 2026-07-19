@@ -207,120 +207,274 @@ export class VedurkortWeatherCardEditor extends LitElement {
 
     return html`
       <div class="form">
-        ${this._picker("Weather entity", "entity", "weather", false)}
+        <fieldset>
+          <legend>General</legend>
+          ${this._picker("Weather entity", "entity", "weather", false)}
+          <label>
+            Name (optional)
+            <input
+              type="text"
+              .value=${c.name ?? ""}
+              data-config="name"
+              @change=${this._value}
+            />
+          </label>
+          <label>
+            Icon style
+            <select
+              .value=${c.icon_style}
+              data-config="icon_style"
+              @change=${this._value}
+            >
+              ${ICON_STYLES.map(
+                (s) => html`<option value=${s}>${s}</option>`,
+              )}
+            </select>
+          </label>
+          <label class="row">
+            <input
+              type="checkbox"
+              .checked=${c.animated_icons}
+              data-config="animated_icons"
+              @change=${this._value}
+            />
+            Animated icons
+          </label>
+          <label class="row">
+            <input
+              type="checkbox"
+              .checked=${c.animated_background}
+              data-config="animated_background"
+              @change=${this._value}
+            />
+            Animated background
+          </label>
+        </fieldset>
 
         <fieldset>
-          <legend>Sections</legend>
-          <label class="row"
-            ><input
+          <legend>Current weather</legend>
+          <label class="row enable">
+            <input
               type="checkbox"
               .checked=${c.show_current}
               data-config="show_current"
               @change=${this._value}
             />
-            Current weather</label
-          >
-          <label class="row"
-            ><input
+            Show current weather
+          </label>
+          ${c.show_current
+            ? html`
+                <p class="hint">
+                  Detail chips only appear on the card when the weather entity
+                  or an override sensor provides a value. Availability varies
+                  by integration.
+                </p>
+                ${this._detailToggle(
+                  "show_sun",
+                  "Sunrise / sunset",
+                  ["next_rising"],
+                  true,
+                )}
+                ${this._detailToggle("show_humidity", "Humidity", [
+                  "humidity",
+                ])}
+                ${this._detailToggle(
+                  "show_wind_speed",
+                  "Wind speed (Beaufort icon)",
+                  ["wind_speed"],
+                )}
+                ${this._detailToggle("show_wind_direction", "Wind direction", [
+                  "wind_bearing",
+                ])}
+                ${this._detailToggle("show_uv_index", "UV index", [
+                  "uv_index",
+                ])}
+                ${this._detailToggle("show_pressure", "Pressure", [
+                  "pressure",
+                ])}
+                ${this._detailToggle(
+                  "show_cloud_coverage",
+                  "Cloud coverage",
+                  ["cloud_coverage"],
+                )}
+                ${this._detailToggle(
+                  "show_feels_like",
+                  "Feels like",
+                  ["apparent_temperature"],
+                )}
+                ${this._detailToggle("show_dew_point", "Dew point", [
+                  "dew_point",
+                ])}
+                ${this._detailToggle("show_visibility", "Visibility", [
+                  "visibility",
+                ])}
+              `
+            : nothing}
+        </fieldset>
+
+        <fieldset>
+          <legend>Daily forecast</legend>
+          <label class="row enable">
+            <input
               type="checkbox"
               .checked=${c.daily.enabled}
               data-config="daily.enabled"
               @change=${this._value}
             />
-            Daily forecast</label
-          >
-          <label class="row"
-            ><input
+            Show daily forecast
+          </label>
+          ${c.daily.enabled
+            ? html`
+                <label>
+                  Days
+                  <input
+                    type="number"
+                    min="2"
+                    max="7"
+                    .value=${String(c.daily.days)}
+                    data-config="daily.days"
+                    @change=${this._value}
+                  />
+                </label>
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${c.daily.show_condition_icons}
+                    data-config="daily.show_condition_icons"
+                    @change=${this._value}
+                  />
+                  Condition icons</label
+                >
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${c.daily.show_wind_speed}
+                    data-config="daily.show_wind_speed"
+                    @change=${this._value}
+                  />
+                  Wind speed</label
+                >
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${c.daily.show_wind_direction}
+                    data-config="daily.show_wind_direction"
+                    @change=${this._value}
+                  />
+                  Wind direction</label
+                >
+                <label>
+                  <span class="row-text"
+                    >Precipitation
+                    ${c.daily.precip_type === "probability"
+                      ? this._dailyHasProbability === false
+                        ? html`<span class="avail missing"
+                            >probability not in forecast</span
+                          >`
+                        : this._dailyHasProbability === true
+                          ? html`<span class="avail ok"
+                              >probability in forecast</span
+                            >`
+                          : nothing
+                      : nothing}</span
+                  >
+                  <select
+                    .value=${c.daily.precip_type}
+                    data-config="daily.precip_type"
+                    @change=${this._value}
+                  >
+                    <option value="rainfall">rainfall</option>
+                    <option value="probability">probability</option>
+                  </select>
+                </label>
+              `
+            : nothing}
+        </fieldset>
+
+        <fieldset>
+          <legend>Hourly forecast</legend>
+          <label class="row enable">
+            <input
               type="checkbox"
               .checked=${c.hourly.enabled}
               data-config="hourly.enabled"
               @change=${this._value}
             />
-            Hourly forecast</label
-          >
-        </fieldset>
-
-        <label>
-          Name (optional)
-          <input
-            type="text"
-            .value=${c.name ?? ""}
-            data-config="name"
-            @change=${this._value}
-          />
-        </label>
-
-        <label>
-          Icon style
-          <select
-            .value=${c.icon_style}
-            data-config="icon_style"
-            @change=${this._value}
-          >
-            ${ICON_STYLES.map(
-              (s) => html`<option value=${s}>${s}</option>`,
-            )}
-          </select>
-        </label>
-
-        <label class="row">
-          <input
-            type="checkbox"
-            .checked=${c.animated_icons}
-            data-config="animated_icons"
-            @change=${this._value}
-          />
-          Animated icons
-        </label>
-
-        <label class="row">
-          <input
-            type="checkbox"
-            .checked=${c.animated_background}
-            data-config="animated_background"
-            @change=${this._value}
-          />
-          Animated background
-        </label>
-
-        <fieldset>
-          <legend>Details</legend>
-          <p class="hint">
-            Detail chips only appear on the card when the weather entity or an
-            override sensor provides a value. Availability varies by
-            integration (e.g. Meteorologisk institutt often has no feels-like
-            or visibility).
-          </p>
-          ${this._detailToggle("show_sun", "Sunrise / sunset", ["next_rising"], true)}
-          ${this._detailToggle("show_humidity", "Humidity", ["humidity"])}
-          ${this._detailToggle(
-            "show_wind_speed",
-            "Wind speed (Beaufort icon)",
-            ["wind_speed"],
-          )}
-          ${this._detailToggle(
-            "show_wind_direction",
-            "Wind direction",
-            ["wind_bearing"],
-          )}
-          ${this._detailToggle("show_uv_index", "UV index", ["uv_index"])}
-          ${this._detailToggle("show_pressure", "Pressure", ["pressure"])}
-          ${this._detailToggle(
-            "show_cloud_coverage",
-            "Cloud coverage",
-            ["cloud_coverage"],
-          )}
-          ${this._detailToggle(
-            "show_feels_like",
-            "Feels like",
-            ["apparent_temperature"],
-          )}
-          ${this._detailToggle("show_dew_point", "Dew point", ["dew_point"])}
-          ${this._detailToggle("show_visibility", "Visibility", ["visibility"])}
+            Show hourly forecast
+          </label>
+          ${c.hourly.enabled
+            ? html`
+                <label>
+                  Hours
+                  <input
+                    type="number"
+                    min="2"
+                    max="48"
+                    .value=${String(c.hourly.hours)}
+                    data-config="hourly.hours"
+                    @change=${this._value}
+                  />
+                </label>
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${c.hourly.show_condition_icons}
+                    data-config="hourly.show_condition_icons"
+                    @change=${this._value}
+                  />
+                  Condition icons</label
+                >
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${c.hourly.show_wind_speed}
+                    data-config="hourly.show_wind_speed"
+                    @change=${this._value}
+                  />
+                  Wind speed</label
+                >
+                <label class="row"
+                  ><input
+                    type="checkbox"
+                    .checked=${c.hourly.show_wind_direction}
+                    data-config="hourly.show_wind_direction"
+                    @change=${this._value}
+                  />
+                  Wind direction</label
+                >
+                <label>
+                  <span class="row-text"
+                    >Precipitation
+                    ${c.hourly.precip_type === "probability"
+                      ? this._hourlyHasProbability === false
+                        ? html`<span class="avail missing"
+                            >probability not in forecast</span
+                          >`
+                        : this._hourlyHasProbability === true
+                          ? html`<span class="avail ok"
+                              >probability in forecast</span
+                            >`
+                          : nothing
+                      : nothing}</span
+                  >
+                  <select
+                    .value=${c.hourly.precip_type}
+                    data-config="hourly.precip_type"
+                    @change=${this._value}
+                  >
+                    <option value="rainfall">rainfall</option>
+                    <option value="probability">probability</option>
+                  </select>
+                </label>
+              `
+            : nothing}
         </fieldset>
 
         <fieldset>
           <legend>Optional sensors</legend>
+          <p class="hint">
+            Override values from the weather entity with dedicated sensors.
+          </p>
           ${this._picker("Temperature", "temperature_entity", "sensor")}
           ${this._picker("Humidity", "humidity_entity", "sensor")}
           ${this._picker("Wind speed", "wind_speed_entity", "sensor")}
@@ -332,138 +486,6 @@ export class VedurkortWeatherCardEditor extends LitElement {
           ${this._picker("Dew point", "dew_point_entity", "sensor")}
           ${this._picker("Visibility", "visibility_entity", "sensor")}
           ${this._picker("Sun", "sun_entity", "sun")}
-        </fieldset>
-
-        <fieldset>
-          <legend>Daily forecast</legend>
-          <label>
-            Days
-            <input
-              type="number"
-              min="2"
-              max="7"
-              .value=${String(c.daily.days)}
-              data-config="daily.days"
-              @change=${this._value}
-            />
-          </label>
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.daily.show_condition_icons}
-              data-config="daily.show_condition_icons"
-              @change=${this._value}
-            />
-            Condition icons</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.daily.show_wind_speed}
-              data-config="daily.show_wind_speed"
-              @change=${this._value}
-            />
-            Wind speed</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.daily.show_wind_direction}
-              data-config="daily.show_wind_direction"
-              @change=${this._value}
-            />
-            Wind direction</label
-          >
-          <label>
-            <span class="row-text"
-              >Precipitation
-              ${c.daily.precip_type === "probability"
-                ? this._dailyHasProbability === false
-                  ? html`<span class="avail missing"
-                      >probability not in forecast</span
-                    >`
-                  : this._dailyHasProbability === true
-                    ? html`<span class="avail ok"
-                        >probability in forecast</span
-                      >`
-                    : nothing
-                : nothing}</span
-            >
-            <select
-              .value=${c.daily.precip_type}
-              data-config="daily.precip_type"
-              @change=${this._value}
-            >
-              <option value="rainfall">rainfall</option>
-              <option value="probability">probability</option>
-            </select>
-          </label>
-        </fieldset>
-
-        <fieldset>
-          <legend>Hourly forecast</legend>
-          <label>
-            Hours
-            <input
-              type="number"
-              min="2"
-              max="48"
-              .value=${String(c.hourly.hours)}
-              data-config="hourly.hours"
-              @change=${this._value}
-            />
-          </label>
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.hourly.show_condition_icons}
-              data-config="hourly.show_condition_icons"
-              @change=${this._value}
-            />
-            Condition icons</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.hourly.show_wind_speed}
-              data-config="hourly.show_wind_speed"
-              @change=${this._value}
-            />
-            Wind speed</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.hourly.show_wind_direction}
-              data-config="hourly.show_wind_direction"
-              @change=${this._value}
-            />
-            Wind direction</label
-          >
-          <label>
-            <span class="row-text"
-              >Precipitation
-              ${c.hourly.precip_type === "probability"
-                ? this._hourlyHasProbability === false
-                  ? html`<span class="avail missing"
-                      >probability not in forecast</span
-                    >`
-                  : this._hourlyHasProbability === true
-                    ? html`<span class="avail ok"
-                        >probability in forecast</span
-                      >`
-                    : nothing
-                : nothing}</span
-            >
-            <select
-              .value=${c.hourly.precip_type}
-              data-config="hourly.precip_type"
-              @change=${this._value}
-            >
-              <option value="rainfall">rainfall</option>
-              <option value="probability">probability</option>
-            </select>
-          </label>
         </fieldset>
       </div>
     `;
@@ -491,6 +513,9 @@ export class VedurkortWeatherCardEditor extends LitElement {
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+    label.enable {
+      font-weight: 600;
     }
     input[type="text"],
     input[type="number"],
