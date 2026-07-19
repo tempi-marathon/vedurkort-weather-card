@@ -9,6 +9,7 @@ import {
 } from "../icons/condition-map";
 import { getMeteoconSvg } from "../icons/meteocons";
 import type { ForecastItem, HomeAssistant } from "../types";
+import { tipWrap } from "../ui/tooltip";
 import { isSunUp } from "../weather/adapter";
 
 export function renderForecastRow(
@@ -61,38 +62,39 @@ export function renderForecastRow(
         return html`
           <div class="forecast-col">
             ${opts.showIcons
-              ? html`<div
-                  class="forecast-icon"
-                  title=${conditionLabel}
-                  aria-label=${conditionLabel}
-                  .innerHTML=${svg}
-                ></div>`
+              ? tipWrap(
+                  conditionLabel,
+                  html`<div class="forecast-icon" .innerHTML=${svg}></div>`,
+                )
               : nothing}
             ${opts.showWind
               ? html`
                   <div class="forecast-wind">
-                    <div class="wind-pair" title=${speedTip}>
-                      <span
-                        class="wind-icon"
-                        title=${speedTip}
-                        aria-label=${speedTip}
-                        .innerHTML=${bftSvg}
-                      ></span>
-                      <span class="wind-meta"
-                        >${item.wind_speed != null
-                          ? Math.round(item.wind_speed)
-                          : "—"}</span
-                      >
-                    </div>
-                    <div class="wind-pair" title=${dirTip}>
-                      <span
-                        class="wind-icon"
-                        title=${dirTip}
-                        aria-label=${dirTip}
-                        .innerHTML=${windDirSvg}
-                      ></span>
-                      <span class="wind-meta">${dirLabel}</span>
-                    </div>
+                    ${tipWrap(
+                      speedTip,
+                      html`
+                        <div class="wind-pair">
+                          <span class="wind-icon" .innerHTML=${bftSvg}></span>
+                          <span class="wind-meta"
+                            >${item.wind_speed != null
+                              ? Math.round(item.wind_speed)
+                              : "—"}</span
+                          >
+                        </div>
+                      `,
+                    )}
+                    ${tipWrap(
+                      dirTip,
+                      html`
+                        <div class="wind-pair">
+                          <span
+                            class="wind-icon"
+                            .innerHTML=${windDirSvg}
+                          ></span>
+                          <span class="wind-meta">${dirLabel}</span>
+                        </div>
+                      `,
+                    )}
                   </div>
                 `
               : nothing}

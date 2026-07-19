@@ -31,6 +31,7 @@ import {
 } from "./icons/condition-map";
 import { getMeteoconSvg } from "./icons/meteocons";
 import type { ForecastItem, HomeAssistant, LovelaceCardEditor } from "./types";
+import { tipWrap } from "./ui/tooltip";
 import {
   formatNumber,
   formatTemp,
@@ -187,9 +188,11 @@ export class VedurkortWeatherCard extends LitElement {
       snap?.condition,
       snap?.isDay ?? true,
     );
+    const textColor = getComputedStyle(this).color;
     const chrome = chartChromeForScene(
       this._config.animated_background,
       scene,
+      textColor,
     );
     const precipUnit =
       (snap?.entity.attributes.precipitation_unit as string | undefined) ??
@@ -282,17 +285,14 @@ export class VedurkortWeatherCard extends LitElement {
   ) {
     if (!text) return nothing;
     const tip = `${label}: ${text}`;
-    return html`
-      <div class="detail" title=${tip}>
-        <span
-          class="detail-icon"
-          title=${tip}
-          aria-label=${tip}
-          .innerHTML=${this._icon(icon)}
-        ></span>
+    return tipWrap(
+      tip,
+      html`
+        <span class="detail-icon" .innerHTML=${this._icon(icon)}></span>
         <span>${text}</span>
-      </div>
-    `;
+      `,
+      "detail",
+    );
   }
 
   protected render() {
@@ -364,12 +364,13 @@ export class VedurkortWeatherCard extends LitElement {
                 ${formatTemp(snap.temperature, snap.temperatureUnit)}
               </div>
             </div>
-            <div
-              class="main-icon"
-              title=${snap.conditionLabel}
-              aria-label=${snap.conditionLabel}
-              .innerHTML=${this._icon(iconName)}
-            ></div>
+            ${tipWrap(
+              snap.conditionLabel,
+              html`<div
+                class="main-icon"
+                .innerHTML=${this._icon(iconName)}
+              ></div>`,
+            )}
           </div>
 
           ${showDetails
@@ -377,22 +378,24 @@ export class VedurkortWeatherCard extends LitElement {
                 <div class="details">
                   ${this._config.show_sun
                     ? html`
-                        <div class="detail">
-                          <span
-                            class="detail-icon"
-                            title=${`Sunrise ${formatTime(snap.sunrise, language)}`}
-                            aria-label=${`Sunrise ${formatTime(snap.sunrise, language)}`}
-                            .innerHTML=${this._icon("sunrise")}
-                          ></span>
+                        <span class="detail">
+                          ${tipWrap(
+                            `Sunrise ${formatTime(snap.sunrise, language)}`,
+                            html`<span
+                              class="detail-icon"
+                              .innerHTML=${this._icon("sunrise")}
+                            ></span>`,
+                          )}
                           <span>${formatTime(snap.sunrise, language)}</span>
-                          <span
-                            class="detail-icon"
-                            title=${`Sunset ${formatTime(snap.sunset, language)}`}
-                            aria-label=${`Sunset ${formatTime(snap.sunset, language)}`}
-                            .innerHTML=${this._icon("sunset")}
-                          ></span>
+                          ${tipWrap(
+                            `Sunset ${formatTime(snap.sunset, language)}`,
+                            html`<span
+                              class="detail-icon"
+                              .innerHTML=${this._icon("sunset")}
+                            ></span>`,
+                          )}
                           <span>${formatTime(snap.sunset, language)}</span>
-                        </div>
+                        </span>
                       `
                     : nothing}
                   ${this._config.show_feels_like
@@ -451,52 +454,50 @@ export class VedurkortWeatherCard extends LitElement {
                   ${this._config.show_wind_speed ||
                   this._config.show_wind_direction
                     ? html`
-                        <div class="detail wind-detail">
+                        <span class="detail wind-detail">
                           ${this._config.show_wind_speed &&
                           snap.windSpeed != null
-                            ? html`
-                                <span
-                                  class="wind-pair"
-                                  title=${`Wind ${Math.round(snap.windSpeed)} ${snap.windSpeedUnit} (Beaufort ${bft})`}
-                                >
-                                  <span
-                                    class="detail-icon"
-                                    title=${`Wind ${Math.round(snap.windSpeed)} ${snap.windSpeedUnit} (Beaufort ${bft})`}
-                                    aria-label=${`Wind ${Math.round(snap.windSpeed)} ${snap.windSpeedUnit} (Beaufort ${bft})`}
-                                    .innerHTML=${this._icon(beaufortIcon(bft))}
-                                  ></span>
-                                  <span
-                                    >${Math.round(snap.windSpeed)}
-                                    ${snap.windSpeedUnit}</span
-                                  >
-                                </span>
-                              `
+                            ? tipWrap(
+                                `Wind ${Math.round(snap.windSpeed)} ${snap.windSpeedUnit} (Beaufort ${bft})`,
+                                html`
+                                  <span class="wind-pair">
+                                    <span
+                                      class="detail-icon"
+                                      .innerHTML=${this._icon(
+                                        beaufortIcon(bft),
+                                      )}
+                                    ></span>
+                                    <span
+                                      >${Math.round(snap.windSpeed)}
+                                      ${snap.windSpeedUnit}</span
+                                    >
+                                  </span>
+                                `,
+                              )
                             : nothing}
                           ${this._config.show_wind_direction
-                            ? html`
-                                <span
-                                  class="wind-pair"
-                                  title=${`Wind direction ${bearingToLabel(snap.windBearing ?? undefined)}`}
-                                >
-                                  <span
-                                    class="detail-icon"
-                                    title=${`Wind direction ${bearingToLabel(snap.windBearing ?? undefined)}`}
-                                    aria-label=${`Wind direction ${bearingToLabel(snap.windBearing ?? undefined)}`}
-                                    .innerHTML=${this._icon(
-                                      bearingToWindIcon(
+                            ? tipWrap(
+                                `Wind direction ${bearingToLabel(snap.windBearing ?? undefined)}`,
+                                html`
+                                  <span class="wind-pair">
+                                    <span
+                                      class="detail-icon"
+                                      .innerHTML=${this._icon(
+                                        bearingToWindIcon(
+                                          snap.windBearing ?? undefined,
+                                        ),
+                                      )}
+                                    ></span>
+                                    <span
+                                      >${bearingToLabel(
                                         snap.windBearing ?? undefined,
-                                      ),
-                                    )}
-                                  ></span>
-                                  <span
-                                    >${bearingToLabel(
-                                      snap.windBearing ?? undefined,
-                                    )}</span
-                                  >
-                                </span>
-                              `
+                                      )}</span
+                                    >
+                                  </span>
+                                `,
+                              )
                             : nothing}
-                        </div>
+                        </span>
                       `
                     : nothing}
                 </div>
@@ -611,7 +612,10 @@ export class VedurkortWeatherCard extends LitElement {
       .details {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px 18px;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        gap: 10px 14px;
         margin-top: 14px;
         font-size: 0.9rem;
         opacity: 0.95;
@@ -620,6 +624,8 @@ export class VedurkortWeatherCard extends LitElement {
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        flex: 1 1 auto;
+        min-width: max-content;
       }
       .wind-detail {
         gap: 14px;
@@ -633,11 +639,46 @@ export class VedurkortWeatherCard extends LitElement {
         width: 26px;
         height: 26px;
         display: inline-flex;
-        cursor: help;
       }
       .detail-icon svg {
         width: 100%;
         height: 100%;
+      }
+      .tip {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+      .tip::after {
+        content: attr(data-tip);
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 6px);
+        transform: translateX(-50%) translateY(2px);
+        background: rgba(20, 20, 20, 0.92);
+        color: #fff;
+        font-size: 0.72rem;
+        line-height: 1.25;
+        padding: 4px 8px;
+        border-radius: 6px;
+        white-space: nowrap;
+        max-width: 220px;
+        white-space: normal;
+        width: max-content;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.12s ease, transform 0.12s ease;
+        z-index: 5;
+        text-align: center;
+      }
+      .tip:hover::after,
+      .tip:focus-within::after {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+      ha-card.has-bg .tip::after {
+        background: rgba(255, 255, 255, 0.95);
+        color: #111;
       }
       .forecast {
         margin-top: 16px;
@@ -666,7 +707,6 @@ export class VedurkortWeatherCard extends LitElement {
       .forecast-icon {
         width: 40px;
         height: 40px;
-        cursor: help;
       }
       .forecast-icon svg,
       .wind-icon svg {
@@ -687,7 +727,6 @@ export class VedurkortWeatherCard extends LitElement {
       .wind-icon {
         width: 24px;
         height: 24px;
-        cursor: help;
       }
       .wind-meta {
         font-size: 0.7rem;

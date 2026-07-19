@@ -48,11 +48,49 @@ export interface ChartPlotArea {
   width: number;
 }
 
-/** Light/dark chart chrome from the active CSS background scene. */
+function withAlpha(color: string, alpha: number): string {
+  const c = color.trim();
+  if (c.startsWith("rgba(")) {
+    return c.replace(
+      /rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*[\d.]+\s*\)/,
+      `rgba($1, $2, $3, ${alpha})`,
+    );
+  }
+  if (c.startsWith("rgb(")) {
+    return c.replace(
+      /rgb\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/,
+      `rgba($1, $2, $3, ${alpha})`,
+    );
+  }
+  if (c.startsWith("#") && (c.length === 7 || c.length === 4)) {
+    const hex =
+      c.length === 4
+        ? `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}`
+        : c;
+    const r = Number.parseInt(hex.slice(1, 3), 16);
+    const g = Number.parseInt(hex.slice(3, 5), 16);
+    const b = Number.parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return `rgba(127, 127, 127, ${alpha})`;
+}
+
+/**
+ * Chart chrome. Prefer the card's computed text color so weekday labels
+ * match the rest of the card; fall back to scene-based contrast.
+ */
 export function chartChromeForScene(
   animatedBackground: boolean,
   scene: BackgroundScene,
+  textColor?: string,
 ): ChartChrome {
+  const resolved = textColor?.trim();
+  if (resolved) {
+    return {
+      tick: resolved,
+      grid: withAlpha(resolved, 0.2),
+    };
+  }
   if (!animatedBackground) {
     return {
       tick: "rgba(120, 120, 120, 0.95)",
@@ -211,15 +249,18 @@ function buildDatasets(
         const v = ctx.dataset.data[ctx.dataIndex];
         return typeof v === "number" && !Number.isNaN(v);
       },
+      // Sit near the base of the bar, inside the plot (not clipped below)
       anchor: "start",
-      align: "bottom",
-      offset: 2,
-      color: "rgba(40, 110, 150, 1)",
-      backgroundColor: "rgba(255,255,255,0.92)",
-      borderColor: "rgba(132, 209, 253, 1)",
+      align: "end",
+      offset: 4,
+      clamp: false,
+      clip: false,
+      color: "rgba(30, 90, 130, 1)",
+      backgroundColor: "rgba(255,255,255,0.95)",
+      borderColor: "rgba(100, 180, 230, 1)",
       borderWidth: 1,
       borderRadius: 4,
-      padding: { top: 1, bottom: 1, left: 3, right: 3 },
+      padding: { top: 2, bottom: 2, left: 4, right: 4 },
       font: { size: 10, weight: "bold" },
       formatter: (v: number | null) =>
         formatPrecipLabel(v, precipType, precipUnit),
@@ -271,14 +312,15 @@ export function createForecastChart(
       maintainAspectRatio: false,
       animation: false,
       layout: {
-        padding: { left: 0, right: 0, top: 4, bottom: 4 },
+        padding: { left: 2, right: 2, top: 6, bottom: 22 },
       },
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: { enabled: true },
         datalabels: {
-          clamp: true,
+          clamp: false,
+          clip: false,
           font: { size: 10, weight: "bold" },
         },
       },
@@ -307,8 +349,7 @@ export function createForecastChart(
           ticks: {
             display: false,
           },
-          // keep a little headroom for temp labels
-          grace: "12%",
+          grace: "15%",
         },
         yPrecip: {
           type: "linear",
@@ -320,7 +361,9 @@ export function createForecastChart(
           ticks: {
             display: false,
           },
-          grace: "10%",
+          // Extra headroom so bar labels near the base stay readable
+          suggestedMax: undefined,
+          grace: "25%",
         },
       },
     },
