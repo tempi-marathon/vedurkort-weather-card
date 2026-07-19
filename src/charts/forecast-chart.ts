@@ -43,6 +43,11 @@ export interface ChartChrome {
   grid: string;
 }
 
+export interface ChartPlotArea {
+  left: number;
+  width: number;
+}
+
 /** Light/dark chart chrome from the active CSS background scene. */
 export function chartChromeForScene(
   animatedBackground: boolean,
@@ -61,7 +66,6 @@ export function chartChromeForScene(
       grid: "rgba(255, 255, 255, 0.22)",
     };
   }
-  // cloudy, fog, snow, wind, clear-day — lighter skies need darker axes
   return {
     tick: "rgba(28, 28, 28, 0.9)",
     grid: "rgba(28, 28, 28, 0.18)",
@@ -124,10 +128,24 @@ export function buildHourlySeries(
   };
 }
 
+function formatPrecipLabel(
+  value: number | null,
+  precipType: PrecipType,
+  precipUnit: string,
+): string {
+  if (value == null || Number.isNaN(value)) return "";
+  if (precipType === "probability") return `${Math.round(value)}%`;
+  const rounded =
+    Math.abs(value) >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
+  return `${rounded} ${precipUnit}`.trim();
+}
+
 function buildDatasets(
   series: ChartSeries,
   mode: "daily" | "hourly",
   precipType: PrecipType,
+  precipUnit: string,
+  chrome: ChartChrome,
 ): ChartConfiguration["data"]["datasets"] {
   const hasLow = series.low.some((v) => v != null);
   const datasets: ChartConfiguration["data"]["datasets"] = [
@@ -140,9 +158,16 @@ function buildDatasets(
       tension: 0.35,
       yAxisID: "yTemp",
       pointRadius: 3,
+      order: 0,
       datalabels: {
         align: "top",
+        anchor: "end",
         color: "rgba(255, 152, 0, 1)",
+        backgroundColor: "rgba(255,255,255,0.92)",
+        borderColor: "rgba(255, 152, 0, 0.85)",
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: { top: 1, bottom: 1, left: 3, right: 3 },
         formatter: (v: number | null) => (v == null ? "" : `${Math.round(v)}°`),
       },
     },
@@ -158,9 +183,16 @@ function buildDatasets(
       tension: 0.35,
       yAxisID: "yTemp",
       pointRadius: 3,
+      order: 0,
       datalabels: {
         align: "bottom",
+        anchor: "start",
         color: "rgba(68, 115, 158, 1)",
+        backgroundColor: "rgba(255,255,255,0.92)",
+        borderColor: "rgba(68, 115, 158, 0.85)",
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: { top: 1, bottom: 1, left: 3, right: 3 },
         formatter: (v: number | null) => (v == null ? "" : `${Math.round(v)}°`),
       },
     });
@@ -170,14 +202,32 @@ function buildDatasets(
     type: "bar",
     label: precipType === "probability" ? "Precip %" : "Precip",
     data: series.precip,
-    backgroundColor: "rgba(132, 209, 253, 0.65)",
+    backgroundColor: "rgba(132, 209, 253, 0.55)",
     borderRadius: 3,
     yAxisID: "yPrecip",
     order: 1,
     datalabels: {
-      display: false,
+      display: (ctx) => {
+        const v = ctx.dataset.data[ctx.dataIndex];
+        return typeof v === "number" && !Number.isNaN(v);
+      },
+      anchor: "start",
+      align: "bottom",
+      offset: 2,
+      color: "rgba(40, 110, 150, 1)",
+      backgroundColor: "rgba(255,255,255,0.92)",
+      borderColor: "rgba(132, 209, 253, 1)",
+      borderWidth: 1,
+      borderRadius: 4,
+      padding: { top: 1, bottom: 1, left: 3, right: 3 },
+      font: { size: 10, weight: "bold" },
+      formatter: (v: number | null) =>
+        formatPrecipLabel(v, precipType, precipUnit),
     },
   });
+
+  // silence unused chrome in datasets (used by scales)
+  void chrome;
 
   return datasets;
 }
@@ -185,20 +235,21 @@ function buildDatasets(
 function applyChrome(chart: Chart, chrome: ChartChrome): void {
   const scales = chart.options.scales;
   if (!scales) return;
-  for (const key of ["x", "yTemp", "yPrecip"] as const) {
-    const scale = scales[key];
-    if (!scale || typeof scale !== "object") continue;
-    scale.ticks = {
-      ...scale.ticks,
-      color: chrome.tick,
-    };
-    if (key === "yTemp") {
-      scale.grid = {
-        ...scale.grid,
-        color: chrome.grid,
-      };
-    }
+  const x = scales.x;
+  if (x && typeof x === "object") {
+    x.ticks = { ...x.ticks, color: chrome.tick };
+    x.grid = { ...x.grid, color: chrome.grid, display: true };
   }
+  const yTemp = scales.yTemp;
+  if (yTemp && typeof yTemp === "object") {
+    yTemp.grid = { ...yTemp.grid, color: chrome.grid };
+  }
+}
+
+export function getChartPlotArea(chart: Chart): ChartPlotArea | null {
+  const area = chart.chartArea;
+  if (!area || area.width <= 0) return null;
+  return { left: area.left, width: area.width };
 }
 
 export function createForecastChart(
@@ -207,17 +258,21 @@ export function createForecastChart(
   mode: "daily" | "hourly",
   precipType: PrecipType,
   chrome: ChartChrome,
+  precipUnit = "mm",
 ): Chart {
   const config: ChartConfiguration = {
     type: "bar",
     data: {
       labels: series.labels,
-      datasets: buildDatasets(series, mode, precipType),
+      datasets: buildDatasets(series, mode, precipType, precipUnit, chrome),
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
+      layout: {
+        padding: { left: 0, right: 0, top: 4, bottom: 4 },
+      },
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { display: false },
@@ -229,28 +284,43 @@ export function createForecastChart(
       },
       scales: {
         x: {
-          ticks: { maxRotation: 0, autoSkip: true, color: chrome.tick },
-          grid: { display: false },
+          position: "top",
+          ticks: {
+            maxRotation: 0,
+            autoSkip: true,
+            color: chrome.tick,
+            font: { size: 11, weight: "bold" },
+          },
+          grid: {
+            display: true,
+            color: chrome.grid,
+            drawTicks: false,
+          },
+          border: { display: false },
         },
         yTemp: {
           type: "linear",
           position: "left",
+          display: true,
           grid: { color: chrome.grid },
+          border: { display: false },
           ticks: {
-            color: chrome.tick,
-            callback: (v) => `${v}°`,
+            display: false,
           },
+          // keep a little headroom for temp labels
+          grace: "12%",
         },
         yPrecip: {
           type: "linear",
           position: "right",
-          grid: { drawOnChartArea: false },
+          display: true,
+          grid: { drawOnChartArea: false, display: false },
+          border: { display: false },
           beginAtZero: true,
           ticks: {
-            color: chrome.tick,
-            callback: (v) =>
-              precipType === "probability" ? `${v}%` : `${v}`,
+            display: false,
           },
+          grace: "10%",
         },
       },
     },
@@ -266,8 +336,15 @@ export function syncForecastChart(
   mode: "daily" | "hourly",
   precipType: PrecipType,
   chrome: ChartChrome,
+  precipUnit = "mm",
 ): void {
-  const nextDatasets = buildDatasets(series, mode, precipType);
+  const nextDatasets = buildDatasets(
+    series,
+    mode,
+    precipType,
+    precipUnit,
+    chrome,
+  );
   const structureChanged =
     chart.data.datasets.length !== nextDatasets.length ||
     chart.data.datasets.some((d, i) => d.type !== nextDatasets[i]?.type);
@@ -280,6 +357,10 @@ export function syncForecastChart(
       if (!next) return;
       ds.data = next.data;
       ds.label = next.label;
+      // refresh datalabel formatters when precip type/unit changes
+      (ds as { datalabels?: unknown }).datalabels = (
+        next as { datalabels?: unknown }
+      ).datalabels;
     });
   }
 
@@ -291,6 +372,14 @@ export function syncForecastChart(
 
 export function seriesFingerprint(series: ChartSeries): string {
   return JSON.stringify(series);
+}
+
+export function forecastHasPrecipProbability(items: ForecastItem[]): boolean {
+  return items.some(
+    (i) =>
+      i.precipitation_probability != null &&
+      !Number.isNaN(Number(i.precipitation_probability)),
+  );
 }
 
 export type { ForecastBlockConfig };

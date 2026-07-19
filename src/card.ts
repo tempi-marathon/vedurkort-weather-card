@@ -11,6 +11,7 @@ import {
   buildHourlySeries,
   chartChromeForScene,
   createForecastChart,
+  getChartPlotArea,
   seriesFingerprint,
   syncForecastChart,
 } from "./charts/forecast-chart";
@@ -45,6 +46,8 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _config!: VedurkortCardConfig;
   @state() private _forecast: ForecastItem[] = [];
   @state() private _forecastError: string | null = null;
+  @state() private _plotLeft = 0;
+  @state() private _plotWidth = 0;
 
   private _chart: Chart | null = null;
   private _chartFingerprint = "";
@@ -153,6 +156,21 @@ export class VedurkortWeatherCard extends LitElement {
     this._chart = null;
     this._chartFingerprint = "";
     this._chartModeKey = "";
+    this._plotLeft = 0;
+    this._plotWidth = 0;
+  }
+
+  private _syncPlotArea(): void {
+    if (!this._chart) return;
+    const area = getChartPlotArea(this._chart);
+    if (!area) return;
+    if (
+      Math.abs(area.left - this._plotLeft) > 0.5 ||
+      Math.abs(area.width - this._plotWidth) > 0.5
+    ) {
+      this._plotLeft = area.left;
+      this._plotWidth = area.width;
+    }
   }
 
   private _renderChart(): void {
@@ -173,6 +191,9 @@ export class VedurkortWeatherCard extends LitElement {
       this._config.animated_background,
       scene,
     );
+    const precipUnit =
+      (snap?.entity.attributes.precipitation_unit as string | undefined) ??
+      "mm";
 
     const language =
       this.hass.locale?.language ??
@@ -203,27 +224,45 @@ export class VedurkortWeatherCard extends LitElement {
       return;
     }
 
-    const modeKey = `${mode}:${precipType}:${this._config.animated_background}:${scene}`;
+    const modeKey = `${mode}:${precipType}:${precipUnit}:${this._config.animated_background}:${scene}`;
     const fingerprint = seriesFingerprint(series);
     if (
       this._chart &&
       this._chartModeKey === modeKey &&
       this._chartFingerprint === fingerprint
     ) {
+      this._syncPlotArea();
       return;
     }
 
     if (this._chart && this._chartModeKey.split(":")[0] === mode) {
-      syncForecastChart(this._chart, series, mode, precipType, chrome);
+      syncForecastChart(
+        this._chart,
+        series,
+        mode,
+        precipType,
+        chrome,
+        precipUnit,
+      );
       this._chartFingerprint = fingerprint;
       this._chartModeKey = modeKey;
+      this._syncPlotArea();
       return;
     }
 
     this._destroyChart();
-    this._chart = createForecastChart(canvas, series, mode, precipType, chrome);
+    this._chart = createForecastChart(
+      canvas,
+      series,
+      mode,
+      precipType,
+      chrome,
+      precipUnit,
+    );
     this._chartFingerprint = fingerprint;
     this._chartModeKey = modeKey;
+    // chartArea is ready after layout
+    requestAnimationFrame(() => this._syncPlotArea());
   }
 
   private _icon(
@@ -481,19 +520,26 @@ export class VedurkortWeatherCard extends LitElement {
                         <div class="chart-wrap">
                           <canvas class="forecast-canvas"></canvas>
                         </div>
-                        ${renderForecastRow(this.hass, forecastSlice, {
-                          showIcons: forecastBlock.show_condition_icons,
-                          showWind: forecastBlock.show_wind,
-                          iconStyle: this._config.icon_style,
-                          animated: this._config.animated_icons,
-                          windSpeedUnit: snap.windSpeedUnit,
-                          mode:
-                            this._config.layout === "daily"
-                              ? "daily"
-                              : "hourly",
-                          language,
-                          sunEntity: this._config.sun_entity,
-                        })}
+                        <div
+                          class="forecast-row-slot"
+                          style=${this._plotWidth
+                            ? `margin-left:${this._plotLeft}px;width:${this._plotWidth}px`
+                            : ""}
+                        >
+                          ${renderForecastRow(this.hass, forecastSlice, {
+                            showIcons: forecastBlock.show_condition_icons,
+                            showWind: forecastBlock.show_wind,
+                            iconStyle: this._config.icon_style,
+                            animated: this._config.animated_icons,
+                            windSpeedUnit: snap.windSpeedUnit,
+                            mode:
+                              this._config.layout === "daily"
+                                ? "daily"
+                                : "hourly",
+                            language,
+                            sunEntity: this._config.sun_entity,
+                          })}
+                        </div>
                       `
                     : nothing}
                 </div>
@@ -600,11 +646,15 @@ export class VedurkortWeatherCard extends LitElement {
         height: 180px;
         width: 100%;
       }
+      .forecast-row-slot {
+        box-sizing: border-box;
+      }
       .forecast-row {
         display: grid;
         grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr));
-        gap: 4px;
+        gap: 0;
         margin-top: 8px;
+        width: 100%;
       }
       .forecast-col {
         display: flex;

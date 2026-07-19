@@ -1,5 +1,6 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { forecastHasPrecipProbability } from "./charts/forecast-chart";
 import {
   DEFAULT_CONFIG,
   normalizeConfig,
@@ -7,11 +8,17 @@ import {
 } from "./config";
 import { ICON_STYLES } from "./icons/allowlist";
 import type { HomeAssistant } from "./types";
+import { fetchForecast } from "./weather/adapter";
 
 @customElement("vedurkort-weather-card-editor")
 export class VedurkortWeatherCardEditor extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private _config!: VedurkortCardConfig;
+  /** null = unknown/loading, true/false = probed from forecast sample */
+  @state() private _dailyHasProbability: boolean | null = null;
+  @state() private _hourlyHasProbability: boolean | null = null;
+
+  private _probeKey = "";
 
   public setConfig(config: Partial<VedurkortCardConfig>): void {
     this._config = normalizeConfig({
@@ -19,6 +26,37 @@ export class VedurkortWeatherCardEditor extends LitElement {
       entity: config.entity ?? "weather.home",
       ...config,
     });
+  }
+
+  protected updated(changed: Map<string, unknown>): void {
+    if (
+      (changed.has("hass") || changed.has("_config")) &&
+      this.hass &&
+      this._config
+    ) {
+      void this._probePrecipProbability();
+    }
+  }
+
+  private async _probePrecipProbability(): Promise<void> {
+    const key = this._config.entity;
+    if (!key || key === this._probeKey) return;
+    this._probeKey = key;
+    this._dailyHasProbability = null;
+    this._hourlyHasProbability = null;
+    try {
+      const [daily, hourly] = await Promise.all([
+        fetchForecast(this.hass, key, "daily"),
+        fetchForecast(this.hass, key, "hourly"),
+      ]);
+      if (this._probeKey !== key) return;
+      this._dailyHasProbability = forecastHasPrecipProbability(daily);
+      this._hourlyHasProbability = forecastHasPrecipProbability(hourly);
+    } catch {
+      if (this._probeKey !== key) return;
+      this._dailyHasProbability = null;
+      this._hourlyHasProbability = null;
+    }
   }
 
   private _fire(config: VedurkortCardConfig): void {
@@ -310,7 +348,16 @@ export class VedurkortWeatherCardEditor extends LitElement {
             Wind</label
           >
           <label>
-            Precipitation
+            <span class="row-text"
+              >Precipitation
+              ${this._dailyHasProbability === false
+                ? html`<span class="avail missing"
+                    >probability not in forecast</span
+                  >`
+                : this._dailyHasProbability === true
+                  ? html`<span class="avail ok">probability in forecast</span>`
+                  : nothing}</span
+            >
             <select
               .value=${c.daily.precip_type}
               data-config="daily.precip_type"
@@ -354,7 +401,16 @@ export class VedurkortWeatherCardEditor extends LitElement {
             Wind</label
           >
           <label>
-            Precipitation
+            <span class="row-text"
+              >Precipitation
+              ${this._hourlyHasProbability === false
+                ? html`<span class="avail missing"
+                    >probability not in forecast</span
+                  >`
+                : this._hourlyHasProbability === true
+                  ? html`<span class="avail ok">probability in forecast</span>`
+                  : nothing}</span
+            >
             <select
               .value=${c.hourly.precip_type}
               data-config="hourly.precip_type"
