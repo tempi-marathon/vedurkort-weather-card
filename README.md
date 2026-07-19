@@ -77,7 +77,7 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hours` | number | `24` | Number of hourly forecast points to show. |
+| `hours` | number | `12` | Number of hourly forecast points to show. |
 | `show_condition_icons` | boolean | `true` | Show Meteocons condition icons under the chart. |
 | `show_wind` | boolean | `true` | Show Beaufort + direction icons and speed under the chart. |
 | `precip_type` | string | `rainfall` | Precipitation series: `rainfall` or `probability`. |
@@ -127,6 +127,25 @@ hourly:
   hours: 12
   precip_type: probability
 ```
+
+### Weather integrations & missing attributes
+
+Not every weather integration exposes every attribute. Veðurkort reads values from the `weather.*` entity when present, and otherwise from optional override sensors.
+
+| Attribute | Typical weather attr | Notes |
+| --- | --- | --- |
+| Temperature | `temperature` | Usually available |
+| Humidity | `humidity` | Usually available |
+| Wind speed / bearing | `wind_speed`, `wind_bearing` | Usually available |
+| Pressure | `pressure` | Often available |
+| Cloud coverage | `cloud_coverage` | Often available |
+| UV index | `uv_index` | Integration-dependent |
+| Feels like | `apparent_temperature` | Missing on some (e.g. Meteorologisk institutt) |
+| Dew point | `dew_point` | Integration-dependent |
+| Visibility | `visibility` | Missing on some (e.g. Meteorologisk institutt) |
+| Sunrise / sunset | via `sun.sun` | Not from the weather entity |
+
+On the card, detail chips are **hidden when there is no value**. In the visual editor, toggles stay available and show a small hint whether the selected weather entity currently has that attribute — use an override sensor when it does not.
 
 ### With sensor overrides
 

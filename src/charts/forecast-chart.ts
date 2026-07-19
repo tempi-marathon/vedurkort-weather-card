@@ -13,6 +13,7 @@ import {
   type ChartConfiguration,
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
+import type { BackgroundScene } from "../backgrounds/scenes";
 import type { ForecastBlockConfig, PrecipType } from "../config";
 import type { ForecastItem } from "../types";
 
@@ -35,6 +36,36 @@ export interface ChartSeries {
   high: (number | null)[];
   low: (number | null)[];
   precip: (number | null)[];
+}
+
+export interface ChartChrome {
+  tick: string;
+  grid: string;
+}
+
+/** Light/dark chart chrome from the active CSS background scene. */
+export function chartChromeForScene(
+  animatedBackground: boolean,
+  scene: BackgroundScene,
+): ChartChrome {
+  if (!animatedBackground) {
+    return {
+      tick: "rgba(120, 120, 120, 0.95)",
+      grid: "rgba(120, 120, 120, 0.18)",
+    };
+  }
+  const darkScenes: BackgroundScene[] = ["clear-night", "storm", "rain"];
+  if (darkScenes.includes(scene)) {
+    return {
+      tick: "rgba(245, 245, 245, 0.92)",
+      grid: "rgba(255, 255, 255, 0.22)",
+    };
+  }
+  // cloudy, fog, snow, wind, clear-day — lighter skies need darker axes
+  return {
+    tick: "rgba(28, 28, 28, 0.9)",
+    grid: "rgba(28, 28, 28, 0.18)",
+  };
 }
 
 export function buildDailySeries(
@@ -93,12 +124,11 @@ export function buildHourlySeries(
   };
 }
 
-export function createForecastChart(
-  canvas: HTMLCanvasElement,
+function buildDatasets(
   series: ChartSeries,
   mode: "daily" | "hourly",
   precipType: PrecipType,
-): Chart {
+): ChartConfiguration["data"]["datasets"] {
   const hasLow = series.low.some((v) => v != null);
   const datasets: ChartConfiguration["data"]["datasets"] = [
     {
@@ -149,15 +179,45 @@ export function createForecastChart(
     },
   });
 
+  return datasets;
+}
+
+function applyChrome(chart: Chart, chrome: ChartChrome): void {
+  const scales = chart.options.scales;
+  if (!scales) return;
+  for (const key of ["x", "yTemp", "yPrecip"] as const) {
+    const scale = scales[key];
+    if (!scale || typeof scale !== "object") continue;
+    scale.ticks = {
+      ...scale.ticks,
+      color: chrome.tick,
+    };
+    if (key === "yTemp") {
+      scale.grid = {
+        ...scale.grid,
+        color: chrome.grid,
+      };
+    }
+  }
+}
+
+export function createForecastChart(
+  canvas: HTMLCanvasElement,
+  series: ChartSeries,
+  mode: "daily" | "hourly",
+  precipType: PrecipType,
+  chrome: ChartChrome,
+): Chart {
   const config: ChartConfiguration = {
     type: "bar",
     data: {
       labels: series.labels,
-      datasets,
+      datasets: buildDatasets(series, mode, precipType),
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { display: false },
@@ -169,14 +229,15 @@ export function createForecastChart(
       },
       scales: {
         x: {
-          ticks: { maxRotation: 0, autoSkip: true },
+          ticks: { maxRotation: 0, autoSkip: true, color: chrome.tick },
           grid: { display: false },
         },
         yTemp: {
           type: "linear",
           position: "left",
-          grid: { color: "rgba(127,127,127,0.15)" },
+          grid: { color: chrome.grid },
           ticks: {
+            color: chrome.tick,
             callback: (v) => `${v}°`,
           },
         },
@@ -186,6 +247,7 @@ export function createForecastChart(
           grid: { drawOnChartArea: false },
           beginAtZero: true,
           ticks: {
+            color: chrome.tick,
             callback: (v) =>
               precipType === "probability" ? `${v}%` : `${v}`,
           },
@@ -195,6 +257,40 @@ export function createForecastChart(
   };
 
   return new Chart(canvas, config);
+}
+
+/** Update an existing chart without re-animating from zero. */
+export function syncForecastChart(
+  chart: Chart,
+  series: ChartSeries,
+  mode: "daily" | "hourly",
+  precipType: PrecipType,
+  chrome: ChartChrome,
+): void {
+  const nextDatasets = buildDatasets(series, mode, precipType);
+  const structureChanged =
+    chart.data.datasets.length !== nextDatasets.length ||
+    chart.data.datasets.some((d, i) => d.type !== nextDatasets[i]?.type);
+
+  if (structureChanged) {
+    chart.data.datasets = nextDatasets;
+  } else {
+    chart.data.datasets.forEach((ds, i) => {
+      const next = nextDatasets[i];
+      if (!next) return;
+      ds.data = next.data;
+      ds.label = next.label;
+    });
+  }
+
+  chart.data.labels = series.labels;
+  applyChrome(chart, chrome);
+  chart.options.animation = false;
+  chart.update("none");
+}
+
+export function seriesFingerprint(series: ChartSeries): string {
+  return JSON.stringify(series);
 }
 
 export type { ForecastBlockConfig };

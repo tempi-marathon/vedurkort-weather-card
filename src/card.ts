@@ -9,7 +9,10 @@ import {
 import {
   buildDailySeries,
   buildHourlySeries,
+  chartChromeForScene,
   createForecastChart,
+  seriesFingerprint,
+  syncForecastChart,
 } from "./charts/forecast-chart";
 import { renderForecastRow } from "./charts/forecast-row";
 import {
@@ -44,6 +47,8 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _forecastError: string | null = null;
 
   private _chart: Chart | null = null;
+  private _chartFingerprint = "";
+  private _chartModeKey = "";
   private _forecastKey = "";
   private _unsubForecast: (() => void) | undefined;
   private _forecastLoading = false;
@@ -146,6 +151,8 @@ export class VedurkortWeatherCard extends LitElement {
   private _destroyChart(): void {
     this._chart?.destroy();
     this._chart = null;
+    this._chartFingerprint = "";
+    this._chartModeKey = "";
   }
 
   private _renderChart(): void {
@@ -156,35 +163,67 @@ export class VedurkortWeatherCard extends LitElement {
       this._destroyChart();
       return;
     }
+
+    const snap = getWeatherSnapshot(this.hass, this._config);
+    const scene = conditionToScene(
+      snap?.condition,
+      snap?.isDay ?? true,
+    );
+    const chrome = chartChromeForScene(
+      this._config.animated_background,
+      scene,
+    );
+
     const language =
       this.hass.locale?.language ??
       this.hass.language ??
       this.hass.config.language;
+    const mode = this._config.layout === "daily" ? "daily" : "hourly";
+    const precipType =
+      mode === "daily"
+        ? this._config.daily.precip_type
+        : this._config.hourly.precip_type;
     const series =
-      this._config.layout === "daily"
+      mode === "daily"
         ? buildDailySeries(
             this._forecast,
             this._config.daily.days,
-            this._config.daily.precip_type,
+            precipType,
             language,
           )
         : buildHourlySeries(
             this._forecast,
             this._config.hourly.hours,
-            this._config.hourly.precip_type,
+            precipType,
             language,
           );
 
+    if (!series.labels.length) {
+      this._destroyChart();
+      return;
+    }
+
+    const modeKey = `${mode}:${precipType}:${this._config.animated_background}:${scene}`;
+    const fingerprint = seriesFingerprint(series);
+    if (
+      this._chart &&
+      this._chartModeKey === modeKey &&
+      this._chartFingerprint === fingerprint
+    ) {
+      return;
+    }
+
+    if (this._chart && this._chartModeKey.split(":")[0] === mode) {
+      syncForecastChart(this._chart, series, mode, precipType, chrome);
+      this._chartFingerprint = fingerprint;
+      this._chartModeKey = modeKey;
+      return;
+    }
+
     this._destroyChart();
-    if (!series.labels.length) return;
-    this._chart = createForecastChart(
-      canvas,
-      series,
-      this._config.layout === "daily" ? "daily" : "hourly",
-      this._config.layout === "daily"
-        ? this._config.daily.precip_type
-        : this._config.hourly.precip_type,
-    );
+    this._chart = createForecastChart(canvas, series, mode, precipType, chrome);
+    this._chartFingerprint = fingerprint;
+    this._chartModeKey = modeKey;
   }
 
   private _icon(
@@ -350,36 +389,40 @@ export class VedurkortWeatherCard extends LitElement {
                   ${this._config.show_wind_speed ||
                   this._config.show_wind_direction
                     ? html`
-                        <div class="detail">
-                          ${this._config.show_wind_speed
-                            ? html`<span
-                                class="detail-icon"
-                                .innerHTML=${this._icon(beaufortIcon(bft))}
-                              ></span>`
-                            : nothing}
-                          ${this._config.show_wind_direction
-                            ? html`<span
-                                class="detail-icon"
-                                .innerHTML=${this._icon(
-                                  bearingToWindIcon(
-                                    snap.windBearing ?? undefined,
-                                  ),
-                                )}
-                              ></span>`
-                            : nothing}
-                          ${this._config.show_wind_direction
-                            ? html`<span
-                                >${bearingToLabel(
-                                  snap.windBearing ?? undefined,
-                                )}</span
-                              >`
-                            : nothing}
+                        <div class="detail wind-detail">
                           ${this._config.show_wind_speed &&
                           snap.windSpeed != null
-                            ? html`<span
-                                >${Math.round(snap.windSpeed)}
-                                ${snap.windSpeedUnit}</span
-                              >`
+                            ? html`
+                                <span class="wind-pair">
+                                  <span
+                                    class="detail-icon"
+                                    .innerHTML=${this._icon(beaufortIcon(bft))}
+                                  ></span>
+                                  <span
+                                    >${Math.round(snap.windSpeed)}
+                                    ${snap.windSpeedUnit}</span
+                                  >
+                                </span>
+                              `
+                            : nothing}
+                          ${this._config.show_wind_direction
+                            ? html`
+                                <span class="wind-pair">
+                                  <span
+                                    class="detail-icon"
+                                    .innerHTML=${this._icon(
+                                      bearingToWindIcon(
+                                        snap.windBearing ?? undefined,
+                                      ),
+                                    )}
+                                  ></span>
+                                  <span
+                                    >${bearingToLabel(
+                                      snap.windBearing ?? undefined,
+                                    )}</span
+                                  >
+                                </span>
+                              `
                             : nothing}
                         </div>
                       `
@@ -499,6 +542,14 @@ export class VedurkortWeatherCard extends LitElement {
         align-items: center;
         gap: 6px;
       }
+      .wind-detail {
+        gap: 14px;
+      }
+      .wind-pair {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
       .detail-icon {
         width: 22px;
         height: 22px;
@@ -542,6 +593,11 @@ export class VedurkortWeatherCard extends LitElement {
         flex-direction: column;
         align-items: center;
         gap: 2px;
+      }
+      .forecast-wind .wind-pair {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
       }
       .wind-icon {
         width: 20px;

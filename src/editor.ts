@@ -117,6 +117,52 @@ export class VedurkortWeatherCardEditor extends LitElement {
     `;
   }
 
+  private _entityHasAttr(attrs: string[]): boolean | null {
+    if (!this.hass || !this._config?.entity) return null;
+    const entity = this.hass.states[this._config.entity];
+    if (!entity) return null;
+    return attrs.some((a) => entity.attributes[a] != null);
+  }
+
+  private _detailToggle(
+    key: keyof VedurkortCardConfig,
+    label: string,
+    attrs: string[],
+    sunSpecial = false,
+  ) {
+    const checked = Boolean(this._config[key]);
+    let avail: boolean | null = null;
+    if (sunSpecial) {
+      const sunId = this._config.sun_entity ?? "sun.sun";
+      const sun = this.hass?.states[sunId];
+      avail = sun
+        ? attrs.some((a) => sun.attributes[a] != null) || sun.state != null
+        : null;
+    } else {
+      avail = this._entityHasAttr(attrs);
+    }
+    const hint =
+      avail === false
+        ? html`<span class="avail missing">not on weather entity</span>`
+        : avail === true
+          ? html`<span class="avail ok">on weather entity</span>`
+          : nothing;
+
+    return html`
+      <label class="row">
+        <input
+          type="checkbox"
+          .checked=${checked}
+          data-config=${key as string}
+          @change=${this._value}
+        />
+        <span class="row-text"
+          >${label} ${hint}</span
+        >
+      </label>
+    `;
+  }
+
   protected render() {
     if (!this._config || !this.hass) return nothing;
     const c = this._config;
@@ -183,96 +229,38 @@ export class VedurkortWeatherCardEditor extends LitElement {
 
         <fieldset>
           <legend>Details</legend>
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.show_sun}
-              data-config="show_sun"
-              @change=${this._value}
-            />
-            Sunrise / sunset</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.show_humidity}
-              data-config="show_humidity"
-              @change=${this._value}
-            />
-            Humidity</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.show_wind_speed}
-              data-config="show_wind_speed"
-              @change=${this._value}
-            />
-            Wind speed (Beaufort icon)</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.show_wind_direction}
-              data-config="show_wind_direction"
-              @change=${this._value}
-            />
-            Wind direction</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.show_uv_index}
-              data-config="show_uv_index"
-              @change=${this._value}
-            />
-            UV index</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.show_pressure}
-              data-config="show_pressure"
-              @change=${this._value}
-            />
-            Pressure</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.show_cloud_coverage}
-              data-config="show_cloud_coverage"
-              @change=${this._value}
-            />
-            Cloud coverage</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.show_feels_like}
-              data-config="show_feels_like"
-              @change=${this._value}
-            />
-            Feels like</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.show_dew_point}
-              data-config="show_dew_point"
-              @change=${this._value}
-            />
-            Dew point</label
-          >
-          <label class="row"
-            ><input
-              type="checkbox"
-              .checked=${c.show_visibility}
-              data-config="show_visibility"
-              @change=${this._value}
-            />
-            Visibility</label
-          >
+          <p class="hint">
+            Detail chips only appear on the card when the weather entity or an
+            override sensor provides a value. Availability varies by
+            integration (e.g. Meteorologisk institutt often has no feels-like
+            or visibility).
+          </p>
+          ${this._detailToggle("show_sun", "Sunrise / sunset", ["next_rising"], true)}
+          ${this._detailToggle("show_humidity", "Humidity", ["humidity"])}
+          ${this._detailToggle(
+            "show_wind_speed",
+            "Wind speed (Beaufort icon)",
+            ["wind_speed"],
+          )}
+          ${this._detailToggle(
+            "show_wind_direction",
+            "Wind direction",
+            ["wind_bearing"],
+          )}
+          ${this._detailToggle("show_uv_index", "UV index", ["uv_index"])}
+          ${this._detailToggle("show_pressure", "Pressure", ["pressure"])}
+          ${this._detailToggle(
+            "show_cloud_coverage",
+            "Cloud coverage",
+            ["cloud_coverage"],
+          )}
+          ${this._detailToggle(
+            "show_feels_like",
+            "Feels like",
+            ["apparent_temperature"],
+          )}
+          ${this._detailToggle("show_dew_point", "Dew point", ["dew_point"])}
+          ${this._detailToggle("show_visibility", "Visibility", ["visibility"])}
         </fieldset>
 
         <fieldset>
@@ -423,6 +411,28 @@ export class VedurkortWeatherCardEditor extends LitElement {
     legend {
       padding: 0 6px;
       font-weight: 600;
+    }
+    .hint {
+      margin: 0;
+      font-size: 0.8rem;
+      opacity: 0.8;
+      line-height: 1.35;
+    }
+    .row-text {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .avail {
+      font-size: 0.75rem;
+      opacity: 0.75;
+    }
+    .avail.ok {
+      color: var(--success-color, #2e7d32);
+    }
+    .avail.missing {
+      color: var(--warning-color, #f57c00);
     }
   `;
 }

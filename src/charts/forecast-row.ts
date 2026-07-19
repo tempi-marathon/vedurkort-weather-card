@@ -58,14 +58,20 @@ export function renderForecastRow(
             ${opts.showWind
               ? html`
                   <div class="forecast-wind">
-                    <span class="wind-icon" .innerHTML=${bftSvg}></span>
-                    <span class="wind-icon" .innerHTML=${windDirSvg}></span>
-                    <span class="wind-meta">
-                      ${bearingToLabel(item.wind_bearing)}
-                      ${item.wind_speed != null
-                        ? html`${Math.round(item.wind_speed)}`
-                        : "—"}
-                    </span>
+                    <div class="wind-pair">
+                      <span class="wind-icon" .innerHTML=${bftSvg}></span>
+                      <span class="wind-meta"
+                        >${item.wind_speed != null
+                          ? Math.round(item.wind_speed)
+                          : "—"}</span
+                      >
+                    </div>
+                    <div class="wind-pair">
+                      <span class="wind-icon" .innerHTML=${windDirSvg}></span>
+                      <span class="wind-meta"
+                        >${bearingToLabel(item.wind_bearing)}</span
+                      >
+                    </div>
                   </div>
                 `
               : nothing}

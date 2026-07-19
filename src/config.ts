@@ -78,7 +78,7 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   },
   hourly: {
     ...DEFAULT_FORECAST_BLOCK,
-    hours: 24,
+    hours: 12,
   },
 };
 
