@@ -88,25 +88,25 @@ export function chartChromeForScene(
   if (resolved) {
     return {
       tick: resolved,
-      grid: withAlpha(resolved, 0.2),
+      grid: withAlpha(resolved, 0.08),
     };
   }
   if (!animatedBackground) {
     return {
       tick: "rgba(120, 120, 120, 0.95)",
-      grid: "rgba(120, 120, 120, 0.18)",
+      grid: "rgba(120, 120, 120, 0.08)",
     };
   }
   const darkScenes: BackgroundScene[] = ["clear-night", "storm", "rain"];
   if (darkScenes.includes(scene)) {
     return {
       tick: "rgba(245, 245, 245, 0.92)",
-      grid: "rgba(255, 255, 255, 0.22)",
+      grid: "rgba(255, 255, 255, 0.1)",
     };
   }
   return {
     tick: "rgba(28, 28, 28, 0.9)",
-    grid: "rgba(28, 28, 28, 0.18)",
+    grid: "rgba(28, 28, 28, 0.08)",
   };
 }
 
@@ -279,11 +279,11 @@ function applyChrome(chart: Chart, chrome: ChartChrome): void {
   const x = scales.x;
   if (x && typeof x === "object") {
     x.ticks = { ...x.ticks, color: chrome.tick };
-    x.grid = { ...x.grid, color: chrome.grid, display: true };
+    x.grid = { ...x.grid, display: false };
   }
   const yTemp = scales.yTemp;
   if (yTemp && typeof yTemp === "object") {
-    yTemp.grid = { ...yTemp.grid, color: chrome.grid };
+    yTemp.grid = { ...yTemp.grid, color: chrome.grid, display: true };
   }
 }
 
@@ -367,8 +367,7 @@ export function createForecastChart(
             font: { size: 11, weight: "bold" },
           },
           grid: {
-            display: true,
-            color: chrome.grid,
+            display: false,
             drawTicks: false,
           },
           border: { display: false },
@@ -377,7 +376,11 @@ export function createForecastChart(
           type: "linear",
           position: "left",
           display: true,
-          grid: { color: chrome.grid },
+          grid: {
+            display: true,
+            color: chrome.grid,
+            drawTicks: false,
+          },
           border: { display: false },
           ticks: {
             display: false,
