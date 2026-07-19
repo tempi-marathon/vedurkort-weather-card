@@ -38,6 +38,8 @@ export function renderForecastRow(
             : isSunUp(hass, opts.sunEntity));
         const icon = conditionToMeteocon(item.condition, isDay);
         const svg = getMeteoconSvg(icon, opts.iconStyle, opts.animated);
+        const conditionLabel = (item.condition ?? "unknown").replace(/-/g, " ");
+        const dirLabel = bearingToLabel(item.wind_bearing);
         const windDirIcon = bearingToWindIcon(item.wind_bearing);
         const windDirSvg = getMeteoconSvg(
           windDirIcon,
@@ -50,27 +52,46 @@ export function renderForecastRow(
           opts.iconStyle,
           opts.animated,
         );
+        const speedText =
+          item.wind_speed != null
+            ? `${Math.round(item.wind_speed)} ${opts.windSpeedUnit}`
+            : "—";
+        const speedTip = `Wind ${speedText} (Beaufort ${bft})`;
+        const dirTip = `Wind direction ${dirLabel}`;
         return html`
           <div class="forecast-col">
             ${opts.showIcons
-              ? html`<div class="forecast-icon" .innerHTML=${svg}></div>`
+              ? html`<div
+                  class="forecast-icon"
+                  title=${conditionLabel}
+                  aria-label=${conditionLabel}
+                  .innerHTML=${svg}
+                ></div>`
               : nothing}
             ${opts.showWind
               ? html`
                   <div class="forecast-wind">
-                    <div class="wind-pair">
-                      <span class="wind-icon" .innerHTML=${bftSvg}></span>
+                    <div class="wind-pair" title=${speedTip}>
+                      <span
+                        class="wind-icon"
+                        title=${speedTip}
+                        aria-label=${speedTip}
+                        .innerHTML=${bftSvg}
+                      ></span>
                       <span class="wind-meta"
                         >${item.wind_speed != null
                           ? Math.round(item.wind_speed)
                           : "—"}</span
                       >
                     </div>
-                    <div class="wind-pair">
-                      <span class="wind-icon" .innerHTML=${windDirSvg}></span>
-                      <span class="wind-meta"
-                        >${bearingToLabel(item.wind_bearing)}</span
-                      >
+                    <div class="wind-pair" title=${dirTip}>
+                      <span
+                        class="wind-icon"
+                        title=${dirTip}
+                        aria-label=${dirTip}
+                        .innerHTML=${windDirSvg}
+                      ></span>
+                      <span class="wind-meta">${dirLabel}</span>
                     </div>
                   </div>
                 `
