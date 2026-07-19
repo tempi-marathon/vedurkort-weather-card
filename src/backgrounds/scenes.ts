@@ -49,12 +49,21 @@ export function conditionToScene(
 export function renderBackground(
   enabled: boolean,
   scene: BackgroundScene,
+  cloudCoverage: number | null = null,
 ): TemplateResult | typeof nothing {
   if (!enabled) return nothing;
+  // Light enhancement: scale cloud layer opacity from coverage (display-driven, no toggle)
+  const cloudOpacity =
+    cloudCoverage == null || Number.isNaN(cloudCoverage)
+      ? undefined
+      : Math.max(0.2, Math.min(1, cloudCoverage / 100));
   return html`
     <div class="vk-bg vk-bg--${scene}" aria-hidden="true">
       <div class="vk-bg__layer vk-bg__sky"></div>
-      <div class="vk-bg__layer vk-bg__clouds"></div>
+      <div
+        class="vk-bg__layer vk-bg__clouds"
+        style=${cloudOpacity != null ? `opacity:${cloudOpacity}` : ""}
+      ></div>
       <div class="vk-bg__layer vk-bg__precip"></div>
       <div class="vk-bg__layer vk-bg__fx"></div>
       <div class="vk-bg__scrim"></div>

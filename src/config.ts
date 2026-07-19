@@ -29,10 +29,22 @@ export interface VedurkortCardConfig {
   show_wind_speed: boolean;
   show_wind_direction: boolean;
   show_humidity: boolean;
+  show_uv_index: boolean;
+  show_pressure: boolean;
+  show_cloud_coverage: boolean;
+  show_feels_like: boolean;
+  show_dew_point: boolean;
+  show_visibility: boolean;
   temperature_entity?: string;
   humidity_entity?: string;
   wind_speed_entity?: string;
   wind_bearing_entity?: string;
+  uv_index_entity?: string;
+  pressure_entity?: string;
+  cloud_coverage_entity?: string;
+  feels_like_entity?: string;
+  dew_point_entity?: string;
+  visibility_entity?: string;
   sun_entity?: string;
   daily: DailyConfig;
   hourly: HourlyConfig;
@@ -53,6 +65,12 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   show_wind_speed: false,
   show_wind_direction: false,
   show_humidity: false,
+  show_uv_index: false,
+  show_pressure: false,
+  show_cloud_coverage: false,
+  show_feels_like: false,
+  show_dew_point: false,
+  show_visibility: false,
   sun_entity: "sun.sun",
   daily: {
     ...DEFAULT_FORECAST_BLOCK,
@@ -80,7 +98,6 @@ export function normalizeConfig(
     ...(input.hourly ?? {}),
   };
 
-  // Migrate legacy single forecast block if present
   const legacy = (input as { forecast?: Partial<DailyConfig & HourlyConfig> })
     .forecast;
   if (legacy) {

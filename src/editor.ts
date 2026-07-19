@@ -1,4 +1,4 @@
-import { LitElement, css, html } from "lit";
+import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import {
   DEFAULT_CONFIG,
@@ -33,12 +33,15 @@ export class VedurkortWeatherCardEditor extends LitElement {
   }
 
   private _value(ev: Event): void {
-    const target = ev.target as HTMLInputElement | HTMLSelectElement;
-    const key = target.getAttribute("data-config");
+    const target = ev.target as HTMLInputElement | HTMLSelectElement & {
+      value?: string | number | boolean;
+    };
+    const key =
+      target.getAttribute("data-config") ??
+      (target as HTMLElement).getAttribute("data-config");
     if (!key || !this._config) return;
 
     const next: VedurkortCardConfig = structuredClone(this._config);
-
     const setNested = (path: string, value: unknown) => {
       const parts = path.split(".");
       let cur: Record<string, unknown> = next as unknown as Record<
@@ -59,29 +62,68 @@ export class VedurkortWeatherCardEditor extends LitElement {
     } else if (target instanceof HTMLInputElement && target.type === "number") {
       value = Number(target.value);
     } else {
-      value = target.value;
+      value = (target as HTMLSelectElement).value;
     }
 
     setNested(key, value === "" ? undefined : value);
     this._fire(normalizeConfig(next));
   }
 
+  private _entityChanged(ev: CustomEvent, key: string): void {
+    if (!this._config) return;
+    const value = (ev.detail as { value?: string })?.value ?? "";
+    const next = structuredClone(this._config) as VedurkortCardConfig &
+      Record<string, unknown>;
+    if (key.includes(".")) {
+      // not used
+    } else {
+      (next as Record<string, unknown>)[key] =
+        value === "" ? undefined : value;
+    }
+    if (key === "entity" && !value) return;
+    this._fire(
+      normalizeConfig({
+        ...next,
+        entity: key === "entity" ? value : next.entity,
+      }),
+    );
+  }
+
+  private _picker(
+    label: string,
+    key: keyof VedurkortCardConfig,
+    domainFilter?: string | string[],
+    allowCustom = true,
+  ) {
+    const value = (this._config[key] as string | undefined) ?? "";
+    // ha-entity-picker is provided by Home Assistant frontend
+    return html`
+      <div class="field">
+        <span class="label">${label}</span>
+        <ha-entity-picker
+          .hass=${this.hass}
+          .value=${value}
+          .includeDomains=${domainFilter
+            ? Array.isArray(domainFilter)
+              ? domainFilter
+              : [domainFilter]
+            : undefined}
+          .allowCustomEntity=${allowCustom}
+          data-config=${key}
+          @value-changed=${(ev: CustomEvent) =>
+            this._entityChanged(ev, key as string)}
+        ></ha-entity-picker>
+      </div>
+    `;
+  }
+
   protected render() {
-    if (!this._config) return html``;
+    if (!this._config || !this.hass) return nothing;
     const c = this._config;
 
     return html`
       <div class="form">
-        <label>
-          Weather entity
-          <input
-            type="text"
-            .value=${c.entity}
-            data-config="entity"
-            @change=${this._value}
-            placeholder="weather.home"
-          />
-        </label>
+        ${this._picker("Weather entity", "entity", "weather", false)}
 
         <label>
           Layout
@@ -141,82 +183,111 @@ export class VedurkortWeatherCardEditor extends LitElement {
 
         <fieldset>
           <legend>Details</legend>
-          <label class="row">
-            <input
+          <label class="row"
+            ><input
               type="checkbox"
               .checked=${c.show_sun}
               data-config="show_sun"
               @change=${this._value}
             />
-            Sunrise / sunset
-          </label>
-          <label class="row">
-            <input
+            Sunrise / sunset</label
+          >
+          <label class="row"
+            ><input
               type="checkbox"
               .checked=${c.show_humidity}
               data-config="show_humidity"
               @change=${this._value}
             />
-            Humidity
-          </label>
-          <label class="row">
-            <input
+            Humidity</label
+          >
+          <label class="row"
+            ><input
               type="checkbox"
               .checked=${c.show_wind_speed}
               data-config="show_wind_speed"
               @change=${this._value}
             />
-            Wind speed
-          </label>
-          <label class="row">
-            <input
+            Wind speed (Beaufort icon)</label
+          >
+          <label class="row"
+            ><input
               type="checkbox"
               .checked=${c.show_wind_direction}
               data-config="show_wind_direction"
               @change=${this._value}
             />
-            Wind direction
-          </label>
+            Wind direction</label
+          >
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.show_uv_index}
+              data-config="show_uv_index"
+              @change=${this._value}
+            />
+            UV index</label
+          >
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.show_pressure}
+              data-config="show_pressure"
+              @change=${this._value}
+            />
+            Pressure</label
+          >
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.show_cloud_coverage}
+              data-config="show_cloud_coverage"
+              @change=${this._value}
+            />
+            Cloud coverage</label
+          >
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.show_feels_like}
+              data-config="show_feels_like"
+              @change=${this._value}
+            />
+            Feels like</label
+          >
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.show_dew_point}
+              data-config="show_dew_point"
+              @change=${this._value}
+            />
+            Dew point</label
+          >
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.show_visibility}
+              data-config="show_visibility"
+              @change=${this._value}
+            />
+            Visibility</label
+          >
         </fieldset>
 
         <fieldset>
           <legend>Optional sensors</legend>
-          <label>
-            Temperature entity
-            <input
-              type="text"
-              .value=${c.temperature_entity ?? ""}
-              data-config="temperature_entity"
-              @change=${this._value}
-            />
-          </label>
-          <label>
-            Humidity entity
-            <input
-              type="text"
-              .value=${c.humidity_entity ?? ""}
-              data-config="humidity_entity"
-              @change=${this._value}
-            />
-          </label>
-          <label>
-            Wind speed entity
-            <input
-              type="text"
-              .value=${c.wind_speed_entity ?? ""}
-              data-config="wind_speed_entity"
-              @change=${this._value}
-            />
-          </label>
-          <label>
-            Wind bearing entity
-            <input
-              type="text"
-              .value=${c.wind_bearing_entity ?? ""}
-              data-config="wind_bearing_entity"
-              @change=${this._value}
-            />
-          </label>
+          ${this._picker("Temperature", "temperature_entity", "sensor")}
+          ${this._picker("Humidity", "humidity_entity", "sensor")}
+          ${this._picker("Wind speed", "wind_speed_entity", "sensor")}
+          ${this._picker("Wind bearing", "wind_bearing_entity", "sensor")}
+          ${this._picker("UV index", "uv_index_entity", "sensor")}
+          ${this._picker("Pressure", "pressure_entity", "sensor")}
+          ${this._picker("Cloud coverage", "cloud_coverage_entity", "sensor")}
+          ${this._picker("Feels like", "feels_like_entity", "sensor")}
+          ${this._picker("Dew point", "dew_point_entity", "sensor")}
+          ${this._picker("Visibility", "visibility_entity", "sensor")}
+          ${this._picker("Sun", "sun_entity", "sun")}
         </fieldset>
 
         <fieldset>
@@ -232,24 +303,24 @@ export class VedurkortWeatherCardEditor extends LitElement {
               @change=${this._value}
             />
           </label>
-          <label class="row">
-            <input
+          <label class="row"
+            ><input
               type="checkbox"
               .checked=${c.daily.show_condition_icons}
               data-config="daily.show_condition_icons"
               @change=${this._value}
             />
-            Condition icons
-          </label>
-          <label class="row">
-            <input
+            Condition icons</label
+          >
+          <label class="row"
+            ><input
               type="checkbox"
               .checked=${c.daily.show_wind}
               data-config="daily.show_wind"
               @change=${this._value}
             />
-            Wind
-          </label>
+            Wind</label
+          >
           <label>
             Precipitation
             <select
@@ -276,24 +347,24 @@ export class VedurkortWeatherCardEditor extends LitElement {
               @change=${this._value}
             />
           </label>
-          <label class="row">
-            <input
+          <label class="row"
+            ><input
               type="checkbox"
               .checked=${c.hourly.show_condition_icons}
               data-config="hourly.show_condition_icons"
               @change=${this._value}
             />
-            Condition icons
-          </label>
-          <label class="row">
-            <input
+            Condition icons</label
+          >
+          <label class="row"
+            ><input
               type="checkbox"
               .checked=${c.hourly.show_wind}
               data-config="hourly.show_wind"
               @change=${this._value}
             />
-            Wind
-          </label>
+            Wind</label
+          >
           <label>
             Precipitation
             <select
@@ -315,6 +386,13 @@ export class VedurkortWeatherCardEditor extends LitElement {
       display: grid;
       gap: 12px;
       padding: 4px 0 16px;
+    }
+    .field {
+      display: grid;
+      gap: 4px;
+    }
+    .label {
+      font-size: 0.9rem;
     }
     label {
       display: grid;

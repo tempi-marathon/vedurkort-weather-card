@@ -1,5 +1,6 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import type { Chart } from "chart.js";
 import {
   backgroundStyles,
   conditionToScene,
@@ -16,16 +17,23 @@ import {
   normalizeConfig,
   type VedurkortCardConfig,
 } from "./config";
-import { bearingToLabel, bearingToWindIcon, conditionToMeteocon } from "./icons/condition-map";
+import {
+  bearingToLabel,
+  bearingToWindIcon,
+  beaufortIcon,
+  conditionToMeteocon,
+  uvIndexIcon,
+  windSpeedToBeaufort,
+} from "./icons/condition-map";
 import { getMeteoconSvg } from "./icons/meteocons";
 import type { ForecastItem, HomeAssistant, LovelaceCardEditor } from "./types";
 import {
-  fetchForecast,
+  formatNumber,
   formatTemp,
   formatTime,
   getWeatherSnapshot,
+  subscribeForecast,
 } from "./weather/adapter";
-import type { Chart } from "chart.js";
 
 @customElement("vedurkort-weather-card")
 export class VedurkortWeatherCard extends LitElement {
@@ -37,6 +45,8 @@ export class VedurkortWeatherCard extends LitElement {
 
   private _chart: Chart | null = null;
   private _forecastKey = "";
+  private _unsubForecast: (() => void) | undefined;
+  private _forecastLoading = false;
 
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
     await import("./editor");
@@ -72,7 +82,7 @@ export class VedurkortWeatherCard extends LitElement {
       this._config &&
       this.hass
     ) {
-      void this._loadForecastIfNeeded();
+      void this._ensureForecastSubscription();
     }
     if (
       changed.has("_forecast") ||
@@ -85,30 +95,51 @@ export class VedurkortWeatherCard extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
+    this._teardownForecast();
     this._destroyChart();
   }
 
-  private async _loadForecastIfNeeded(): Promise<void> {
+  private _teardownForecast(): void {
+    this._unsubForecast?.();
+    this._unsubForecast = undefined;
+    this._forecastKey = "";
+  }
+
+  private async _ensureForecastSubscription(): Promise<void> {
     const layout = this._config.layout;
     if (layout === "basic") {
+      this._teardownForecast();
       this._forecast = [];
-      this._forecastKey = "";
+      this._forecastError = null;
       return;
     }
+
     const key = `${this._config.entity}:${layout}`;
-    if (key === this._forecastKey && this._forecast.length) return;
+    if (key === this._forecastKey || this._forecastLoading) return;
+    this._forecastLoading = true;
+    this._teardownForecast();
     this._forecastKey = key;
+    this._forecastError = null;
+
+    const type = layout === "daily" ? "daily" : "hourly";
     try {
-      this._forecast = await fetchForecast(
+      this._unsubForecast = await subscribeForecast(
         this.hass,
         this._config.entity,
-        layout === "daily" ? "daily" : "hourly",
+        type,
+        (items, error) => {
+          this._forecast = items;
+          this._forecastError = error;
+          this.requestUpdate();
+        },
       );
-      this._forecastError = null;
     } catch (err) {
       this._forecast = [];
       this._forecastError =
         err instanceof Error ? err.message : "Failed to load forecast";
+      this._forecastKey = "";
+    } finally {
+      this._forecastLoading = false;
     }
   }
 
@@ -126,7 +157,9 @@ export class VedurkortWeatherCard extends LitElement {
       return;
     }
     const language =
-      this.hass.locale?.language ?? this.hass.config.language;
+      this.hass.locale?.language ??
+      this.hass.language ??
+      this.hass.config.language;
     const series =
       this._config.layout === "daily"
         ? buildDailySeries(
@@ -154,12 +187,35 @@ export class VedurkortWeatherCard extends LitElement {
     );
   }
 
+  private _icon(
+    name: Parameters<typeof getMeteoconSvg>[0],
+  ): string {
+    return getMeteoconSvg(
+      name,
+      this._config.icon_style,
+      this._config.animated_icons,
+    );
+  }
+
+  private _detail(
+    icon: Parameters<typeof getMeteoconSvg>[0],
+    text: string | null,
+  ) {
+    if (!text) return nothing;
+    return html`
+      <div class="detail">
+        <span class="detail-icon" .innerHTML=${this._icon(icon)}></span>
+        <span>${text}</span>
+      </div>
+    `;
+  }
+
   protected render() {
-    if (!this._config) {
-      return html``;
-    }
+    if (!this._config) return html``;
     if (!this.hass) {
-      return html`<ha-card><div class="pad">Waiting for Home Assistant…</div></ha-card>`;
+      return html`<ha-card
+        ><div class="pad">Waiting for Home Assistant…</div></ha-card
+      >`;
     }
 
     const snap = getWeatherSnapshot(this.hass, this._config);
@@ -174,20 +230,24 @@ export class VedurkortWeatherCard extends LitElement {
     }
 
     const iconName = conditionToMeteocon(snap.condition, snap.isDay);
-    const iconSvg = getMeteoconSvg(
-      iconName,
-      this._config.icon_style,
-      this._config.animated_icons,
-    );
     const scene = conditionToScene(snap.condition, snap.isDay);
     const language =
-      this.hass.locale?.language ?? this.hass.config.language;
+      this.hass.locale?.language ??
+      this.hass.language ??
+      this.hass.config.language;
 
+    const bft = windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit);
     const showDetails =
       this._config.show_sun ||
       this._config.show_humidity ||
       this._config.show_wind_speed ||
-      this._config.show_wind_direction;
+      this._config.show_wind_direction ||
+      this._config.show_uv_index ||
+      this._config.show_pressure ||
+      this._config.show_cloud_coverage ||
+      this._config.show_feels_like ||
+      this._config.show_dew_point ||
+      this._config.show_visibility;
 
     const forecastBlock =
       this._config.layout === "daily"
@@ -205,17 +265,21 @@ export class VedurkortWeatherCard extends LitElement {
 
     return html`
       <ha-card class=${this._config.animated_background ? "has-bg" : ""}>
-        ${renderBackground(this._config.animated_background, scene)}
+        ${renderBackground(
+          this._config.animated_background,
+          scene,
+          snap.cloudCoverage,
+        )}
         <div class="content">
           <div class="main">
             <div class="main-text">
               <div class="location">${snap.name}</div>
-              <div class="condition">${snap.condition.replace(/-/g, " ")}</div>
+              <div class="condition">${snap.conditionLabel}</div>
               <div class="temp">
                 ${formatTemp(snap.temperature, snap.temperatureUnit)}
               </div>
             </div>
-            <div class="main-icon" .innerHTML=${iconSvg}></div>
+            <div class="main-icon" .innerHTML=${this._icon(iconName)}></div>
           </div>
 
           ${showDetails
@@ -226,57 +290,80 @@ export class VedurkortWeatherCard extends LitElement {
                         <div class="detail">
                           <span
                             class="detail-icon"
-                            .innerHTML=${getMeteoconSvg(
-                              "sunrise",
-                              this._config.icon_style,
-                              this._config.animated_icons,
-                            )}
+                            .innerHTML=${this._icon("sunrise")}
                           ></span>
                           <span>${formatTime(snap.sunrise, language)}</span>
                           <span
                             class="detail-icon"
-                            .innerHTML=${getMeteoconSvg(
-                              "sunset",
-                              this._config.icon_style,
-                              this._config.animated_icons,
-                            )}
+                            .innerHTML=${this._icon("sunset")}
                           ></span>
                           <span>${formatTime(snap.sunset, language)}</span>
                         </div>
                       `
                     : nothing}
+                  ${this._config.show_feels_like
+                    ? this._detail(
+                        "thermometer",
+                        formatNumber(snap.feelsLike, snap.temperatureUnit),
+                      )
+                    : nothing}
+                  ${this._config.show_dew_point
+                    ? this._detail(
+                        "thermometer-raindrop",
+                        formatNumber(snap.dewPoint, snap.temperatureUnit),
+                      )
+                    : nothing}
                   ${this._config.show_humidity
-                    ? html`
-                        <div class="detail">
-                          <span
-                            class="detail-icon"
-                            .innerHTML=${getMeteoconSvg(
-                              "humidity",
-                              this._config.icon_style,
-                              this._config.animated_icons,
-                            )}
-                          ></span>
-                          <span
-                            >${snap.humidity != null
-                              ? `${Math.round(snap.humidity)}%`
-                              : "—"}</span
-                          >
-                        </div>
-                      `
+                    ? this._detail(
+                        "humidity",
+                        formatNumber(snap.humidity, "%", 0),
+                      )
+                    : nothing}
+                  ${this._config.show_cloud_coverage
+                    ? this._detail(
+                        "cloudy",
+                        formatNumber(snap.cloudCoverage, "%", 0),
+                      )
+                    : nothing}
+                  ${this._config.show_pressure
+                    ? this._detail(
+                        "barometer",
+                        formatNumber(snap.pressure, ` ${snap.pressureUnit}`, 0),
+                      )
+                    : nothing}
+                  ${this._config.show_visibility
+                    ? this._detail(
+                        "fog",
+                        formatNumber(
+                          snap.visibility,
+                          ` ${snap.visibilityUnit}`,
+                          0,
+                        ),
+                      )
+                    : nothing}
+                  ${this._config.show_uv_index
+                    ? this._detail(
+                        uvIndexIcon(snap.uvIndex),
+                        formatNumber(snap.uvIndex, "", 0),
+                      )
                     : nothing}
                   ${this._config.show_wind_speed ||
                   this._config.show_wind_direction
                     ? html`
                         <div class="detail">
+                          ${this._config.show_wind_speed
+                            ? html`<span
+                                class="detail-icon"
+                                .innerHTML=${this._icon(beaufortIcon(bft))}
+                              ></span>`
+                            : nothing}
                           ${this._config.show_wind_direction
                             ? html`<span
                                 class="detail-icon"
-                                .innerHTML=${getMeteoconSvg(
+                                .innerHTML=${this._icon(
                                   bearingToWindIcon(
                                     snap.windBearing ?? undefined,
                                   ),
-                                  this._config.icon_style,
-                                  this._config.animated_icons,
                                 )}
                               ></span>`
                             : nothing}
@@ -287,11 +374,11 @@ export class VedurkortWeatherCard extends LitElement {
                                 )}</span
                               >`
                             : nothing}
-                          ${this._config.show_wind_speed
+                          ${this._config.show_wind_speed &&
+                          snap.windSpeed != null
                             ? html`<span
-                                >${snap.windSpeed != null
-                                  ? `${Math.round(snap.windSpeed)} ${snap.windSpeedUnit}`
-                                  : "—"}</span
+                                >${Math.round(snap.windSpeed)}
+                                ${snap.windSpeedUnit}</span
                               >`
                             : nothing}
                         </div>
@@ -308,7 +395,10 @@ export class VedurkortWeatherCard extends LitElement {
                     ? html`<div class="warn">${this._forecastError}</div>`
                     : nothing}
                   ${!this._forecastError && !forecastSlice.length
-                    ? html`<div class="warn">No forecast data available</div>`
+                    ? html`<div class="warn">
+                        No forecast data available for ${this._config.layout}
+                        forecasts on <code>${this._config.entity}</code>
+                      </div>`
                     : nothing}
                   ${forecastSlice.length
                     ? html`
@@ -326,6 +416,7 @@ export class VedurkortWeatherCard extends LitElement {
                               ? "daily"
                               : "hourly",
                           language,
+                          sunEntity: this._config.sun_entity,
                         })}
                       `
                     : nothing}
