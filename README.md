@@ -4,7 +4,9 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 
 **Custom type:** `custom:vedurkort-weather-card`
 
-![Veðurkort Weather Card](images/vedurkort-basic-daily.png)
+| Basic | Hourly | Daily |
+| --- | --- | --- |
+| ![Basic layout](images/vedurkort-basic.png) | ![Hourly layout](images/vedurkort-hourly.png) | ![Daily layout](images/vedurkort-daily.png) |
 
 ## Features
 
