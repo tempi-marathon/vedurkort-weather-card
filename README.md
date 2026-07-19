@@ -11,17 +11,21 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 
 **Custom type:** `custom:vedurkort-weather-card`
 
-| Current | Hourly | Daily |
+| Full | Icon styles | Daily only |
 | --- | --- | --- |
-| ![Current weather](images/vedurkort-basic.png) | ![Hourly forecast](images/vedurkort-hourly.png) | ![Daily forecast](images/vedurkort-daily.png) |
+| ![Full card](images/vedurkort-full.png) | ![Icon styles](images/vedurkort-styles.png) | ![Daily only](images/vedurkort-daily-only.png) |
 
 ## Features
 
 - Compose sections independently: current weather, daily forecast, hourly forecast (any combination)
 - **Meteocons only** — styles `fill` / `flat` / `line` / `monochrome`, animated or static (8 combinations)
-- Day/night condition icons where Meteocons provides variants
+- Day/night condition icons (hourly icons follow sun rising/setting; daily uses daytime variants where available)
 - Optional CSS animated backgrounds (cloud opacity lightly follows `cloud_coverage`)
-- Optional details: sun, humidity, wind (Beaufort icon + system unit), UV, pressure, cloud coverage, feels like, dew point, visibility
+- Optional current-weather details: sun, humidity, wind (Beaufort icon + system unit), UV, pressure, cloud coverage, feels like, dew point, visibility
+- Subtle section dividers when more than one section is shown
+- CSS tooltips on detail and forecast icons (shadow-DOM friendly)
+- Visual editor grouped as General → Current weather → Daily → Hourly → Optional sensors (section options collapse when disabled)
+- Empty-card hint when no sections are enabled
 - Optional sensor overrides with entity pickers in the UI editor
 - Separate `daily` and `hourly` config blocks
 
@@ -61,7 +65,7 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `show_feels_like` | boolean | `false` | Show feels-like / apparent temperature. |
 | `show_dew_point` | boolean | `false` | Show dew point. |
 | `show_visibility` | boolean | `false` | Show visibility. |
-| `sun_entity` | string | `sun.sun` | Entity used for sunrise/sunset and day/night icon picking. |
+| `sun_entity` | string | `sun.sun` | Entity used for sunrise/sunset times and hourly day/night icon picking. |
 | `temperature_entity` | string | none | Optional sensor override for current temperature. |
 | `humidity_entity` | string | none | Optional sensor override for humidity. |
 | `wind_speed_entity` | string | none | Optional sensor override for wind speed. |
@@ -195,7 +199,7 @@ pressure_entity: sensor.pressure
 
 | Project | Role |
 | --- | --- |
-| **[Meteocons](https://meteocons.com/)** by [Bas Milius](https://github.com/basmilius/meteocons) | **All weather icons** — animated (`@meteocons/svg`) and static (`@meteocons/svg-static`) SVGs in fill / flat / line / monochrome. Only a curated subset for [HA weather conditions](https://www.home-assistant.io/integrations/weather/#condition-mapping) (plus sun, humidity, UV, barometer, Beaufort, wind-direction) is bundled. Homepage demos also inspired the basic layout. MIT licensed. |
+| **[Meteocons](https://meteocons.com/)** by [Bas Milius](https://github.com/basmilius/meteocons) | **All weather icons** — animated (`@meteocons/svg`) and static (`@meteocons/svg-static`) SVGs in fill / flat / line / monochrome. Only a curated subset for [HA weather conditions](https://www.home-assistant.io/integrations/weather/#condition-mapping) (plus sun, humidity, UV, barometer, Beaufort, wind-direction) is bundled. Homepage demos also inspired the current-weather presentation. MIT licensed. |
 | [weather-chart-card](https://github.com/mlamberts78/weather-chart-card) by Marc Lamberts | Forecast UX: Chart.js temperature lines, precipitation bars, condition/wind forecast row. No longer maintained; this card reimplements similar patterns in TypeScript. |
 | [HA-Animated-cards](https://github.com/Anashost/HA-Animated-cards) (climate / weather examples) | Inspiration for optional CSS/HTML weather backgrounds by condition. |
 
