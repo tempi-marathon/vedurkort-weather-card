@@ -28,7 +28,7 @@
   "devDependencies": {
     "@meteocons/svg": "^3.0.0-next.10",
     "@meteocons/svg-static": "^3.0.0-next.10",
-    "typescript": "^5.8.2",
-    "vite": "^6.2.2"
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5"
   }
 }
