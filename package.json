@@ -1,0 +1,34 @@
+{
+  "name": "vedurkort-weather-card",
+  "version": "0.1.0",
+  "description": "Veðurkort — Home Assistant weather card with Meteocons icons",
+  "type": "module",
+  "main": "dist/vedurkort-weather-card.js",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "npm run sync-icons && tsc --noEmit && vite build",
+    "sync-icons": "node scripts/sync-icons.mjs",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "home-assistant",
+    "homeassistant",
+    "hacs",
+    "lovelace",
+    "weather",
+    "meteocons"
+  ],
+  "author": "tempi-marathon",
+  "license": "MIT",
+  "dependencies": {
+    "chart.js": "^4.4.8",
+    "chartjs-plugin-datalabels": "^2.2.0",
+    "lit": "^3.2.1"
+  },
+  "devDependencies": {
+    "@meteocons/svg": "^3.0.0-next.10",
+    "@meteocons/svg-static": "^3.0.0-next.10",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.2"
+  }
+}
