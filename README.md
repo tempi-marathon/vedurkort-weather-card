@@ -4,6 +4,8 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 
 **Custom type:** `custom:vedurkort-weather-card`
 
+![Veðurkort Weather Card](images/vedurkort-basic-daily.png)
+
 ## Features
 
 - One card, three layouts: `basic`, `daily`, `hourly`
@@ -178,6 +180,6 @@ npm run build
 
 ## License
 
-MIT.
+MIT — see [LICENSE](LICENSE).
 
-Meteocons icons are MIT licensed — copyright © Bas Milius. See [meteocons.com](https://meteocons.com/) and the [Meteocons LICENSE](https://github.com/basmilius/meteocons/blob/main/LICENSE).
+Meteocons icons are MIT licensed — copyright © Bas Milius. See [NOTICE](NOTICE), [meteocons.com](https://meteocons.com/), and the [Meteocons LICENSE](https://github.com/basmilius/meteocons/blob/main/LICENSE).
