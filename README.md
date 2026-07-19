@@ -70,7 +70,7 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| `days` | number | `5` | Number of daily forecast points to show. |
+| `days` | number | `5` | Number of daily forecast points to show (2–7). |
 | `show_condition_icons` | boolean | `true` | Show Meteocons condition icons under the chart. |
 | `show_wind` | boolean | `true` | Show Beaufort + direction icons and speed under the chart. |
 | `precip_type` | string | `rainfall` | Precipitation series: `rainfall` or `probability`. |
@@ -79,7 +79,7 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| `hours` | number | `12` | Number of hourly forecast points to show. |
+| `hours` | number | `12` | Number of hourly forecast points to show (2–48). |
 | `show_condition_icons` | boolean | `true` | Show Meteocons condition icons under the chart. |
 | `show_wind` | boolean | `true` | Show Beaufort + direction icons and speed under the chart. |
 | `precip_type` | string | `rainfall` | Precipitation series: `rainfall` or `probability`. |

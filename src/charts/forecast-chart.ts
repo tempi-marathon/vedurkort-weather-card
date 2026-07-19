@@ -312,7 +312,7 @@ export function createForecastChart(
       maintainAspectRatio: false,
       animation: false,
       layout: {
-        padding: { left: 2, right: 2, top: 6, bottom: 22 },
+        padding: { left: 2, right: 2, top: 6, bottom: 14 },
       },
       interaction: { mode: "index", intersect: false },
       plugins: {

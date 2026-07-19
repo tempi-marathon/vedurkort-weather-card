@@ -364,13 +364,10 @@ export class VedurkortWeatherCard extends LitElement {
                 ${formatTemp(snap.temperature, snap.temperatureUnit)}
               </div>
             </div>
-            ${tipWrap(
-              snap.conditionLabel,
-              html`<div
-                class="main-icon"
-                .innerHTML=${this._icon(iconName)}
-              ></div>`,
-            )}
+            <div
+              class="main-icon"
+              .innerHTML=${this._icon(iconName)}
+            ></div>
           </div>
 
           ${showDetails
@@ -612,10 +609,9 @@ export class VedurkortWeatherCard extends LitElement {
       .details {
         display: flex;
         flex-wrap: wrap;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
-        width: 100%;
-        gap: 10px 14px;
+        gap: 8px 16px;
         margin-top: 14px;
         font-size: 0.9rem;
         opacity: 0.95;
@@ -624,8 +620,6 @@ export class VedurkortWeatherCard extends LitElement {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        flex: 1 1 auto;
-        min-width: max-content;
       }
       .wind-detail {
         gap: 14px;
@@ -681,7 +675,7 @@ export class VedurkortWeatherCard extends LitElement {
         color: #111;
       }
       .forecast {
-        margin-top: 16px;
+        margin-top: 12px;
       }
       .chart-wrap {
         height: 180px;
@@ -694,7 +688,7 @@ export class VedurkortWeatherCard extends LitElement {
         display: grid;
         grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr));
         gap: 0;
-        margin-top: 8px;
+        margin-top: 2px;
         width: 100%;
       }
       .forecast-col {

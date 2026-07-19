@@ -117,6 +117,9 @@ export function normalizeConfig(
     }
   }
 
+  daily.days = clampInt(daily.days, 2, 7, DEFAULT_CONFIG.daily.days);
+  hourly.hours = clampInt(hourly.hours, 2, 48, DEFAULT_CONFIG.hourly.hours);
+
   return {
     ...DEFAULT_CONFIG,
     ...input,
@@ -129,4 +132,15 @@ export function normalizeConfig(
     animated_background:
       input.animated_background ?? DEFAULT_CONFIG.animated_background,
   };
+}
+
+function clampInt(
+  value: unknown,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, Math.round(n)));
 }

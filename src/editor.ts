@@ -322,8 +322,8 @@ export class VedurkortWeatherCardEditor extends LitElement {
             Days
             <input
               type="number"
-              min="1"
-              max="14"
+              min="2"
+              max="7"
               .value=${String(c.daily.days)}
               data-config="daily.days"
               @change=${this._value}
@@ -375,7 +375,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
             Hours
             <input
               type="number"
-              min="1"
+              min="2"
               max="48"
               .value=${String(c.hourly.hours)}
               data-config="hourly.hours"
