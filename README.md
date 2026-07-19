@@ -72,7 +72,8 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | --- | --- | --- | --- |
 | `days` | number | `5` | Number of daily forecast points to show (2–7). |
 | `show_condition_icons` | boolean | `true` | Show Meteocons condition icons under the chart. |
-| `show_wind` | boolean | `true` | Show Beaufort + direction icons and speed under the chart. |
+| `show_wind_speed` | boolean | `true` | Show Beaufort icon + speed under the chart. |
+| `show_wind_direction` | boolean | `true` | Show compass label + wind-direction icon under the chart. |
 | `precip_type` | string | `rainfall` | Precipitation series: `rainfall` or `probability`. |
 
 ### Hourly options (`hourly`)
@@ -81,7 +82,8 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | --- | --- | --- | --- |
 | `hours` | number | `12` | Number of hourly forecast points to show (2–48). |
 | `show_condition_icons` | boolean | `true` | Show Meteocons condition icons under the chart. |
-| `show_wind` | boolean | `true` | Show Beaufort + direction icons and speed under the chart. |
+| `show_wind_speed` | boolean | `true` | Show Beaufort icon + speed under the chart. |
+| `show_wind_direction` | boolean | `true` | Show compass label + wind-direction icon under the chart. |
 | `precip_type` | string | `rainfall` | Precipitation series: `rainfall` or `probability`. |
 
 `daily` and `hourly` are separate objects so each layout can be tuned independently, even though only one `layout` is visible at a time.
@@ -115,7 +117,8 @@ layout: daily
 daily:
   days: 7
   show_condition_icons: true
-  show_wind: true
+  show_wind_speed: true
+  show_wind_direction: true
   precip_type: rainfall
 ```
 

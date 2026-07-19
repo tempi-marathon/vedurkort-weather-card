@@ -341,22 +341,35 @@ export class VedurkortWeatherCardEditor extends LitElement {
           <label class="row"
             ><input
               type="checkbox"
-              .checked=${c.daily.show_wind}
-              data-config="daily.show_wind"
+              .checked=${c.daily.show_wind_speed}
+              data-config="daily.show_wind_speed"
               @change=${this._value}
             />
-            Wind</label
+            Wind speed</label
+          >
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.daily.show_wind_direction}
+              data-config="daily.show_wind_direction"
+              @change=${this._value}
+            />
+            Wind direction</label
           >
           <label>
             <span class="row-text"
               >Precipitation
-              ${this._dailyHasProbability === false
-                ? html`<span class="avail missing"
-                    >probability not in forecast</span
-                  >`
-                : this._dailyHasProbability === true
-                  ? html`<span class="avail ok">probability in forecast</span>`
-                  : nothing}</span
+              ${c.daily.precip_type === "probability"
+                ? this._dailyHasProbability === false
+                  ? html`<span class="avail missing"
+                      >probability not in forecast</span
+                    >`
+                  : this._dailyHasProbability === true
+                    ? html`<span class="avail ok"
+                        >probability in forecast</span
+                      >`
+                    : nothing
+                : nothing}</span
             >
             <select
               .value=${c.daily.precip_type}
@@ -394,22 +407,35 @@ export class VedurkortWeatherCardEditor extends LitElement {
           <label class="row"
             ><input
               type="checkbox"
-              .checked=${c.hourly.show_wind}
-              data-config="hourly.show_wind"
+              .checked=${c.hourly.show_wind_speed}
+              data-config="hourly.show_wind_speed"
               @change=${this._value}
             />
-            Wind</label
+            Wind speed</label
+          >
+          <label class="row"
+            ><input
+              type="checkbox"
+              .checked=${c.hourly.show_wind_direction}
+              data-config="hourly.show_wind_direction"
+              @change=${this._value}
+            />
+            Wind direction</label
           >
           <label>
             <span class="row-text"
               >Precipitation
-              ${this._hourlyHasProbability === false
-                ? html`<span class="avail missing"
-                    >probability not in forecast</span
-                  >`
-                : this._hourlyHasProbability === true
-                  ? html`<span class="avail ok">probability in forecast</span>`
-                  : nothing}</span
+              ${c.hourly.precip_type === "probability"
+                ? this._hourlyHasProbability === false
+                  ? html`<span class="avail missing"
+                      >probability not in forecast</span
+                    >`
+                  : this._hourlyHasProbability === true
+                    ? html`<span class="avail ok"
+                        >probability in forecast</span
+                      >`
+                    : nothing
+                : nothing}</span
             >
             <select
               .value=${c.hourly.precip_type}

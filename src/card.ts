@@ -395,57 +395,11 @@ export class VedurkortWeatherCard extends LitElement {
                         </span>
                       `
                     : nothing}
-                  ${this._config.show_feels_like
-                    ? this._detail(
-                        "thermometer",
-                        formatNumber(snap.feelsLike, snap.temperatureUnit),
-                        "Feels like",
-                      )
-                    : nothing}
-                  ${this._config.show_dew_point
-                    ? this._detail(
-                        "thermometer-raindrop",
-                        formatNumber(snap.dewPoint, snap.temperatureUnit),
-                        "Dew point",
-                      )
-                    : nothing}
                   ${this._config.show_humidity
                     ? this._detail(
                         "humidity",
                         formatNumber(snap.humidity, "%", 0),
                         "Humidity",
-                      )
-                    : nothing}
-                  ${this._config.show_cloud_coverage
-                    ? this._detail(
-                        "cloudy",
-                        formatNumber(snap.cloudCoverage, "%", 0),
-                        "Cloud coverage",
-                      )
-                    : nothing}
-                  ${this._config.show_pressure
-                    ? this._detail(
-                        "barometer",
-                        formatNumber(snap.pressure, ` ${snap.pressureUnit}`, 0),
-                        "Pressure",
-                      )
-                    : nothing}
-                  ${this._config.show_visibility
-                    ? this._detail(
-                        "fog",
-                        formatNumber(
-                          snap.visibility,
-                          ` ${snap.visibilityUnit}`,
-                          0,
-                        ),
-                        "Visibility",
-                      )
-                    : nothing}
-                  ${this._config.show_uv_index
-                    ? this._detail(
-                        uvIndexIcon(snap.uvIndex),
-                        formatNumber(snap.uvIndex, "", 0),
-                        "UV index",
                       )
                     : nothing}
                   ${this._config.show_wind_speed ||
@@ -497,6 +451,52 @@ export class VedurkortWeatherCard extends LitElement {
                         </span>
                       `
                     : nothing}
+                  ${this._config.show_uv_index
+                    ? this._detail(
+                        uvIndexIcon(snap.uvIndex),
+                        formatNumber(snap.uvIndex, "", 0),
+                        "UV index",
+                      )
+                    : nothing}
+                  ${this._config.show_pressure
+                    ? this._detail(
+                        "barometer",
+                        formatNumber(snap.pressure, ` ${snap.pressureUnit}`, 0),
+                        "Pressure",
+                      )
+                    : nothing}
+                  ${this._config.show_cloud_coverage
+                    ? this._detail(
+                        "cloudy",
+                        formatNumber(snap.cloudCoverage, "%", 0),
+                        "Cloud coverage",
+                      )
+                    : nothing}
+                  ${this._config.show_feels_like
+                    ? this._detail(
+                        "thermometer",
+                        formatNumber(snap.feelsLike, snap.temperatureUnit),
+                        "Feels like",
+                      )
+                    : nothing}
+                  ${this._config.show_dew_point
+                    ? this._detail(
+                        "thermometer-raindrop",
+                        formatNumber(snap.dewPoint, snap.temperatureUnit),
+                        "Dew point",
+                      )
+                    : nothing}
+                  ${this._config.show_visibility
+                    ? this._detail(
+                        "fog",
+                        formatNumber(
+                          snap.visibility,
+                          ` ${snap.visibilityUnit}`,
+                          0,
+                        ),
+                        "Visibility",
+                      )
+                    : nothing}
                 </div>
               `
             : nothing}
@@ -526,7 +526,9 @@ export class VedurkortWeatherCard extends LitElement {
                         >
                           ${renderForecastRow(this.hass, forecastSlice, {
                             showIcons: forecastBlock.show_condition_icons,
-                            showWind: forecastBlock.show_wind,
+                            showWindSpeed: forecastBlock.show_wind_speed,
+                            showWindDirection:
+                              forecastBlock.show_wind_direction,
                             iconStyle: this._config.icon_style,
                             animated: this._config.animated_icons,
                             windSpeedUnit: snap.windSpeedUnit,

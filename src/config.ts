@@ -5,7 +5,8 @@ export type PrecipType = "rainfall" | "probability";
 
 export interface ForecastBlockConfig {
   show_condition_icons: boolean;
-  show_wind: boolean;
+  show_wind_speed: boolean;
+  show_wind_direction: boolean;
   precip_type: PrecipType;
 }
 
@@ -52,7 +53,8 @@ export interface VedurkortCardConfig {
 
 const DEFAULT_FORECAST_BLOCK: ForecastBlockConfig = {
   show_condition_icons: true,
-  show_wind: true,
+  show_wind_speed: true,
+  show_wind_direction: true,
   precip_type: "rainfall",
 };
 
@@ -82,6 +84,27 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   },
 };
 
+type RawForecastBlock = Partial<ForecastBlockConfig> & {
+  show_wind?: boolean;
+  days?: number;
+  hours?: number;
+  precip_type?: PrecipType;
+  show_condition_icons?: boolean;
+};
+
+/** Map legacy `show_wind` onto the split speed/direction toggles. */
+function migrateLegacyWind(block: RawForecastBlock): void {
+  if (
+    block.show_wind != null &&
+    block.show_wind_speed == null &&
+    block.show_wind_direction == null
+  ) {
+    block.show_wind_speed = block.show_wind;
+    block.show_wind_direction = block.show_wind;
+  }
+  delete block.show_wind;
+}
+
 export function normalizeConfig(
   input: Partial<VedurkortCardConfig> & { entity?: string },
 ): VedurkortCardConfig {
@@ -89,31 +112,43 @@ export function normalizeConfig(
     throw new Error("Please define a weather entity");
   }
 
+  const dailyRaw: RawForecastBlock = { ...(input.daily ?? {}) };
+  const hourlyRaw: RawForecastBlock = { ...(input.hourly ?? {}) };
+  migrateLegacyWind(dailyRaw);
+  migrateLegacyWind(hourlyRaw);
+
   const daily = {
     ...DEFAULT_CONFIG.daily,
-    ...(input.daily ?? {}),
+    ...dailyRaw,
   };
   const hourly = {
     ...DEFAULT_CONFIG.hourly,
-    ...(input.hourly ?? {}),
+    ...hourlyRaw,
   };
 
-  const legacy = (input as { forecast?: Partial<DailyConfig & HourlyConfig> })
-    .forecast;
+  const legacy = (
+    input as { forecast?: RawForecastBlock & Partial<DailyConfig & HourlyConfig> }
+  ).forecast;
   if (legacy) {
-    if (legacy.days != null) daily.days = legacy.days;
-    if (legacy.hours != null) hourly.hours = legacy.hours;
-    if (legacy.show_condition_icons != null) {
-      daily.show_condition_icons = legacy.show_condition_icons;
-      hourly.show_condition_icons = legacy.show_condition_icons;
+    const legacyCopy: RawForecastBlock = { ...legacy };
+    migrateLegacyWind(legacyCopy);
+    if (legacyCopy.days != null) daily.days = legacyCopy.days;
+    if (legacyCopy.hours != null) hourly.hours = legacyCopy.hours;
+    if (legacyCopy.show_condition_icons != null) {
+      daily.show_condition_icons = legacyCopy.show_condition_icons;
+      hourly.show_condition_icons = legacyCopy.show_condition_icons;
     }
-    if (legacy.show_wind != null) {
-      daily.show_wind = legacy.show_wind;
-      hourly.show_wind = legacy.show_wind;
+    if (legacyCopy.show_wind_speed != null) {
+      daily.show_wind_speed = legacyCopy.show_wind_speed;
+      hourly.show_wind_speed = legacyCopy.show_wind_speed;
     }
-    if (legacy.precip_type != null) {
-      daily.precip_type = legacy.precip_type;
-      hourly.precip_type = legacy.precip_type;
+    if (legacyCopy.show_wind_direction != null) {
+      daily.show_wind_direction = legacyCopy.show_wind_direction;
+      hourly.show_wind_direction = legacyCopy.show_wind_direction;
+    }
+    if (legacyCopy.precip_type != null) {
+      daily.precip_type = legacyCopy.precip_type;
+      hourly.precip_type = legacyCopy.precip_type;
     }
   }
 
