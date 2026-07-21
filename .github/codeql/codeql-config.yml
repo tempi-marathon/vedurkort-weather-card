@@ -1,0 +1,5 @@
+name: "Veðurkort CodeQL config"
+
+# dist/ is a bundled build artifact (includes Lit internals); scan src/ only.
+paths:
+  - src
