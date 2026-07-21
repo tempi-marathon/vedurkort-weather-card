@@ -1,4 +1,4 @@
-import type { IconStyle } from "./icons/allowlist";
+import { ICON_STYLES, type IconStyle } from "./icons/allowlist";
 
 export type PrecipType = "rainfall" | "probability";
 
@@ -123,7 +123,7 @@ function mergeConfigFields(
     ),
     daily,
     hourly,
-    icon_style: input.icon_style ?? DEFAULT_CONFIG.icon_style,
+    icon_style: normalizeIconStyle(input.icon_style),
     animated_icons: input.animated_icons ?? DEFAULT_CONFIG.animated_icons,
     animated_background:
       input.animated_background ?? DEFAULT_CONFIG.animated_background,
@@ -144,6 +144,12 @@ export function normalizeConfig(
   }
 
   return mergeConfigFields(input) as VedurkortCardConfig;
+}
+
+function normalizeIconStyle(value: unknown): IconStyle {
+  return ICON_STYLES.includes(value as IconStyle)
+    ? (value as IconStyle)
+    : DEFAULT_CONFIG.icon_style;
 }
 
 function clampInt(
