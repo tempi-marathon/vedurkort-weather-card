@@ -19,6 +19,7 @@ import { renderForecastRow } from "./charts/forecast-row";
 import {
   DEFAULT_CONFIG,
   normalizeConfig,
+  normalizeEditorConfig,
   type VedurkortCardConfig,
 } from "./config";
 import {
@@ -75,17 +76,15 @@ export class VedurkortWeatherCard extends LitElement {
 
   public static getStubConfig(
     _hass: HomeAssistant,
-    entities: string[],
+    _entities: string[],
   ): Partial<VedurkortCardConfig> {
-    const weather = entities.find((e) => e.startsWith("weather."));
-    return {
-      ...DEFAULT_CONFIG,
-      entity: weather ?? "weather.home",
-    };
+    return { ...DEFAULT_CONFIG };
   }
 
   public setConfig(config: Partial<VedurkortCardConfig>): void {
-    this._config = normalizeConfig(config);
+    this._config = config.entity
+      ? normalizeConfig(config)
+      : (normalizeEditorConfig(config) as VedurkortCardConfig);
   }
 
   public getCardSize(): number {
@@ -478,6 +477,16 @@ export class VedurkortWeatherCard extends LitElement {
       return html`<ha-card
         ><div class="pad">Waiting for Home Assistant…</div></ha-card
       >`;
+    }
+
+    if (!this._config.entity) {
+      return html`
+        <ha-card>
+          <div class="pad empty">
+            Configure a weather entity for this card.
+          </div>
+        </ha-card>
+      `;
     }
 
     const snap = getWeatherSnapshot(this.hass, this._config);

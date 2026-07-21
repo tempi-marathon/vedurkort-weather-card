@@ -92,13 +92,14 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   },
 };
 
-export function normalizeConfig(
-  input: Partial<VedurkortCardConfig> & { entity?: string },
-): VedurkortCardConfig {
-  if (!input.entity) {
-    throw new Error("Please define a weather entity");
-  }
+/** Config while editing; entity may be blank until the user picks one. */
+export type VedurkortEditorConfig = Omit<VedurkortCardConfig, "entity"> & {
+  entity?: string;
+};
 
+function mergeConfigFields(
+  input: Partial<VedurkortCardConfig> & { entity?: string },
+): VedurkortEditorConfig {
   const daily = {
     ...DEFAULT_CONFIG.daily,
     ...(input.daily ?? {}),
@@ -116,7 +117,7 @@ export function normalizeConfig(
   return {
     ...DEFAULT_CONFIG,
     ...input,
-    entity: input.entity,
+    entity: input.entity ?? "",
     show_current: Boolean(
       input.show_current ?? DEFAULT_CONFIG.show_current,
     ),
@@ -127,6 +128,22 @@ export function normalizeConfig(
     animated_background:
       input.animated_background ?? DEFAULT_CONFIG.animated_background,
   };
+}
+
+export function normalizeEditorConfig(
+  input: Partial<VedurkortEditorConfig>,
+): VedurkortEditorConfig {
+  return mergeConfigFields(input);
+}
+
+export function normalizeConfig(
+  input: Partial<VedurkortCardConfig> & { entity?: string },
+): VedurkortCardConfig {
+  if (!input.entity) {
+    throw new Error("Please define a weather entity");
+  }
+
+  return mergeConfigFields(input) as VedurkortCardConfig;
 }
 
 function clampInt(
