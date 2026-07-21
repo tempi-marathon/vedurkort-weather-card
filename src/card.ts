@@ -34,6 +34,7 @@ import type { ForecastItem, HomeAssistant, LovelaceCardEditor } from "./types";
 import { tipWrap } from "./ui/tooltip";
 import {
   formatNumber,
+  formatPrecip,
   formatTemp,
   formatTime,
   getWeatherSnapshot,
@@ -512,7 +513,9 @@ export class VedurkortWeatherCard extends LitElement {
         this._config.show_cloud_coverage ||
         this._config.show_feels_like ||
         this._config.show_dew_point ||
-        this._config.show_visibility);
+        this._config.show_visibility ||
+        this._config.show_precipitation ||
+        this._config.show_precipitation_probability);
 
     if (!showCurrent && !showDaily && !showHourly) {
       return html`
@@ -694,6 +697,27 @@ export class VedurkortWeatherCard extends LitElement {
                                   0,
                                 ),
                                 "Visibility",
+                              )
+                            : nothing}
+                          ${this._config.show_precipitation
+                            ? this._detail(
+                                "rain",
+                                formatPrecip(
+                                  snap.precipitation,
+                                  snap.precipitationUnit,
+                                ),
+                                "Precipitation",
+                              )
+                            : nothing}
+                          ${this._config.show_precipitation_probability
+                            ? this._detail(
+                                "rain",
+                                formatNumber(
+                                  snap.precipitationProbability,
+                                  "%",
+                                  0,
+                                ),
+                                "Precipitation probability",
                               )
                             : nothing}
                         </div>

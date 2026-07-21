@@ -20,10 +20,13 @@ export interface WeatherSnapshot {
   feelsLike: number | null;
   dewPoint: number | null;
   visibility: number | null;
+  precipitation: number | null;
+  precipitationProbability: number | null;
   temperatureUnit: string;
   windSpeedUnit: string;
   pressureUnit: string;
   visibilityUnit: string;
+  precipitationUnit: string;
   isDay: boolean;
   sunrise: string | null;
   sunset: string | null;
@@ -144,6 +147,12 @@ export function getWeatherSnapshot(
   const visOverride = config.visibility_entity
     ? hass.states[config.visibility_entity]
     : undefined;
+  const precipOverride = config.precipitation_entity
+    ? hass.states[config.precipitation_entity]
+    : undefined;
+  const precipProbOverride = config.precipitation_probability_entity
+    ? hass.states[config.precipitation_probability_entity]
+    : undefined;
   const sun = hass.states[config.sun_entity ?? "sun.sun"];
 
   const temperature =
@@ -164,6 +173,11 @@ export function getWeatherSnapshot(
   const dewPoint = stateNumber(dewOverride) ?? numAttr(entity, "dew_point");
   const visibility =
     stateNumber(visOverride) ?? numAttr(entity, "visibility");
+  const precipitation =
+    stateNumber(precipOverride) ?? numAttr(entity, "precipitation");
+  const precipitationProbability =
+    stateNumber(precipProbOverride) ??
+    numAttr(entity, "precipitation_probability");
 
   const lengthUnit = hass.config.unit_system.length || "";
   const nextRising = sun?.attributes.next_rising as string | undefined;
@@ -188,6 +202,8 @@ export function getWeatherSnapshot(
     feelsLike,
     dewPoint,
     visibility,
+    precipitation,
+    precipitationProbability,
     temperatureUnit:
       sensorUnit(tempOverride) ??
       (entity.attributes.temperature_unit as string | undefined) ??
@@ -208,6 +224,10 @@ export function getWeatherSnapshot(
       (entity.attributes.visibility_unit as string | undefined) ??
       lengthUnit ??
       "km",
+    precipitationUnit:
+      sensorUnit(precipOverride) ??
+      (entity.attributes.precipitation_unit as string | undefined) ??
+      "mm",
     isDay: isSunUp(hass, config.sun_entity ?? "sun.sun"),
     sunrise: nextRising ?? null,
     sunset: nextSetting ?? null,
@@ -395,4 +415,14 @@ export function formatNumber(
 ): string | null {
   if (value == null || Number.isNaN(value)) return null;
   return `${value.toFixed(decimals)}${suffix}`;
+}
+
+export function formatPrecip(
+  value: number | null | undefined,
+  unit: string,
+): string | null {
+  if (value == null || Number.isNaN(value)) return null;
+  const rounded =
+    Math.abs(value) >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
+  return `${rounded} ${unit}`.trim();
 }
