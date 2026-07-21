@@ -20,3 +20,7 @@ I’ll look into reports as soon as I can and follow up when there’s a fix or 
 ## Scope
 
 This is a Lovelace frontend card. Please report security issues in **this** repository’s code or its direct dependencies. Problems in Home Assistant, HACS, or weather integrations belong upstream.
+
+## Distribution integrity
+
+HACS installs the prebuilt bundle at `dist/vedurkort-weather-card.js` from this repository. Treat that file as part of the trusted release surface: tag releases from verified CI builds, and verify the committed `dist/` artifact matches a local `npm run build` before publishing.

@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -91,6 +91,20 @@ const PACKAGES = [
   { name: "@meteocons/svg-static", dest: "static" },
 ];
 
+const UNSAFE_SVG_PATTERNS = [
+  /<script\b/i,
+  /\bon[a-z]+\s*=/i,
+  /javascript:/i,
+];
+
+function assertSafeSvg(content, label) {
+  for (const pattern of UNSAFE_SVG_PATTERNS) {
+    if (pattern.test(content)) {
+      throw new Error(`Unsafe SVG content in ${label}`);
+    }
+  }
+}
+
 function resolvePkg(name) {
   return dirname(require.resolve(`${name}/package.json`));
 }
@@ -118,6 +132,9 @@ function sync() {
           missing += 1;
           continue;
         }
+        const label = `${pkg.name}/${style}/${icon}.svg`;
+        const content = readFileSync(src, "utf8");
+        assertSafeSvg(content, label);
         copyFileSync(src, dest);
         copied += 1;
       }
