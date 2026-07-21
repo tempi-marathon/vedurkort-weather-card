@@ -308,6 +308,14 @@ export class VedurkortWeatherCardEditor extends LitElement {
                 ${this._detailToggle("show_visibility", "Visibility", [
                   "visibility",
                 ])}
+                ${this._detailToggle("show_precipitation", "Precipitation", [
+                  "precipitation",
+                ])}
+                ${this._detailToggle(
+                  "show_precipitation_probability",
+                  "Precipitation probability",
+                  ["precipitation_probability"],
+                )}
               `
             : nothing}
         </fieldset>
@@ -485,6 +493,12 @@ export class VedurkortWeatherCardEditor extends LitElement {
           ${this._picker("Feels like", "feels_like_entity", "sensor")}
           ${this._picker("Dew point", "dew_point_entity", "sensor")}
           ${this._picker("Visibility", "visibility_entity", "sensor")}
+          ${this._picker("Precipitation", "precipitation_entity", "sensor")}
+          ${this._picker(
+            "Precipitation probability",
+            "precipitation_probability_entity",
+            "sensor",
+          )}
           ${this._picker("Sun", "sun_entity", "sun")}
         </fieldset>
       </div>

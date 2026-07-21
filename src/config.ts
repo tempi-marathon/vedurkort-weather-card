@@ -37,6 +37,8 @@ export interface VedurkortCardConfig {
   show_feels_like: boolean;
   show_dew_point: boolean;
   show_visibility: boolean;
+  show_precipitation: boolean;
+  show_precipitation_probability: boolean;
   temperature_entity?: string;
   humidity_entity?: string;
   wind_speed_entity?: string;
@@ -47,6 +49,8 @@ export interface VedurkortCardConfig {
   feels_like_entity?: string;
   dew_point_entity?: string;
   visibility_entity?: string;
+  precipitation_entity?: string;
+  precipitation_probability_entity?: string;
   sun_entity?: string;
   daily: DailyConfig;
   hourly: HourlyConfig;
@@ -75,6 +79,8 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   show_feels_like: false,
   show_dew_point: false,
   show_visibility: false,
+  show_precipitation: false,
+  show_precipitation_probability: false,
   sun_entity: "sun.sun",
   daily: {
     ...DEFAULT_FORECAST_BLOCK,

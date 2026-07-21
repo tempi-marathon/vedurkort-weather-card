@@ -65,6 +65,8 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `show_feels_like` | boolean | `false` | Show feels-like / apparent temperature. |
 | `show_dew_point` | boolean | `false` | Show dew point. |
 | `show_visibility` | boolean | `false` | Show visibility. |
+| `show_precipitation` | boolean | `false` | Show current precipitation amount. |
+| `show_precipitation_probability` | boolean | `false` | Show current precipitation probability (%). |
 | `sun_entity` | string | `sun.sun` | Entity used for sunrise/sunset times and hourly day/night icon picking. |
 | `temperature_entity` | string | none | Optional sensor override for current temperature. |
 | `humidity_entity` | string | none | Optional sensor override for humidity. |
@@ -76,6 +78,8 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `feels_like_entity` | string | none | Optional sensor override for feels-like temperature. |
 | `dew_point_entity` | string | none | Optional sensor override for dew point. |
 | `visibility_entity` | string | none | Optional sensor override for visibility. |
+| `precipitation_entity` | string | none | Optional sensor override for precipitation amount. |
+| `precipitation_probability_entity` | string | none | Optional sensor override for precipitation probability. |
 | `daily` | object | see below | Daily forecast section options. |
 | `hourly` | object | see below | Hourly forecast section options. |
 

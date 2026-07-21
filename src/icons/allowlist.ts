@@ -49,6 +49,7 @@ export const DETAIL_ICONS = [
   "thermometer",
   "thermometer-raindrop",
   "fog",
+  "rain",
   "uv-index",
   "uv-index-1",
   "uv-index-2",
