@@ -337,25 +337,48 @@ async function fetchForecastViaService(
     // continue
   }
 
-  if (hass.callService) {
-    const result = (await hass.callService(
-      "weather",
-      "get_forecasts",
-      { type },
-      { entity_id: entityId },
-      true,
-    )) as
-      | { response?: Record<string, { forecast?: ForecastItem[] }> }
-      | Record<string, { forecast?: ForecastItem[] }>
-      | undefined;
-    const map =
-      (result as { response?: Record<string, { forecast?: ForecastItem[] }> })
-        ?.response ??
-      (result as Record<string, { forecast?: ForecastItem[] }>);
-    return map?.[entityId]?.forecast ?? [];
-  }
-
   return [];
+}
+
+/**
+ * One-shot forecast read for the config editor. Uses `weather/subscribe_forecast`
+ * (same as core Lovelace) and legacy attributes only — never calls
+ * `weather.get_forecasts`, which triggers HA global error toasts.
+ */
+export async function fetchForecastOnce(
+  hass: HomeAssistant,
+  entityId: string,
+  type: ForecastType,
+): Promise<ForecastItem[]> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let unsub: (() => void) | undefined;
+
+    const finish = (items: ForecastItem[]) => {
+      if (settled) return;
+      settled = true;
+      unsub?.();
+      resolve(items);
+    };
+
+    void hass.connection
+      .subscribeMessage<{ forecast?: ForecastItem[] | null }>(
+        (event) => {
+          finish(event?.forecast ?? []);
+        },
+        {
+          type: "weather/subscribe_forecast",
+          entity_id: entityId,
+          forecast_type: type,
+        },
+      )
+      .then((u) => {
+        unsub = u;
+      })
+      .catch(() => {
+        finish(getLegacyForecast(hass, entityId));
+      });
+  });
 }
 
 function getLegacyForecast(

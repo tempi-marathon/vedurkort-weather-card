@@ -4,26 +4,26 @@ import { forecastHasPrecipProbability } from "./charts/forecast-chart";
 import {
   DEFAULT_CONFIG,
   normalizeConfig,
-  type VedurkortCardConfig,
+  normalizeEditorConfig,
+  type VedurkortEditorConfig,
 } from "./config";
 import { ICON_STYLES } from "./icons/allowlist";
 import type { HomeAssistant } from "./types";
-import { fetchForecast } from "./weather/adapter";
+import { fetchForecastOnce } from "./weather/adapter";
 
 @customElement("vedurkort-weather-card-editor")
 export class VedurkortWeatherCardEditor extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
-  @state() private _config!: VedurkortCardConfig;
+  @state() private _config!: VedurkortEditorConfig;
   /** null = unknown/loading, true/false = probed from forecast sample */
   @state() private _dailyHasProbability: boolean | null = null;
   @state() private _hourlyHasProbability: boolean | null = null;
 
   private _probeKey = "";
 
-  public setConfig(config: Partial<VedurkortCardConfig>): void {
-    this._config = normalizeConfig({
+  public setConfig(config: Partial<VedurkortEditorConfig>): void {
+    this._config = normalizeEditorConfig({
       ...DEFAULT_CONFIG,
-      entity: config.entity ?? "weather.home",
       ...config,
     });
   }
@@ -40,14 +40,20 @@ export class VedurkortWeatherCardEditor extends LitElement {
 
   private async _probePrecipProbability(): Promise<void> {
     const key = this._config.entity;
-    if (!key || key === this._probeKey) return;
+    if (!key || !this.hass.states[key]) {
+      this._probeKey = "";
+      this._dailyHasProbability = null;
+      this._hourlyHasProbability = null;
+      return;
+    }
+    if (key === this._probeKey) return;
     this._probeKey = key;
     this._dailyHasProbability = null;
     this._hourlyHasProbability = null;
     try {
       const [daily, hourly] = await Promise.all([
-        fetchForecast(this.hass, key, "daily"),
-        fetchForecast(this.hass, key, "hourly"),
+        fetchForecastOnce(this.hass, key, "daily"),
+        fetchForecastOnce(this.hass, key, "hourly"),
       ]);
       if (this._probeKey !== key) return;
       this._dailyHasProbability = forecastHasPrecipProbability(daily);
@@ -59,7 +65,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
     }
   }
 
-  private _fire(config: VedurkortCardConfig): void {
+  private _fire(config: VedurkortEditorConfig): void {
     this._config = config;
     this.dispatchEvent(
       new CustomEvent("config-changed", {
@@ -79,7 +85,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
       (target as HTMLElement).getAttribute("data-config");
     if (!key || !this._config) return;
 
-    const next: VedurkortCardConfig = structuredClone(this._config);
+    const next: VedurkortEditorConfig = structuredClone(this._config);
     const setNested = (path: string, value: unknown) => {
       const parts = path.split(".");
       let cur: Record<string, unknown> = next as unknown as Record<
@@ -104,13 +110,15 @@ export class VedurkortWeatherCardEditor extends LitElement {
     }
 
     setNested(key, value === "" ? undefined : value);
-    this._fire(normalizeConfig(next));
+    this._fire(
+      next.entity ? normalizeConfig(next) : normalizeEditorConfig(next),
+    );
   }
 
   private _entityChanged(ev: CustomEvent, key: string): void {
     if (!this._config) return;
     const value = (ev.detail as { value?: string })?.value ?? "";
-    const next = structuredClone(this._config) as VedurkortCardConfig &
+    const next = structuredClone(this._config) as VedurkortEditorConfig &
       Record<string, unknown>;
     if (key.includes(".")) {
       // not used
@@ -129,7 +137,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
 
   private _picker(
     label: string,
-    key: keyof VedurkortCardConfig,
+    key: keyof VedurkortEditorConfig,
     domainFilter?: string | string[],
     allowCustom = true,
   ) {
@@ -163,7 +171,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
   }
 
   private _detailToggle(
-    key: keyof VedurkortCardConfig,
+    key: keyof VedurkortEditorConfig,
     label: string,
     attrs: string[],
     sunSpecial = false,
