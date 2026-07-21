@@ -70,9 +70,27 @@ export function bearingToLabel(bearing: number | string | undefined): string {
   const deg =
     typeof bearing === "string" ? Number.parseFloat(bearing) : bearing;
   if (deg == null || Number.isNaN(deg)) return "—";
-  const labels = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  const labels = [
+    "N",
+    "NNE",
+    "NE",
+    "ENE",
+    "E",
+    "ESE",
+    "SE",
+    "SSE",
+    "S",
+    "SSW",
+    "SW",
+    "WSW",
+    "W",
+    "WNW",
+    "NW",
+    "NNW",
+    "N",
+  ];
   const normalized = ((deg % 360) + 360) % 360;
-  return labels[Math.round(normalized / 45) % 8]!;
+  return labels[Math.floor((normalized + 11.25) / 22.5)]!;
 }
 
 /** Convert wind speed to Beaufort 0–12 using the given unit. */
