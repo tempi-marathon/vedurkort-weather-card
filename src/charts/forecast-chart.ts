@@ -97,7 +97,12 @@ export function chartChromeForScene(
       grid: "rgba(120, 120, 120, 0.08)",
     };
   }
-  const darkScenes: BackgroundScene[] = ["clear-night", "storm", "rain"];
+  const darkScenes: BackgroundScene[] = [
+    "clear-night",
+    "partlycloudy-night",
+    "storm",
+    "rain",
+  ];
   if (darkScenes.includes(scene)) {
     return {
       tick: "rgba(245, 245, 245, 0.92)",
