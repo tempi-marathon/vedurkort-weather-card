@@ -31,8 +31,8 @@
     "@meteocons/svg-static": "^3.0.0-next.10",
     "esbuild": "^0.28.1",
     "typescript": "^7.0.2",
-    "vite": "^8.1.5",
-    "vitest": "^3.2.4"
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10"
   },
   "allowScripts": {
     "fsevents": true,
