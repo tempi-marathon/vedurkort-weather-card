@@ -50,7 +50,7 @@ export function conditionToScene(
 ): BackgroundScene {
   switch (condition) {
     case "sunny":
-      return "clear-day";
+      return isDay ? "clear-day" : "clear-night";
     case "clear-night":
       return "clear-night";
     case "partlycloudy":
