@@ -170,6 +170,35 @@ export class VedurkortWeatherCardEditor extends LitElement {
     return attrs.some((a) => entity.attributes[a] != null);
   }
 
+  private _detailAvail(attrs: string[], sunSpecial = false): boolean | null {
+    if (sunSpecial) {
+      const sunId = this._config?.sun_entity ?? "sun.sun";
+      const sun = this.hass?.states[sunId];
+      if (!sun) return null;
+      return (
+        attrs.some((a) => sun.attributes[a] != null) || sun.state != null
+      );
+    }
+    return this._entityHasAttr(attrs);
+  }
+
+  private _anyDetailMissing(): boolean {
+    return (
+      this._detailAvail(["next_rising"], true) === false ||
+      this._detailAvail(["humidity"]) === false ||
+      this._detailAvail(["wind_speed"]) === false ||
+      this._detailAvail(["wind_bearing"]) === false ||
+      this._detailAvail(["uv_index"]) === false ||
+      this._detailAvail(["pressure"]) === false ||
+      this._detailAvail(["cloud_coverage"]) === false ||
+      this._detailAvail(["apparent_temperature"]) === false ||
+      this._detailAvail(["dew_point"]) === false ||
+      this._detailAvail(["visibility"]) === false ||
+      this._detailAvail(["precipitation"]) === false ||
+      this._detailAvail(["precipitation_probability"]) === false
+    );
+  }
+
   private _detailToggle(
     key: keyof VedurkortEditorConfig,
     label: string,
@@ -177,22 +206,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
     sunSpecial = false,
   ) {
     const checked = Boolean(this._config[key]);
-    let avail: boolean | null = null;
-    if (sunSpecial) {
-      const sunId = this._config.sun_entity ?? "sun.sun";
-      const sun = this.hass?.states[sunId];
-      avail = sun
-        ? attrs.some((a) => sun.attributes[a] != null) || sun.state != null
-        : null;
-    } else {
-      avail = this._entityHasAttr(attrs);
-    }
-    const hint =
-      avail === false
-        ? html`<span class="avail missing">not on weather entity</span>`
-        : avail === true
-          ? html`<span class="avail ok">on weather entity</span>`
-          : nothing;
+    const missing = this._detailAvail(attrs, sunSpecial) === false;
 
     return html`
       <label class="row">
@@ -203,7 +217,9 @@ export class VedurkortWeatherCardEditor extends LitElement {
           @change=${this._value}
         />
         <span class="row-text"
-          >${label} ${hint}</span
+          >${label}${missing
+            ? html`<span class="avail missing" aria-hidden="true">*</span>`
+            : nothing}</span
         >
       </label>
     `;
@@ -279,7 +295,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
                 </p>
                 ${this._detailToggle(
                   "show_sun",
-                  "Sunrise / sunset",
+                  "Next sunrise / sunset",
                   ["next_rising"],
                   true,
                 )}
@@ -288,7 +304,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
                 ])}
                 ${this._detailToggle(
                   "show_wind_speed",
-                  "Wind speed (Beaufort icon)",
+                  "Wind speed",
                   ["wind_speed"],
                 )}
                 ${this._detailToggle("show_wind_direction", "Wind direction", [
@@ -324,6 +340,12 @@ export class VedurkortWeatherCardEditor extends LitElement {
                   "Precipitation probability",
                   ["precipitation_probability"],
                 )}
+                ${this._anyDetailMissing()
+                  ? html`<p class="hint footnote">
+                      * Not on this weather entity — add a sensor under
+                      Optional sensors below.
+                    </p>`
+                  : nothing}
               `
             : nothing}
         </fieldset>
@@ -580,14 +602,19 @@ export class VedurkortWeatherCardEditor extends LitElement {
       gap: 6px;
     }
     .avail {
-      font-size: 0.75rem;
-      opacity: 0.75;
+      font-size: 0.9rem;
+      font-weight: 600;
+      opacity: 0.85;
+      color: var(--primary-text-color, inherit);
     }
     .avail.ok {
       color: var(--success-color, #2e7d32);
     }
     .avail.missing {
-      color: var(--warning-color, #f57c00);
+      color: var(--primary-text-color, inherit);
+    }
+    .footnote {
+      margin-top: 2px;
     }
   `;
 }

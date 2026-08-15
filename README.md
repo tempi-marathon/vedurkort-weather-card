@@ -21,7 +21,8 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - **Meteocons only** — styles `fill` / `flat` / `line` / `monochrome`, animated or static (8 combinations)
 - Day/night condition icons (hourly icons follow sun rising/setting; daily uses daytime variants where available)
 - Optional CSS animated backgrounds (cloud opacity lightly follows `cloud_coverage`)
-- Optional current-weather details: sun, humidity, wind (Beaufort icon + system unit), UV, pressure, cloud coverage, feels like, dew point, visibility
+- Optional current-weather details: next sunrise/sunset, humidity, wind speed & direction (separate chips; Beaufort icon for speed), UV, pressure, cloud coverage, dew point, visibility (2–3 column grid by card width)
+- Feels-like temperature shown beside the main temperature when enabled
 - Subtle section dividers when more than one section is shown
 - CSS tooltips on detail and forecast icons (shadow-DOM friendly)
 - Visual editor grouped as General → Current weather → Daily → Hourly → Optional sensors (section options collapse when disabled)
@@ -56,14 +57,14 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `animated_icons` | boolean | `true` | Use animated Meteocons (`true`) or static SVGs (`false`). |
 | `animated_background` | boolean | `false` | Enable CSS weather background by condition. Cloud layer opacity is lightly scaled from `cloud_coverage` when available. |
 | `condition_entity` | string | none | Optional override for the **current** condition (background scene, main icon, condition label). Forecast sections still use `entity`. Handy for testing scenes via an `input_select` of HA condition strings. |
-| `show_sun` | boolean | `false` | Show sunrise and sunset times. |
+| `show_sun` | boolean | `false` | Show the next sunrise or sunset (sunset while the sun is up, sunrise while down). |
 | `show_humidity` | boolean | `false` | Show humidity. |
 | `show_wind_speed` | boolean | `false` | Show wind speed with Beaufort icon; value stays in system/entity unit. |
 | `show_wind_direction` | boolean | `false` | Show wind direction (compass label + Meteocons wind-direction icon). |
 | `show_uv_index` | boolean | `false` | Show UV index. |
 | `show_pressure` | boolean | `false` | Show pressure. |
 | `show_cloud_coverage` | boolean | `false` | Show cloud coverage (%). |
-| `show_feels_like` | boolean | `false` | Show feels-like / apparent temperature. |
+| `show_feels_like` | boolean | `false` | Show feels-like / apparent temperature beside the main temperature. |
 | `show_dew_point` | boolean | `false` | Show dew point. |
 | `show_visibility` | boolean | `false` | Show visibility. |
 | `show_precipitation` | boolean | `false` | Show current precipitation amount. |
