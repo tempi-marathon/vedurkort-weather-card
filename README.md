@@ -25,7 +25,7 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - Feels-like temperature shown beside the main temperature when enabled
 - Subtle section dividers when more than one section is shown
 - CSS tooltips on detail and forecast icons (shadow-DOM friendly)
-- Visual editor grouped as General → Current weather → Daily → Hourly → Optional sensors (section options collapse when disabled)
+- Full visual editor — configure everything in the UI, no YAML required
 - Empty-card hint when no sections are enabled
 - Optional sensor overrides with entity pickers in the UI editor
 - Separate `daily` and `hourly` config blocks
