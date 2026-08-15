@@ -11,9 +11,9 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 
 **Custom type:** `custom:vedurkort-weather-card`
 
-| Full | Icon styles | Daily only |
-| --- | --- | --- |
-| ![Full card](images/vedurkort-full.png) | ![Icon styles](images/vedurkort-styles.png) | ![Daily only](images/vedurkort-daily-only.png) |
+| Full | Current | Icon styles | Daily only |
+| --- | --- | --- | --- |
+| ![Full card](images/vedurkort-full.png) | ![Current](images/vedurkort-current.png) | ![Icon styles](images/vedurkort-styles.png) | ![Daily only](images/vedurkort-daily-only.png) |
 
 ## Features
 
