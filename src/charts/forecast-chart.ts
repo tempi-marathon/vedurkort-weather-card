@@ -100,8 +100,12 @@ export function chartChromeForScene(
   const darkScenes: BackgroundScene[] = [
     "clear-night",
     "partlycloudy-night",
-    "storm",
     "rain",
+    "pouring",
+    "lightning",
+    "lightning-rainy",
+    "hail",
+    "exceptional",
   ];
   if (darkScenes.includes(scene)) {
     return {

@@ -490,7 +490,15 @@ export class VedurkortWeatherCardEditor extends LitElement {
           <legend>Optional sensors</legend>
           <p class="hint">
             Override values from the weather entity with dedicated sensors.
+            Condition override is useful for testing backgrounds without
+            changing your main weather entity (e.g. an input_select of HA
+            conditions).
           </p>
+          ${this._picker("Condition", "condition_entity", [
+            "input_select",
+            "sensor",
+            "input_text",
+          ])}
           ${this._picker("Temperature", "temperature_entity", "sensor")}
           ${this._picker("Humidity", "humidity_entity", "sensor")}
           ${this._picker("Wind speed", "wind_speed_entity", "sensor")}

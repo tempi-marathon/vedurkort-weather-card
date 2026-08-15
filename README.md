@@ -55,6 +55,7 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `icon_style` | string | `fill` | Meteocons style: `fill`, `flat`, `line`, or `monochrome`. |
 | `animated_icons` | boolean | `true` | Use animated Meteocons (`true`) or static SVGs (`false`). |
 | `animated_background` | boolean | `false` | Enable CSS weather background by condition. Cloud layer opacity is lightly scaled from `cloud_coverage` when available. |
+| `condition_entity` | string | none | Optional override for the **current** condition (background scene, main icon, condition label). Forecast sections still use `entity`. Handy for testing scenes via an `input_select` of HA condition strings. |
 | `show_sun` | boolean | `false` | Show sunrise and sunset times. |
 | `show_humidity` | boolean | `false` | Show humidity. |
 | `show_wind_speed` | boolean | `false` | Show wind speed with Beaufort icon; value stays in system/entity unit. |
@@ -125,6 +126,17 @@ show_wind_direction: true
 show_uv_index: true
 show_pressure: true
 show_cloud_coverage: true
+```
+
+### Test backgrounds without changing your weather entity
+
+Create an `input_select` whose options are HA condition strings (`sunny`, `rainy`, `pouring`, `hail`, …), then:
+
+```yaml
+type: custom:vedurkort-weather-card
+entity: weather.forecast_thuis
+animated_background: true
+condition_entity: input_select.weather_scene_test
 ```
 
 ### Current + daily forecast
@@ -206,6 +218,7 @@ pressure_entity: sensor.pressure
 | **[Meteocons](https://meteocons.com/)** by [Bas Milius](https://github.com/basmilius/meteocons) | **All weather icons** — animated (`@meteocons/svg`) and static (`@meteocons/svg-static`) SVGs in fill / flat / line / monochrome. Only a curated subset for [HA weather conditions](https://www.home-assistant.io/integrations/weather/#condition-mapping) (plus sun, humidity, UV, barometer, Beaufort, wind-direction) is bundled. Homepage demos also inspired the current-weather presentation. MIT licensed. |
 | [weather-chart-card](https://github.com/mlamberts78/weather-chart-card) by Marc Lamberts | Forecast UX: Chart.js temperature lines, precipitation bars, condition/wind forecast row. No longer maintained; this card reimplements similar patterns in TypeScript. |
 | [HA-Animated-cards](https://github.com/Anashost/HA-Animated-cards) (climate / weather examples) | Inspiration for optional CSS/HTML weather backgrounds by condition. |
+| [GlassHome weather scenes](https://github.com/glasshome/widgets/tree/main/src/weather/background/scenes) | Inspiration for animated background techniques — depth-layered rain, hail bounce, storm bolts, wind streaks, and richer night-sky treatment. |
 
 ## Development
 
