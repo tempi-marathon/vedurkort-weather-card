@@ -39,6 +39,8 @@ export interface VedurkortCardConfig {
   show_visibility: boolean;
   show_precipitation: boolean;
   show_precipitation_probability: boolean;
+  /** Optional override for current condition (scene, icon, label). Forecast unchanged. */
+  condition_entity?: string;
   temperature_entity?: string;
   humidity_entity?: string;
   wind_speed_entity?: string;

@@ -154,6 +154,16 @@ export function getWeatherSnapshot(
     ? hass.states[config.precipitation_probability_entity]
     : undefined;
   const sun = hass.states[config.sun_entity ?? "sun.sun"];
+  const conditionOverride = config.condition_entity
+    ? hass.states[config.condition_entity]
+    : undefined;
+  const conditionState =
+    conditionOverride &&
+    conditionOverride.state !== "unknown" &&
+    conditionOverride.state !== "unavailable"
+      ? conditionOverride.state
+      : entity.state;
+  const condition = conditionState as HaWeatherCondition;
 
   const temperature =
     stateNumber(tempOverride) ?? numAttr(entity, "temperature");
@@ -183,14 +193,14 @@ export function getWeatherSnapshot(
   const nextRising = sun?.attributes.next_rising as string | undefined;
   const nextSetting = sun?.attributes.next_setting as string | undefined;
 
-  const conditionLabel = formatConditionLabel(hass, entity, entity.state);
+  const conditionLabel = formatConditionLabel(hass, entity, condition);
 
   return {
     name:
       config.name ??
       (entity.attributes.friendly_name as string | undefined) ??
       config.entity,
-    condition: entity.state as HaWeatherCondition,
+    condition,
     conditionLabel,
     temperature,
     humidity,
