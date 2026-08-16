@@ -29,9 +29,9 @@
   "devDependencies": {
     "@meteocons/svg": "^3.0.0-next.10",
     "@meteocons/svg-static": "^3.0.0-next.10",
-    "esbuild": "^0.28.1",
+    "esbuild": "^0.28.2",
     "typescript": "^7.0.2",
-    "vite": "^8.2.0",
+    "vite": "^8.2.1",
     "vitest": "^4.1.10"
   },
   "allowScripts": {
