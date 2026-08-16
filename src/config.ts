@@ -39,6 +39,17 @@ export interface VedurkortCardConfig {
   show_visibility: boolean;
   show_precipitation: boolean;
   show_precipitation_probability: boolean;
+  /**
+   * Show weather alerts strip when an alert source is configured and active.
+   * Default false — existing cards unchanged.
+   */
+  show_alerts: boolean;
+  /** CAP Alerts (or similar) device id — discovers child alert sensors. */
+  alerts_device?: string;
+  /** Single alert entity (e.g. binary_sensor.meteoalarm). */
+  alerts_entity?: string;
+  /** Additional alert entities to merge. */
+  alerts_entities?: string[];
   /** Optional override for current condition (scene, icon, label). Forecast unchanged. */
   condition_entity?: string;
   temperature_entity?: string;
@@ -83,6 +94,7 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   show_visibility: false,
   show_precipitation: false,
   show_precipitation_probability: false,
+  show_alerts: false,
   sun_entity: "sun.sun",
   daily: {
     ...DEFAULT_FORECAST_BLOCK,
@@ -116,6 +128,8 @@ function mergeConfigFields(
   daily.enabled = Boolean(daily.enabled);
   hourly.enabled = Boolean(hourly.enabled);
 
+  const alertsEntities = normalizeStringList(input.alerts_entities);
+
   return {
     ...DEFAULT_CONFIG,
     ...input,
@@ -123,6 +137,10 @@ function mergeConfigFields(
     show_current: Boolean(
       input.show_current ?? DEFAULT_CONFIG.show_current,
     ),
+    show_alerts: Boolean(input.show_alerts ?? DEFAULT_CONFIG.show_alerts),
+    alerts_device: emptyToUndef(input.alerts_device),
+    alerts_entity: emptyToUndef(input.alerts_entity),
+    alerts_entities: alertsEntities.length ? alertsEntities : undefined,
     daily,
     hourly,
     icon_style: normalizeIconStyle(input.icon_style),
@@ -163,4 +181,24 @@ function clampInt(
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+function emptyToUndef(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const t = value.trim();
+  return t ? t : undefined;
+}
+
+function normalizeStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of value) {
+    if (typeof item !== "string") continue;
+    const t = item.trim();
+    if (!t || seen.has(t)) continue;
+    seen.add(t);
+    out.push(t);
+  }
+  return out;
 }

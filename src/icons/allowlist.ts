@@ -37,6 +37,10 @@ export const CONDITION_ICONS = [
   "thunderstorms-night-rain",
   "wind",
   "weather-alert",
+  "code-yellow",
+  "code-orange",
+  "code-red",
+  "code-purple",
   "not-available",
 ] as const;
 

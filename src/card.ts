@@ -1,6 +1,15 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { Chart } from "chart.js";
+import { formatAlertDateTime } from "./alerts/format";
+import { resolveAlerts } from "./alerts/resolve";
+import {
+  highestSeverityIcon,
+  severityAccentClass,
+  summaryLabel,
+  alertIconName,
+} from "./alerts/summary";
+import type { WeatherAlert } from "./alerts/types";
 import {
   backgroundStyles,
   conditionToScene,
@@ -55,6 +64,8 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _dailyPlotWidth = 0;
   @state() private _hourlyPlotLeft = 0;
   @state() private _hourlyPlotWidth = 0;
+  @state() private _alertsOpen = false;
+  @state() private _selectedAlertId: string | null = null;
 
   private _dailyChart: Chart | null = null;
   private _hourlyChart: Chart | null = null;
@@ -92,6 +103,13 @@ export class VedurkortWeatherCard extends LitElement {
     let size = this._config.show_current ? 3 : 1;
     if (this._config.daily.enabled) size += 3;
     if (this._config.hourly.enabled) size += 3;
+    if (
+      this._config.show_alerts &&
+      this.hass &&
+      resolveAlerts(this.hass, this._config).length > 0
+    ) {
+      size += 1;
+    }
     return size;
   }
 
@@ -102,6 +120,12 @@ export class VedurkortWeatherCard extends LitElement {
       this.hass
     ) {
       void this._ensureForecastSubscription();
+      if (
+        this._alertsOpen &&
+        resolveAlerts(this.hass, this._config).length === 0
+      ) {
+        this._alertsOpen = false;
+      }
     }
     if (
       changed.has("_dailyForecast") ||
@@ -411,6 +435,113 @@ export class VedurkortWeatherCard extends LitElement {
     );
   }
 
+  private _openAlerts(alerts: WeatherAlert[], preferredId?: string): void {
+    this._selectedAlertId = preferredId ?? alerts[0]?.id ?? null;
+    this._alertsOpen = true;
+  }
+
+  private _closeAlerts(): void {
+    this._alertsOpen = false;
+  }
+
+  private _renderAlertsStrip(alerts: WeatherAlert[]) {
+    if (!alerts.length) return nothing;
+    const top = alerts[0]!;
+    const icon = highestSeverityIcon(alerts);
+    return html`
+      <button
+        type="button"
+        class="alerts-strip ${severityAccentClass(top)}"
+        @click=${() => this._openAlerts(alerts)}
+        aria-haspopup="dialog"
+      >
+        <span class="alerts-strip-icon" .innerHTML=${this._icon(icon)}></span>
+        <span class="alerts-strip-label">${summaryLabel(alerts)}</span>
+        <span class="alerts-strip-chevron" aria-hidden="true">›</span>
+      </button>
+    `;
+  }
+
+  private _renderAlertsDialog(alerts: WeatherAlert[], language?: string) {
+    if (!this._alertsOpen || !alerts.length) return nothing;
+
+    const selected =
+      alerts.find((a) => a.id === this._selectedAlertId) ?? alerts[0]!;
+
+    return html`
+      <ha-dialog
+        open
+        @closed=${() => this._closeAlerts()}
+        .heading=${"Weather alerts"}
+      >
+        <div class="alerts-dialog">
+          <ul class="alerts-list">
+            ${alerts.map(
+              (alert) => html`
+                <li>
+                  <button
+                    type="button"
+                    class="alerts-list-item ${severityAccentClass(alert)} ${alert.id === selected.id
+                      ? "is-selected"
+                      : ""}"
+                    @click=${() => {
+                      this._selectedAlertId = alert.id;
+                    }}
+                  >
+                    <span
+                      class="alerts-list-icon"
+                      .innerHTML=${this._icon(alertIconName(alert))}
+                    ></span>
+                    <span class="alerts-list-text">
+                      <span class="alerts-list-title"
+                        >${alert.headline || alert.event}</span
+                      >
+                      <span class="alerts-list-meta"
+                        >${alert.severityLabel}${alert.awarenessColor
+                          ? ` · ${alert.awarenessColor}`
+                          : ""}</span
+                      >
+                    </span>
+                  </button>
+                </li>
+              `,
+            )}
+          </ul>
+          <div class="alerts-detail">
+            <div class="alerts-detail-title">
+              ${selected.headline || selected.event}
+            </div>
+            <div class="alerts-detail-meta">
+              <span>${selected.severityLabel}</span>
+              ${selected.event && selected.event !== selected.headline
+                ? html`<span>· ${selected.event}</span>`
+                : nothing}
+            </div>
+            <dl class="alerts-times">
+              <div>
+                <dt>Onset</dt>
+                <dd>${formatAlertDateTime(selected.onset, language)}</dd>
+              </div>
+              <div>
+                <dt>Expires</dt>
+                <dd>${formatAlertDateTime(selected.expires, language)}</dd>
+              </div>
+            </dl>
+            ${selected.description
+              ? html`<p class="alerts-body">${selected.description}</p>`
+              : nothing}
+            ${selected.instruction
+              ? html`<p class="alerts-instruction">
+                  <strong>Instructions</strong><br />${selected.instruction}
+                </p>`
+              : nothing}
+          </div>
+        </div>
+        <mwc-button slot="primaryAction" dialogAction="close">Close</mwc-button>
+      </ha-dialog>
+    `;
+  }
+
   private _renderForecastSection(
     mode: "daily" | "hourly",
     snap: NonNullable<ReturnType<typeof getWeatherSnapshot>>,
@@ -515,6 +646,8 @@ export class VedurkortWeatherCard extends LitElement {
     const showCurrent = this._config.show_current;
     const showDaily = this._config.daily.enabled;
     const showHourly = this._config.hourly.enabled;
+    const alerts = resolveAlerts(this.hass, this._config);
+    const showAlertsStrip = alerts.length > 0;
     const showDetails =
       showCurrent &&
       (this._config.show_sun ||
@@ -532,7 +665,7 @@ export class VedurkortWeatherCard extends LitElement {
       ? formatNumber(snap.feelsLike, snap.temperatureUnit)
       : null;
 
-    if (!showCurrent && !showDaily && !showHourly) {
+    if (!showCurrent && !showDaily && !showHourly && !showAlertsStrip) {
       return html`
         <ha-card>
           <div class="pad empty">
@@ -556,6 +689,7 @@ export class VedurkortWeatherCard extends LitElement {
                   <div class="main">
                     <div class="main-text">
                       <div class="location">${snap.name}</div>
+                      ${this._renderAlertsStrip(alerts)}
                       <div class="temp-row">
                         <div class="temp">
                           ${formatTemp(snap.temperature, snap.temperatureUnit)}
@@ -697,7 +831,11 @@ export class VedurkortWeatherCard extends LitElement {
                     : nothing}
                 </div>
               `
-            : nothing}
+            : showAlertsStrip
+              ? html`<div class="section section-alerts">
+                  ${this._renderAlertsStrip(alerts)}
+                </div>`
+              : nothing}
 
           ${showDaily
             ? html`
@@ -714,6 +852,7 @@ export class VedurkortWeatherCard extends LitElement {
               `
             : nothing}
         </div>
+        ${this._renderAlertsDialog(alerts, language)}
       </ha-card>
     `;
   }
@@ -770,6 +909,185 @@ export class VedurkortWeatherCard extends LitElement {
         font-size: 1.05rem;
         font-weight: 600;
         opacity: 0.95;
+      }
+      .alerts-strip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        margin-top: 8px;
+        margin-bottom: 2px;
+        padding: 6px 8px;
+        border: 1px solid color-mix(in srgb, var(--vk-alert-accent, #f59e0b) 55%, transparent);
+        border-radius: 8px;
+        background: color-mix(
+          in srgb,
+          var(--vk-alert-accent, #f59e0b) 16%,
+          transparent
+        );
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        box-sizing: border-box;
+      }
+      .alerts-strip:hover,
+      .alerts-strip:focus-visible {
+        background: color-mix(
+          in srgb,
+          var(--vk-alert-accent, #f59e0b) 26%,
+          transparent
+        );
+        outline: none;
+      }
+      .alerts-strip.sev-yellow {
+        --vk-alert-accent: #eab308;
+      }
+      .alerts-strip.sev-orange {
+        --vk-alert-accent: #f97316;
+      }
+      .alerts-strip.sev-red {
+        --vk-alert-accent: #ef4444;
+      }
+      .alerts-strip.sev-purple {
+        --vk-alert-accent: #a855f7;
+      }
+      .alerts-strip.sev-unknown {
+        --vk-alert-accent: #94a3b8;
+      }
+      .alerts-strip-icon {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        display: inline-flex;
+      }
+      .alerts-strip-icon svg {
+        width: 100%;
+        height: 100%;
+      }
+      .alerts-strip-label {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.88rem;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+      .alerts-strip-chevron {
+        opacity: 0.7;
+        font-size: 1.2rem;
+        line-height: 1;
+      }
+      .alerts-dialog {
+        display: grid;
+        gap: 14px;
+        max-width: min(520px, 92vw);
+      }
+      .alerts-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 6px;
+        max-height: 40vh;
+        overflow: auto;
+      }
+      .alerts-list-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+        border-left: 3px solid var(--vk-alert-accent, #94a3b8);
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .alerts-list-item.sev-yellow {
+        --vk-alert-accent: #eab308;
+      }
+      .alerts-list-item.sev-orange {
+        --vk-alert-accent: #f97316;
+      }
+      .alerts-list-item.sev-red {
+        --vk-alert-accent: #ef4444;
+      }
+      .alerts-list-item.sev-purple {
+        --vk-alert-accent: #a855f7;
+      }
+      .alerts-list-item.is-selected {
+        background: color-mix(in srgb, currentColor 8%, transparent);
+      }
+      .alerts-list-icon {
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+      }
+      .alerts-list-icon svg {
+        width: 100%;
+        height: 100%;
+      }
+      .alerts-list-text {
+        display: grid;
+        gap: 2px;
+        min-width: 0;
+      }
+      .alerts-list-title {
+        font-weight: 600;
+        font-size: 0.92rem;
+      }
+      .alerts-list-meta {
+        font-size: 0.8rem;
+        opacity: 0.75;
+        text-transform: capitalize;
+      }
+      .alerts-detail {
+        display: grid;
+        gap: 8px;
+        padding-top: 4px;
+        border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+        max-height: 45vh;
+        overflow: auto;
+      }
+      .alerts-detail-title {
+        font-size: 1.05rem;
+        font-weight: 650;
+      }
+      .alerts-detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        font-size: 0.85rem;
+        opacity: 0.8;
+      }
+      .alerts-times {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin: 0;
+        font-size: 0.85rem;
+      }
+      .alerts-times dt {
+        opacity: 0.65;
+        font-size: 0.75rem;
+        margin: 0;
+      }
+      .alerts-times dd {
+        margin: 2px 0 0;
+        font-weight: 600;
+      }
+      .alerts-body,
+      .alerts-instruction {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.45;
+        white-space: pre-wrap;
+      }
+      .alerts-instruction {
+        opacity: 0.92;
       }
       .condition {
         text-transform: capitalize;

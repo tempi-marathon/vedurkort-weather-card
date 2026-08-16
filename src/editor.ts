@@ -135,6 +135,22 @@ export class VedurkortWeatherCardEditor extends LitElement {
     );
   }
 
+  private _devicePicker(label: string, key: keyof VedurkortEditorConfig) {
+    const value = (this._config[key] as string | undefined) ?? "";
+    return html`
+      <div class="field">
+        <span class="label">${label}</span>
+        <ha-device-picker
+          .hass=${this.hass}
+          .value=${value}
+          data-config=${key as string}
+          @value-changed=${(ev: CustomEvent) =>
+            this._entityChanged(ev, key as string)}
+        ></ha-device-picker>
+      </div>
+    `;
+  }
+
   private _picker(
     label: string,
     key: keyof VedurkortEditorConfig,
@@ -504,6 +520,46 @@ export class VedurkortWeatherCardEditor extends LitElement {
                     <option value="probability">probability</option>
                   </select>
                 </label>
+              `
+            : nothing}
+        </fieldset>
+
+        <fieldset>
+          <legend>Weather alerts</legend>
+          <label class="row enable">
+            <input
+              type="checkbox"
+              .checked=${c.show_alerts}
+              data-config="show_alerts"
+              @change=${this._value}
+            />
+            Show weather alerts
+          </label>
+          ${c.show_alerts
+            ? html`
+                <p class="hint">
+                  Recommended: install
+                  <a
+                    href="https://github.com/seevee/cap_alerts"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >CAP Alerts</a
+                  >
+                  (any region) and pick its device below. Europe shortcut: core
+                  <a
+                    href="https://www.home-assistant.io/integrations/meteoalarm/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >MeteoAlarm</a
+                  >
+                  binary sensor (one alert at a time). Extra entities can be
+                  listed in YAML as <code>alerts_entities</code>.
+                </p>
+                ${this._devicePicker("Alerts device (CAP)", "alerts_device")}
+                ${this._picker("Alerts entity", "alerts_entity", [
+                  "binary_sensor",
+                  "sensor",
+                ])}
               `
             : nothing}
         </fieldset>
