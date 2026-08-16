@@ -1,37 +1,64 @@
 import type { MeteoconName } from "./allowlist";
 import type { HaWeatherCondition } from "../types";
 
+/** Prefer sunless icons when coverage is missing or at/above this percent. */
+export const OVERCAST_CLOUD_COVERAGE = 65;
+
+/** True when coverage is unknown/NaN or fully enough overcast for sunless icons. */
+export function isOvercastCloudCover(
+  cloudCoverage?: number | null,
+): boolean {
+  return (
+    cloudCoverage == null ||
+    Number.isNaN(cloudCoverage) ||
+    cloudCoverage >= OVERCAST_CLOUD_COVERAGE
+  );
+}
+
 /**
  * Map HA weather conditions → Meteocon names with day/night variants.
+ * Cloudy / precip / storm icons use sunless names when cloud coverage is
+ * missing or ≥ {@link OVERCAST_CLOUD_COVERAGE}; otherwise day/night peeks.
  */
 export function conditionToMeteocon(
   condition: HaWeatherCondition | undefined,
   isDay = true,
+  cloudCoverage?: number | null,
 ): MeteoconName {
+  const overcast = isOvercastCloudCover(cloudCoverage);
+
   switch (condition) {
     case "clear-night":
       return "clear-night";
     case "sunny":
       return isDay ? "clear-day" : "clear-night";
     case "cloudy":
+      if (overcast) return "overcast";
       return isDay ? "overcast-day" : "overcast-night";
     case "fog":
       return isDay ? "fog-day" : "fog-night";
     case "hail":
+      if (overcast) return "hail";
       return isDay ? "overcast-day-hail" : "overcast-night-hail";
     case "lightning":
+      if (overcast) return "thunderstorms";
       return isDay ? "thunderstorms-day" : "thunderstorms-night";
     case "lightning-rainy":
+      if (overcast) return "thunderstorms-rain";
       return isDay ? "thunderstorms-day-rain" : "thunderstorms-night-rain";
     case "partlycloudy":
       return isDay ? "partly-cloudy-day" : "partly-cloudy-night";
     case "pouring":
+      if (overcast) return "extreme-rain";
       return isDay ? "extreme-day-rain" : "extreme-night-rain";
     case "rainy":
+      if (overcast) return "rain";
       return isDay ? "overcast-day-rain" : "overcast-night-rain";
     case "snowy":
+      if (overcast) return "snow";
       return isDay ? "overcast-day-snow" : "overcast-night-snow";
     case "snowy-rainy":
+      if (overcast) return "sleet";
       return isDay ? "overcast-day-sleet" : "overcast-night-sleet";
     case "windy":
     case "windy-variant":

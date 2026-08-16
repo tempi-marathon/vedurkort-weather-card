@@ -500,7 +500,11 @@ export class VedurkortWeatherCard extends LitElement {
       `;
     }
 
-    const iconName = conditionToMeteocon(snap.condition, snap.isDay);
+    const iconName = conditionToMeteocon(
+      snap.condition,
+      snap.isDay,
+      snap.cloudCoverage,
+    );
     const scene = conditionToScene(snap.condition, snap.isDay);
     const language =
       this.hass.locale?.language ??

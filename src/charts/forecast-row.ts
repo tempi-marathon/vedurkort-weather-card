@@ -44,7 +44,11 @@ export function renderForecastRow(
           opts.mode === "hourly"
             ? isDaytimeAt(hass, item.datetime, sunEntity)
             : (item.is_daytime ?? isSunUp(hass, sunEntity));
-        const icon = conditionToMeteocon(item.condition, isDay);
+        const icon = conditionToMeteocon(
+          item.condition,
+          isDay,
+          item.cloud_coverage,
+        );
         const svg = getMeteoconSvg(icon, opts.iconStyle, opts.animated);
         const conditionLabel = formatConditionLabel(
           hass,
