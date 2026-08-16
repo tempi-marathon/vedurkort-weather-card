@@ -1,5 +1,6 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { findCapAlertDevices } from "./alerts/discovery";
 import { forecastHasPrecipProbability } from "./charts/forecast-chart";
 import {
   DEFAULT_CONFIG,
@@ -11,6 +12,8 @@ import { ICON_STYLES } from "./icons/allowlist";
 import type { HomeAssistant } from "./types";
 import { fetchForecastOnce } from "./weather/adapter";
 
+type AlertsSource = "cap" | "entity";
+
 @customElement("vedurkort-weather-card-editor")
 export class VedurkortWeatherCardEditor extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
@@ -18,6 +21,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
   /** null = unknown/loading, true/false = probed from forecast sample */
   @state() private _dailyHasProbability: boolean | null = null;
   @state() private _hourlyHasProbability: boolean | null = null;
+  @state() private _alertsSource: AlertsSource = "cap";
 
   private _probeKey = "";
 
@@ -26,6 +30,15 @@ export class VedurkortWeatherCardEditor extends LitElement {
       ...DEFAULT_CONFIG,
       ...config,
     });
+    this._alertsSource = this._inferAlertsSource(this._config);
+  }
+
+  private _inferAlertsSource(config: VedurkortEditorConfig): AlertsSource {
+    if (config.alerts_device) return "cap";
+    if (config.alerts_entity || (config.alerts_entities?.length ?? 0) > 0) {
+      return "entity";
+    }
+    return "cap";
   }
 
   protected updated(changed: Map<string, unknown>): void {
@@ -135,19 +148,91 @@ export class VedurkortWeatherCardEditor extends LitElement {
     );
   }
 
-  private _devicePicker(label: string, key: keyof VedurkortEditorConfig) {
-    const value = (this._config[key] as string | undefined) ?? "";
+  private _setAlertsSource(source: AlertsSource): void {
+    this._alertsSource = source;
+    if (!this._config) return;
+    const next = structuredClone(this._config);
+    if (source === "cap") {
+      next.alerts_entity = undefined;
+      next.alerts_entities = undefined;
+      const devices = this.hass ? findCapAlertDevices(this.hass) : [];
+      if (!next.alerts_device && devices.length === 1) {
+        next.alerts_device = devices[0]!.id;
+      }
+    } else {
+      next.alerts_device = undefined;
+    }
+    this._fire(
+      next.entity ? normalizeConfig(next) : normalizeEditorConfig(next),
+    );
+  }
+
+  private _alertsSourceChanged(ev: Event): void {
+    const value = (ev.target as HTMLSelectElement).value as AlertsSource;
+    if (value === "cap" || value === "entity") {
+      this._setAlertsSource(value);
+    }
+  }
+
+  private _renderCapDeviceField() {
+    const devices = this.hass ? findCapAlertDevices(this.hass) : [];
+    const selected = this._config.alerts_device ?? "";
+
+    if (devices.length === 0) {
+      return html`
+        <p class="hint footnote">
+          No CAP Alerts device found yet. Install
+          <a
+            href="https://github.com/seevee/cap_alerts"
+            target="_blank"
+            rel="noopener noreferrer"
+            >CAP Alerts</a
+          >, add the integration for your region, then reopen this editor. If
+          you already installed it, wait until alert sensors appear under the
+          device, or set <code>alerts_device</code> in YAML.
+        </p>
+        <label>
+          CAP Alerts device id (optional)
+          <input
+            type="text"
+            .value=${selected}
+            placeholder="Paste device id if needed"
+            data-config="alerts_device"
+            @change=${this._value}
+          />
+        </label>
+      `;
+    }
+
     return html`
-      <div class="field">
-        <span class="label">${label}</span>
-        <ha-device-picker
-          .hass=${this.hass}
-          .value=${value}
-          data-config=${key as string}
-          @value-changed=${(ev: CustomEvent) =>
-            this._entityChanged(ev, key as string)}
-        ></ha-device-picker>
-      </div>
+      <p class="hint">
+        ${devices.length === 1
+          ? "One CAP Alerts device was found and can be used automatically."
+          : "Select which CAP Alerts device to use. Do not pick individual warning sensors."}
+      </p>
+      <label>
+        CAP Alerts device
+        <select
+          .value=${selected || (devices.length === 1 ? devices[0]!.id : "")}
+          data-config="alerts_device"
+          @change=${this._value}
+        >
+          ${devices.length > 1
+            ? html`<option value="">Select a device…</option>`
+            : nothing}
+          ${devices.map(
+            (d) => html`
+              <option
+                value=${d.id}
+                ?selected=${d.id === selected ||
+                (!selected && devices.length === 1)}
+              >
+                ${d.name}
+              </option>
+            `,
+          )}
+        </select>
+      </label>
     `;
   }
 
@@ -538,28 +623,46 @@ export class VedurkortWeatherCardEditor extends LitElement {
           ${c.show_alerts
             ? html`
                 <p class="hint">
-                  Recommended: install
+                  Choose where alerts come from. Recommended:
                   <a
                     href="https://github.com/seevee/cap_alerts"
                     target="_blank"
                     rel="noopener noreferrer"
                     >CAP Alerts</a
                   >
-                  (any region) and pick its device below. Europe shortcut: core
+                  (one device for your region). Europe alternative: a single
                   <a
                     href="https://www.home-assistant.io/integrations/meteoalarm/"
                     target="_blank"
                     rel="noopener noreferrer"
                     >MeteoAlarm</a
                   >
-                  binary sensor (one alert at a time). Extra entities can be
-                  listed in YAML as <code>alerts_entities</code>.
+                  binary sensor (one alert at a time).
                 </p>
-                ${this._devicePicker("Alerts device (CAP)", "alerts_device")}
-                ${this._picker("Alerts entity", "alerts_entity", [
-                  "binary_sensor",
-                  "sensor",
-                ])}
+                <label>
+                  Alert source
+                  <select
+                    .value=${this._alertsSource}
+                    @change=${this._alertsSourceChanged}
+                  >
+                    <option value="cap">CAP Alerts device</option>
+                    <option value="entity">Single alert entity</option>
+                  </select>
+                </label>
+                ${this._alertsSource === "cap"
+                  ? this._renderCapDeviceField()
+                  : html`
+                      <p class="hint">
+                        Pick one alert sensor (for example
+                        <code>binary_sensor.meteoalarm</code>). Do not pick the
+                        individual CAP “Minor … warning” sensors — use CAP
+                        Alerts device mode instead.
+                      </p>
+                      ${this._picker("Alert entity", "alerts_entity", [
+                        "binary_sensor",
+                        "sensor",
+                      ])}
+                    `}
               `
             : nothing}
         </fieldset>

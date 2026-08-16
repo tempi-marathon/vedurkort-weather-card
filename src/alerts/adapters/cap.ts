@@ -3,7 +3,13 @@ import {
   awarenessColor,
   awarenessLevelLabel,
   awarenessLevelToSeverity,
+  awarenessTypeCode,
+  awarenessTypeLabel,
+  isInformationalAwareness,
+  meteoalarmParameter,
   normalizeSeverity,
+  phaseLabel,
+  providerMdiIcon,
   str,
   titleCaseSeverity,
 } from "../utils";
@@ -19,7 +25,8 @@ export const capAdapter: AlertAdapter = {
   },
 
   parse(entityId, state, attributes) {
-    if (state === "unavailable" || state === "unknown") return [];
+    // Keep "unknown" — CAP uses it for green / unclassified severity states.
+    if (state === "unavailable") return [];
 
     const id = str(attributes.id);
     if (!id) return [];
@@ -28,24 +35,29 @@ export const capAdapter: AlertAdapter = {
     const phase = str(attributes.phase).toLowerCase();
     if (phase === "cancel" || phase === "expired") return [];
 
+    const awarenessLevel = meteoalarmParameter(attributes, "awareness_level");
+    // Green = no awareness needed (Europe) — not a real warning.
+    if (isInformationalAwareness(awarenessLevel)) return [];
+
     const event = str(attributes.event) || "Alert";
     const rawSeverity = str(attributes.severity);
     const normalizedSev = str(attributes.severity_normalized);
-    const awarenessLevel = str(attributes.awareness_level);
+    const awarenessTypeRaw = meteoalarmParameter(attributes, "awareness_type");
+    const typeLabel = awarenessTypeLabel(awarenessTypeRaw);
+    const typeCode = awarenessTypeCode(awarenessTypeRaw);
 
     const severity =
-      (normalizedSev
+      (normalizedSev && normalizedSev.toLowerCase() !== "unknown"
         ? normalizeSeverity(normalizedSev)
         : undefined) ??
       awarenessLevelToSeverity(awarenessLevel) ??
       normalizeSeverity(rawSeverity);
 
-    const labelSource = rawSeverity || normalizedSev;
     const severityLabel =
       awarenessLevelLabel(awarenessLevel) ||
-      (labelSource
-        ? labelSource.charAt(0).toUpperCase() +
-          labelSource.slice(1).toLowerCase()
+      (rawSeverity
+        ? rawSeverity.charAt(0).toUpperCase() +
+          rawSeverity.slice(1).toLowerCase()
         : titleCaseSeverity(severity));
 
     const onset =
@@ -63,9 +75,14 @@ export const capAdapter: AlertAdapter = {
       headline: str(attributes.headline) || event,
       description: str(attributes.description),
       instruction: str(attributes.instruction),
+      areaDesc: str(attributes.area_desc) || undefined,
       severity,
       severityLabel,
       awarenessColor: awarenessColor(awarenessLevel),
+      awarenessTypeCode: typeCode,
+      awarenessType: typeLabel || undefined,
+      phase: phaseLabel(phase),
+      providerIcon: providerMdiIcon(attributes.icon),
       onset,
       expires,
       entityId,

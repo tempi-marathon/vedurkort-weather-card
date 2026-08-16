@@ -72,7 +72,7 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `daily` | object | see below | Daily forecast section options. |
 | `hourly` | object | see below | Hourly forecast section options. |
 | `show_alerts` | boolean | `false` | Show an alert summary under the location when an alert source is configured and at least one alert is active. Hidden when there are no active alerts. |
-| `alerts_device` | string | none | [CAP Alerts](https://github.com/seevee/cap_alerts) device id — picks up all alert sensors under that device. |
+| `alerts_device` | string | none | [CAP Alerts](https://github.com/seevee/cap_alerts) device id. Optional if you only have one CAP device (auto-detected). |
 | `alerts_entity` | string | none | Single alert entity (e.g. `binary_sensor.meteoalarm`). |
 | `alerts_entities` | list | none | Extra alert entity IDs to include (YAML only). |
 | `condition_entity` | string | none | Optional override for the **current** condition (background scene, main icon, condition label). Forecast sections still use `entity`. Handy for testing scenes via an `input_select` of HA condition strings. |
@@ -116,16 +116,14 @@ Enable any combination of `show_current`, `daily.enabled`, and `hourly.enabled`.
 
 ## Weather alerts setup
 
-Alerts are optional. Point the card at alert entities from an integration you already use; when nothing is active, the alert summary stays hidden.
+Alerts are optional. In the visual editor, turn on **Show weather alerts**, then choose an **Alert source**:
 
-### Recommended (any region) — [CAP Alerts](https://github.com/seevee/cap_alerts)
+1. **CAP Alerts device** (recommended) — install [CAP Alerts](https://github.com/seevee/cap_alerts), then pick its device from the list (or leave it blank if you only have one; the card can detect it)
+2. **Single alert entity** — e.g. Home Assistant’s [MeteoAlarm](https://www.home-assistant.io/integrations/meteoalarm/) binary sensor (one alert at a time)
 
-[CAP Alerts](https://github.com/seevee/cap_alerts) is a HACS integration that works with MeteoAlarm (Europe), NWS (US), ECCC (Canada), WMO, and more.
+When nothing is active, the alert summary stays hidden. Do not select the many individual CAP “Minor … warning” sensors in entity mode — use the CAP device source instead.
 
-1. Install **[CAP Alerts](https://github.com/seevee/cap_alerts)** via HACS (custom repository), then restart Home Assistant
-2. **Settings → Devices & Services → Add Integration → CAP Alerts**
-3. Pick the provider for your region and configure location
-4. In the card editor (or YAML), enable alerts and select the CAP Alerts **device**
+### CAP Alerts YAML example
 
 ```yaml
 type: custom:vedurkort-weather-card
@@ -134,11 +132,7 @@ show_alerts: true
 alerts_device: REPLACE_WITH_CAP_DEVICE_ID
 ```
 
-Active alerts appear as a summary under the location title. Tap it to open details (headline, severity, times, description, and instructions).
-
-### Europe shortcut — [MeteoAlarm](https://www.home-assistant.io/integrations/meteoalarm/)
-
-Use Home Assistant’s built-in [MeteoAlarm](https://www.home-assistant.io/integrations/meteoalarm/) integration, then:
+### Europe MeteoAlarm YAML example
 
 ```yaml
 type: custom:vedurkort-weather-card
@@ -146,8 +140,6 @@ entity: weather.home
 show_alerts: true
 alerts_entity: binary_sensor.meteoalarm
 ```
-
-Core MeteoAlarm typically shows **one** alert at a time. For several concurrent warnings, use [CAP Alerts](https://github.com/seevee/cap_alerts) with the MeteoAlarm provider instead.
 
 You can also list extra entities in YAML with `alerts_entities:`.
 

@@ -5,11 +5,12 @@ import {
   parseEntityAlerts,
   sortAlerts,
 } from "./adapters";
+import { resolveCapDeviceId } from "./discovery";
 import type { WeatherAlert } from "./types";
 
 /**
  * Resolve active alerts from config + hass state.
- * Order: alerts_device (CAP children) → alerts_entities → alerts_entity.
+ * Order: alerts_device (or sole discovered CAP device) → alerts_entities → alerts_entity.
  * Returns [] when show_alerts is off or nothing active.
  */
 export function resolveAlerts(
@@ -47,8 +48,15 @@ function collectAlertEntities(
     out.push(entity);
   };
 
-  if (config.alerts_device) {
-    for (const id of entitiesForDevice(hass, config.alerts_device)) {
+  const deviceId = resolveCapDeviceId(hass, config.alerts_device);
+  const hasExplicitEntity =
+    Boolean(config.alerts_entity) ||
+    Boolean(config.alerts_entities?.length);
+
+  // Prefer CAP device when set or uniquely discoverable; skip auto device
+  // when the user explicitly chose entity source(s) only.
+  if (deviceId && (config.alerts_device || !hasExplicitEntity)) {
+    for (const id of entitiesForDevice(hass, deviceId)) {
       push(id);
     }
   }

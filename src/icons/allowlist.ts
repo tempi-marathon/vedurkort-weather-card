@@ -41,6 +41,10 @@ export const CONDITION_ICONS = [
   "code-orange",
   "code-red",
   "code-purple",
+  "avalanche-danger-alert",
+  "cyclone-alert",
+  "dust",
+  "extreme-smoke",
   "not-available",
 ] as const;
 

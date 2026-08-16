@@ -100,6 +100,67 @@ describe("capAdapter", () => {
       }),
     ).toEqual([]);
   });
+
+  it("hides MeteoAlarm green (no awareness needed)", () => {
+    expect(
+      capAdapter.parse("sensor.cap_heat", "unknown", {
+        incident_platform_version: "1",
+        id: "heat-1",
+        event: "Hittewaarschuwing",
+        headline: "Groene hittewaarschuwing",
+        severity_normalized: "unknown",
+        icon: "mdi:weather-sunny-alert",
+        phase: "new",
+        parameters: {
+          awareness_level: "1; Green; Minor",
+          awareness_type: "5; high-temperature",
+        },
+      }),
+    ).toEqual([]);
+  });
+
+  it("keeps yellow+ CAP alerts and reads nested parameters", () => {
+    const alerts = capAdapter.parse("sensor.cap_heat", "moderate", {
+      incident_platform_version: "1",
+      id: "heat-1",
+      event: "Hittewaarschuwing",
+      headline: "Gele hittewaarschuwing",
+      severity_normalized: "moderate",
+      icon: "mdi:weather-sunny-alert",
+      phase: "new",
+      parameters: {
+        awareness_level: "2; Yellow; Moderate",
+        awareness_type: "5; high-temperature",
+      },
+    });
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]!.severity).toBe("moderate");
+    expect(alerts[0]!.awarenessColor).toBe("yellow");
+    expect(alerts[0]!.awarenessTypeCode).toBe(5);
+    expect(alerts[0]!.awarenessType).toBe("high-temperature");
+    expect(alerts[0]!.providerIcon).toBe("mdi:weather-sunny-alert");
+  });
+
+  it("reads area_desc as location", () => {
+    const alerts = capAdapter.parse("sensor.cap_heat", "moderate", {
+      incident_platform_version: "1",
+      id: "heat-2",
+      event: "Gele waarschuwing voor hittegolf",
+      headline: "Gele waarschuwing voor hittegolf in België - Henegouwen",
+      area_desc: "Henegouwen",
+      severity_normalized: "moderate",
+      phase: "new",
+    });
+    expect(alerts[0]!.areaDesc).toBe("Henegouwen");
+  });
+
+  it("ignores non-mdi provider icons", () => {
+    const alerts = capAdapter.parse("sensor.cap_alert_wind", "severe", {
+      ...attrs,
+      icon: "hass:alert",
+    });
+    expect(alerts[0]!.providerIcon).toBeUndefined();
+  });
 });
 
 describe("resolveAlerts", () => {
@@ -137,7 +198,7 @@ describe("resolveAlerts", () => {
       alerts_entity: "binary_sensor.meteoalarm",
     });
     expect(alerts).toHaveLength(1);
-    expect(summaryLabel(alerts)).toContain("Yellow");
+    expect(summaryLabel(alerts)).toBe("Wind");
   });
 
   it("discovers CAP children via device registry", () => {

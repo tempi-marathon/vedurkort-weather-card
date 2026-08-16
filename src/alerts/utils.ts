@@ -42,6 +42,19 @@ export function awarenessColor(
   return color || undefined;
 }
 
+/**
+ * MeteoAlarm green (level 1) = "no particular awareness needed" — not a warning.
+ * Filter these out of the card UI.
+ */
+export function isInformationalAwareness(
+  awarenessLevel: string | undefined,
+): boolean {
+  if (!awarenessLevel) return false;
+  const levelId = Number.parseInt(awarenessLevel.split(";")[0]!.trim(), 10);
+  if (levelId === 1) return true;
+  return awarenessColor(awarenessLevel) === "green";
+}
+
 export function awarenessLevelLabel(
   awarenessLevel: string | undefined,
 ): string {
@@ -55,6 +68,31 @@ export function awarenessTypeLabel(awarenessType: string | undefined): string {
   if (!awarenessType) return "";
   const parts = awarenessType.split(";");
   return parts.length > 1 ? parts.slice(1).join(";").trim() : "";
+}
+
+/** Numeric MeteoAlarm awareness_type id from "5; high-temperature". */
+export function awarenessTypeCode(
+  awarenessType: string | undefined,
+): number | undefined {
+  if (!awarenessType) return undefined;
+  const n = Number.parseInt(awarenessType.split(";")[0]!.trim(), 10);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+/**
+ * Resolve awareness_level / awareness_type from flat attrs or CAP `parameters`.
+ */
+export function meteoalarmParameter(
+  attributes: Record<string, unknown>,
+  key: "awareness_level" | "awareness_type",
+): string {
+  const direct = str(attributes[key]);
+  if (direct) return direct;
+  const parameters = attributes.parameters;
+  if (parameters && typeof parameters === "object" && !Array.isArray(parameters)) {
+    return str((parameters as Record<string, unknown>)[key]);
+  }
+  return "";
 }
 
 const SEVERITY_RANK: Record<AlertSeverity, number> = {
@@ -71,4 +109,25 @@ export function severityRank(severity: AlertSeverity): number {
 
 export function titleCaseSeverity(severity: AlertSeverity): string {
   return severity.charAt(0).toUpperCase() + severity.slice(1);
+}
+
+const PHASE_LABELS: Record<string, string> = {
+  new: "New",
+  update: "Update",
+  cancel: "Cancel",
+  expired: "Expired",
+};
+
+export function phaseLabel(phase: string | undefined): string | undefined {
+  if (!phase) return undefined;
+  const key = phase.trim().toLowerCase();
+  if (!key) return undefined;
+  return PHASE_LABELS[key] ?? phase.charAt(0).toUpperCase() + phase.slice(1);
+}
+
+/** CAP/provider entity icon — only keep validated `mdi:…` strings for Meteocon mapping. */
+export function providerMdiIcon(value: unknown): string | undefined {
+  const icon = str(value).toLowerCase();
+  if (!icon.startsWith("mdi:")) return undefined;
+  return icon;
 }

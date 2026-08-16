@@ -1,15 +1,113 @@
 import type { MeteoconName } from "../icons/allowlist";
 import type { AlertSeverity, WeatherAlert } from "./types";
 
-/** Map severity / awareness color to curated Meteocon alert icons. */
+/**
+ * Official MeteoAlarm awareness_type ids → Meteocon.
+ * Language-independent; preferred over translated event titles.
+ * @see https://www.meteoalarm.org (awareness type codes)
+ */
+const AWARENESS_TYPE_ICONS: Record<number, MeteoconName> = {
+  1: "wind",
+  2: "sleet",
+  3: "thunderstorms",
+  4: "fog",
+  5: "clear-day",
+  6: "thermometer",
+  7: "wind", // coastal event
+  8: "weather-alert", // forest-fire
+  9: "avalanche-danger-alert",
+  10: "rain",
+  12: "extreme-rain", // flooding
+  13: "extreme-rain", // rain-flood
+};
+
+/** English awareness_type labels from CAP parameters (not localized event text). */
+const AWARENESS_LABEL_ICONS: [readonly string[], MeteoconName][] = [
+  [["high-temperature", "high temperature"], "clear-day"],
+  [["low-temperature", "low temperature"], "thermometer"],
+  [["snow-ice", "snow ice"], "sleet"],
+  [["forest-fire", "forest fire"], "weather-alert"],
+  [["coastal"], "wind"],
+  [["thunderstorm"], "thunderstorms"],
+  [["flood"], "extreme-rain"],
+  [["rain"], "rain"],
+  [["fog"], "fog"],
+  [["wind"], "wind"],
+  [["avalanche"], "avalanche-danger-alert"],
+];
+
+/** Map CAP/provider MDI icons to Meteocons — never render MDI itself. */
+const MDI_TO_METEOCON: Record<string, MeteoconName> = {
+  "mdi:weather-sunny-alert": "clear-day",
+  "mdi:weather-sunny": "clear-day",
+  "mdi:thermometer-high": "clear-day",
+  "mdi:thermometer-low": "thermometer",
+  "mdi:thermometer": "thermometer",
+  "mdi:weather-fog": "fog",
+  "mdi:weather-pouring": "rain",
+  "mdi:weather-rainy": "rain",
+  "mdi:weather-snowy-heavy": "snow",
+  "mdi:weather-snowy": "snow",
+  "mdi:weather-snowy-rainy": "sleet",
+  "mdi:snowflake": "sleet",
+  "mdi:weather-lightning": "thunderstorms",
+  "mdi:weather-lightning-rainy": "thunderstorms-rain",
+  "mdi:weather-windy": "wind",
+  "mdi:weather-windy-variant": "wind",
+  "mdi:weather-hail": "hail",
+  "mdi:weather-dust": "dust",
+  "mdi:smoke": "extreme-smoke",
+  "mdi:fire": "weather-alert",
+  "mdi:home-flood": "extreme-rain",
+  "mdi:waves": "wind",
+  "mdi:weather-hurricane": "cyclone-alert",
+  "mdi:weather-tornado": "weather-alert",
+  "mdi:alert-circle-outline": "weather-alert",
+  "mdi:alert": "weather-alert",
+};
+
+/**
+ * Pick a Meteocon without relying on translated event titles.
+ * Order: awareness_type code → English type label → provider MDI map → severity.
+ */
 export function alertIconName(alert: WeatherAlert): MeteoconName {
-  const color = alert.awarenessColor?.toLowerCase();
-  if (color === "yellow" || color === "code-yellow") return "code-yellow";
-  if (color === "orange" || color === "code-orange") return "code-orange";
-  if (color === "red" || color === "code-red") return "code-red";
-  if (color === "purple" || color === "code-purple") return "code-purple";
+  if (
+    alert.awarenessTypeCode != null &&
+    AWARENESS_TYPE_ICONS[alert.awarenessTypeCode]
+  ) {
+    return AWARENESS_TYPE_ICONS[alert.awarenessTypeCode]!;
+  }
+
+  const fromLabel = iconFromAwarenessLabel(alert.awarenessType);
+  if (fromLabel) return fromLabel;
+
+  const fromMdi = iconFromProviderMdi(alert.providerIcon);
+  if (fromMdi) return fromMdi;
 
   return severityToIcon(alert.severity);
+}
+
+function iconFromAwarenessLabel(
+  label: string | undefined,
+): MeteoconName | undefined {
+  if (!label) return undefined;
+  const e = label.toLowerCase().replace(/[-_/]/g, " ").trim();
+  for (const [patterns, icon] of AWARENESS_LABEL_ICONS) {
+    if (patterns.some((p) => e.includes(p.replace(/-/g, " ")) || e.includes(p))) {
+      return icon;
+    }
+  }
+  return undefined;
+}
+
+function iconFromProviderMdi(
+  icon: string | undefined,
+): MeteoconName | undefined {
+  if (!icon) return undefined;
+  const key = icon.trim().toLowerCase();
+  if (!key.startsWith("mdi:")) return undefined;
+  // Always a Meteocon — never pass through the MDI string.
+  return MDI_TO_METEOCON[key];
 }
 
 export function severityToIcon(severity: AlertSeverity): MeteoconName {
@@ -33,30 +131,51 @@ export function highestSeverityIcon(alerts: WeatherAlert[]): MeteoconName {
 
 export function summaryLabel(alerts: WeatherAlert[]): string {
   if (alerts.length === 0) return "";
-  if (alerts.length === 1) {
-    const a = alerts[0]!;
-    const color = formatColor(a);
-    const event = shortEvent(a);
-    if (color && event) return `${color} · ${event}`;
-    return a.headline || a.event || a.severityLabel;
-  }
-  const top = alerts[0]!;
-  const color = formatColor(top) || top.severityLabel;
-  return `${alerts.length} alerts · highest ${color}`;
+  if (alerts.length === 1) return alertTitle(alerts[0]!);
+  return `${alerts.length} alerts · ${shortEvent(alerts[0]!)}`;
 }
 
-function formatColor(alert: WeatherAlert): string {
-  if (alert.awarenessColor) {
-    return (
-      alert.awarenessColor.charAt(0).toUpperCase() +
-      alert.awarenessColor.slice(1).toLowerCase()
-    );
-  }
-  return alert.severityLabel;
+/** Primary line for an alert row. */
+export function alertTitle(alert: WeatherAlert): string {
+  return alert.event || alert.headline || alert.severityLabel;
+}
+
+/**
+ * Secondary line: location only (no repeated event/headline text).
+ * Prefer CAP area_desc; else strip a leading title from the headline.
+ */
+export function alertSubtitle(alert: WeatherAlert): string | undefined {
+  const fromHeadline = locationFromHeadline(alert);
+  if (fromHeadline) return fromHeadline;
+  const area = alert.areaDesc?.trim();
+  return area || undefined;
+}
+
+function locationFromHeadline(alert: WeatherAlert): string | undefined {
+  const title = alertTitle(alert).trim();
+  const headline = alert.headline?.trim();
+  if (!headline || !title) return undefined;
+  if (normalizeText(headline) === normalizeText(title)) return undefined;
+
+  const titleNorm = normalizeText(title);
+  const headlineNorm = normalizeText(headline);
+  if (!headlineNorm.startsWith(titleNorm)) return undefined;
+
+  // Slice using original casing length of the matched prefix.
+  let rest = headline.slice(title.length).trim();
+  rest = rest
+    .replace(/^(in|for|voor|en|à|a)\s+/i, "")
+    .replace(/^[-–—:]\s*/, "")
+    .trim();
+  return rest || undefined;
+}
+
+function normalizeText(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
 function shortEvent(alert: WeatherAlert): string {
-  const raw = alert.event || alert.headline;
+  const raw = alertTitle(alert);
   if (raw.length <= 42) return raw;
   return `${raw.slice(0, 39)}…`;
 }
@@ -64,12 +183,14 @@ function shortEvent(alert: WeatherAlert): string {
 /** CSS custom property / class token for severity accent. */
 export function severityAccentClass(alert: WeatherAlert): string {
   const color = alert.awarenessColor?.toLowerCase();
+  if (color === "green") return "sev-green";
   if (color === "yellow") return "sev-yellow";
   if (color === "orange") return "sev-orange";
   if (color === "red") return "sev-red";
   if (color === "purple") return "sev-purple";
   switch (alert.severity) {
     case "minor":
+      return "sev-green";
     case "moderate":
       return "sev-yellow";
     case "severe":
