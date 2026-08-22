@@ -2081,15 +2081,15 @@ function Bi(e) {
 function Br(e) {
   var t = e.length, i;
   return e[0] === "#" && (t === 4 || t === 5 ? i = {
-    r: 255 & l1[e[1]] * 17,
-    g: 255 & l1[e[2]] * 17,
-    b: 255 & l1[e[3]] * 17,
-    a: t === 5 ? l1[e[4]] * 17 : 255
+    r: 255 & o1[e[1]] * 17,
+    g: 255 & o1[e[2]] * 17,
+    b: 255 & o1[e[3]] * 17,
+    a: t === 5 ? o1[e[4]] * 17 : 255
   } : (t === 7 || t === 9) && (i = {
-    r: l1[e[1]] << 4 | l1[e[2]],
-    g: l1[e[3]] << 4 | l1[e[4]],
-    b: l1[e[5]] << 4 | l1[e[6]],
-    a: t === 9 ? l1[e[7]] << 4 | l1[e[8]] : 255
+    r: o1[e[1]] << 4 | o1[e[2]],
+    g: o1[e[3]] << 4 | o1[e[4]],
+    b: o1[e[5]] << 4 | o1[e[6]],
+    a: t === 9 ? o1[e[7]] << 4 | o1[e[8]] : 255
   })), i;
 }
 function Or(e) {
@@ -2256,8 +2256,8 @@ function Oi(e) {
 function Jr(e) {
   return e.charAt(0) === "r" ? Xr(e) : Gr(e);
 }
-var P1, l1, Mt, V8, W8, Ue, D8, E8, G8, i2, a2, Ct, I8, Wt, X1, U2, Qr = A((() => {
-  P1 = (e, t, i) => Math.max(Math.min(e, i), t), l1 = {
+var P1, o1, Mt, V8, W8, Ue, D8, E8, G8, i2, a2, Ct, I8, Wt, X1, U2, Qr = A((() => {
+  P1 = (e, t, i) => Math.max(Math.min(e, i), t), o1 = {
     0: 0,
     1: 1,
     2: 2,
@@ -2550,7 +2550,7 @@ function U(e) {
 function G(e) {
   return (typeof e == "number" || e instanceof Number) && isFinite(+e);
 }
-function o1(e, t) {
+function d1(e, t) {
   return G(e) ? e : t;
 }
 function T(e, t) {
@@ -4908,7 +4908,7 @@ function Zt(e, t, i, a, r, n) {
     const I = ((c > 0 ? c - a : 0) + (_ > 0 ? _ - a : 0)) / 2;
     u = (f - (I !== 0 ? f * I / (I + a) : f)) / 2;
   }
-  const g = (f - Math.max(1e-3, f * _ - i / R) / _) / 2, p = o + g + u, m = r - g - u, { outerStart: v, outerEnd: x, innerStart: k, innerEnd: y } = bl(t, h, _, m - p), C = _ - v, M = _ - x, S = p + v / C, z = m - x / M, P = h + k, q = h + y, B = p + k / P, s1 = m - y / q;
+  const g = (f - Math.max(1e-3, f * _ - i / R) / _) / 2, p = o + g + u, m = r - g - u, { outerStart: v, outerEnd: x, innerStart: k, innerEnd: y } = bl(t, h, _, m - p), C = _ - v, M = _ - x, S = p + v / C, z = m - x / M, P = h + k, q = h + y, B = p + k / P, l1 = m - y / q;
   if (e.beginPath(), n) {
     const I = (S + z) / 2;
     if (e.arc(s, l, _, S, I), e.arc(s, l, _, I, z), x > 0) {
@@ -4917,8 +4917,8 @@ function Zt(e, t, i, a, r, n) {
     }
     const H = ce(q, m, s, l);
     if (e.lineTo(H.x, H.y), y > 0) {
-      const K = ce(q, s1, s, l);
-      e.arc(K.x, K.y, y, m + j, s1 + Math.PI);
+      const K = ce(q, l1, s, l);
+      e.arc(K.x, K.y, y, m + j, l1 + Math.PI);
     }
     const V = (m - y / h + (p + k / h)) / 2;
     if (e.arc(s, l, h, m - y / h, V, !0), e.arc(s, l, h, V, p + k / h, !0), k > 0) {
@@ -5569,18 +5569,18 @@ function p6(e, t) {
   return Math.min(a, Ce(e));
 }
 function m6(e, { min: t, max: i }) {
-  t = o1(e.min, t);
+  t = d1(e.min, t);
   const a = [], r = Ce(t);
   let n = p6(t, i), s = n < 0 ? Math.pow(10, Math.abs(n)) : 1;
   const l = Math.pow(10, n), o = r > n ? Math.pow(10, r) : 0, d = Math.round((t - o) * s) / s, c = Math.floor((t - o) / l / 10) * l * 10;
-  let _ = Math.floor((d - c) / Math.pow(10, n)), h = o1(e.min, Math.round((o + c + _ * Math.pow(10, n)) * s) / s);
+  let _ = Math.floor((d - c) / Math.pow(10, n)), h = d1(e.min, Math.round((o + c + _ * Math.pow(10, n)) * s) / s);
   for (; h < i; )
     a.push({
       value: h,
       major: Aa(h),
       significand: _
     }), _ >= 10 ? _ = _ < 15 ? 15 : 20 : _++, _ >= 20 && (n++, _ = 2, s = n >= 0 ? 1 : s), h = Math.round((o + c + _ * Math.pow(10, n)) * s) / s;
-  const u = o1(e.max, h);
+  const u = d1(e.max, h);
   return a.push({
     value: u,
     major: Aa(u),
@@ -6835,9 +6835,9 @@ var Ga, g1, A0, Ia, Fa, B0, Lt, O0, ja, $t, B4, O4, Ya, Xa, Ka, j2, k1, R0, R4, 
     }
     getUserBounds() {
       let { _userMin: t, _userMax: i, _suggestedMin: a, _suggestedMax: r } = this;
-      return t = o1(t, Number.POSITIVE_INFINITY), i = o1(i, Number.NEGATIVE_INFINITY), a = o1(a, Number.POSITIVE_INFINITY), r = o1(r, Number.NEGATIVE_INFINITY), {
-        min: o1(t, a),
-        max: o1(i, r),
+      return t = d1(t, Number.POSITIVE_INFINITY), i = d1(i, Number.NEGATIVE_INFINITY), a = d1(a, Number.POSITIVE_INFINITY), r = d1(r, Number.NEGATIVE_INFINITY), {
+        min: d1(t, a),
+        max: d1(i, r),
         minDefined: G(t),
         maxDefined: G(i)
       };
@@ -6852,8 +6852,8 @@ var Ga, g1, A0, Ia, Fa, B0, Lt, O0, ja, $t, B4, O4, Ya, Xa, Ka, j2, k1, R0, R4, 
       for (let o = 0, d = l.length; o < d; ++o)
         s = l[o].controller.getMinMax(this, t), r || (i = Math.min(i, s.min)), n || (a = Math.max(a, s.max));
       return i = n && i > a ? a : i, a = r && i > a ? i : a, {
-        min: o1(i, o1(a, i)),
-        max: o1(a, o1(i, a))
+        min: d1(i, d1(a, i)),
+        max: d1(a, d1(i, a))
       };
     }
     getPadding() {
@@ -7123,7 +7123,7 @@ var Ga, g1, A0, Ia, Fa, B0, Lt, O0, ja, $t, B4, O4, Ya, Xa, Ka, j2, k1, R0, R4, 
         }
         y = m - g, M = y - _, z = t.left, q = t.right;
       }
-      const s1 = T(r.ticks.maxTicksLimit, c), I = Math.max(1, Math.ceil(c / s1));
+      const l1 = T(r.ticks.maxTicksLimit, c), I = Math.max(1, Math.ceil(c / l1));
       for (v = 0; v < c; v += I) {
         const H = this.getContext(v), V = n.setContext(H), _1 = l.setContext(H), K = V.lineWidth, i0 = V.color, re = _1.dash || [], _t = _1.dashOffset, ne = V.tickWidth, Se = V.tickColor, I1 = V.tickBorderDash || [], ze = V.tickBorderDashOffset;
         x = Ks(this, v, o), x !== void 0 && (k = F1(a, x, K), d ? y = M = z = q = k : C = S = P = B = k, h.push({
@@ -7149,7 +7149,7 @@ var Ga, g1, A0, Ia, Fa, B0, Lt, O0, ja, $t, B4, O4, Ya, Xa, Ka, j2, k1, R0, R4, 
     }
     _computeLabelItems(t) {
       const i = this.axis, a = this.options, { position: r, ticks: n } = a, s = this.isHorizontal(), l = this.ticks, { align: o, crossAlign: d, padding: c, mirror: _ } = n, h = Oe(a.grid), u = h + c, f = _ ? -c : u, g = -B1(this.labelRotation), p = [];
-      let m, v, x, k, y, C, M, S, z, P, q, B, s1 = "middle";
+      let m, v, x, k, y, C, M, S, z, P, q, B, l1 = "middle";
       if (r === "top")
         C = this.bottom - f, M = this._getXAxisLabelAlignment();
       else if (r === "bottom")
@@ -7175,7 +7175,7 @@ var Ga, g1, A0, Ia, Fa, B0, Lt, O0, ja, $t, B4, O4, Ya, Xa, Ka, j2, k1, R0, R4, 
         }
         M = this._getYAxisLabelAlignment(h).textAlign;
       }
-      i === "y" && (o === "start" ? s1 = "top" : o === "end" && (s1 = "bottom"));
+      i === "y" && (o === "start" ? l1 = "top" : o === "end" && (l1 = "bottom"));
       const I = this._getLabelSizes();
       for (m = 0, v = l.length; m < v; ++m) {
         x = l[m], k = x.label;
@@ -7188,7 +7188,7 @@ var Ga, g1, A0, Ia, Fa, B0, Lt, O0, ja, $t, B4, O4, Ya, Xa, Ka, j2, k1, R0, R4, 
         if (H.showLabelBackdrop) {
           const ne = Z(H.backdropPadding), Se = I.heights[m], I1 = I.widths[m];
           let ze = B - ne.top, Pe = 0 - ne.left;
-          switch (s1) {
+          switch (l1) {
             case "middle":
               ze -= Se / 2;
               break;
@@ -7223,7 +7223,7 @@ var Ga, g1, A0, Ia, Fa, B0, Lt, O0, ja, $t, B4, O4, Ya, Xa, Ka, j2, k1, R0, R4, 
             strokeColor: K,
             strokeWidth: i0,
             textAlign: re,
-            textBaseline: s1,
+            textBaseline: l1,
             translation: [y, C],
             backdrop: _t
           }
@@ -8504,8 +8504,8 @@ var Ga, g1, A0, Ia, Fa, B0, Lt, O0, ja, $t, B4, O4, Ya, Xa, Ka, j2, k1, R0, R4, 
         const B = l.x(P);
         if (p(B, q, y), P = _4(S, P + u + _, v ? P + z : this.right, e.rtl), m(l.x(P), q, y), v) h.x += z + d;
         else if (typeof y.text != "string") {
-          const s1 = o.lineHeight;
-          h.y += $4(y, s1) + d;
+          const l1 = o.lineHeight;
+          h.y += $4(y, l1) + d;
         } else h.y += k;
       }), Ki(this.ctx, e.textDirection);
     }
@@ -11343,7 +11343,7 @@ function Hm(e, t, i = "sun.sun") {
 function c8(e, t) {
   const i = e.states[t.entity];
   if (!i) return null;
-  const a = t.temperature_entity ? e.states[t.temperature_entity] : void 0, r = t.humidity_entity ? e.states[t.humidity_entity] : void 0, n = t.wind_speed_entity ? e.states[t.wind_speed_entity] : void 0, s = t.wind_bearing_entity ? e.states[t.wind_bearing_entity] : void 0, l = t.uv_index_entity ? e.states[t.uv_index_entity] : void 0, o = t.pressure_entity ? e.states[t.pressure_entity] : void 0, d = t.cloud_coverage_entity ? e.states[t.cloud_coverage_entity] : void 0, c = t.feels_like_entity ? e.states[t.feels_like_entity] : void 0, _ = t.dew_point_entity ? e.states[t.dew_point_entity] : void 0, h = t.visibility_entity ? e.states[t.visibility_entity] : void 0, u = t.precipitation_entity ? e.states[t.precipitation_entity] : void 0, f = t.precipitation_probability_entity ? e.states[t.precipitation_probability_entity] : void 0, g = e.states[t.sun_entity ?? "sun.sun"], p = t.condition_entity ? e.states[t.condition_entity] : void 0, m = p && p.state !== "unknown" && p.state !== "unavailable" ? p.state : i.state, v = c1(a) ?? h1(i, "temperature"), x = c1(r) ?? h1(i, "humidity"), k = c1(n) ?? h1(i, "wind_speed"), y = c1(s) ?? i.attributes.wind_bearing ?? null, C = c1(l) ?? h1(i, "uv_index"), M = c1(o) ?? h1(i, "pressure"), S = c1(d) ?? h1(i, "cloud_coverage"), z = c1(c) ?? h1(i, "apparent_temperature"), P = c1(_) ?? h1(i, "dew_point"), q = c1(h) ?? h1(i, "visibility"), B = c1(u) ?? h1(i, "precipitation"), s1 = c1(f) ?? h1(i, "precipitation_probability"), I = e.config.unit_system.length || "", H = g?.attributes.next_rising, V = g?.attributes.next_setting, _1 = m3(e, i, m);
+  const a = t.temperature_entity ? e.states[t.temperature_entity] : void 0, r = t.humidity_entity ? e.states[t.humidity_entity] : void 0, n = t.wind_speed_entity ? e.states[t.wind_speed_entity] : void 0, s = t.wind_bearing_entity ? e.states[t.wind_bearing_entity] : void 0, l = t.uv_index_entity ? e.states[t.uv_index_entity] : void 0, o = t.pressure_entity ? e.states[t.pressure_entity] : void 0, d = t.cloud_coverage_entity ? e.states[t.cloud_coverage_entity] : void 0, c = t.feels_like_entity ? e.states[t.feels_like_entity] : void 0, _ = t.dew_point_entity ? e.states[t.dew_point_entity] : void 0, h = t.visibility_entity ? e.states[t.visibility_entity] : void 0, u = t.precipitation_entity ? e.states[t.precipitation_entity] : void 0, f = t.precipitation_probability_entity ? e.states[t.precipitation_probability_entity] : void 0, g = e.states[t.sun_entity ?? "sun.sun"], p = t.condition_entity ? e.states[t.condition_entity] : void 0, m = p && p.state !== "unknown" && p.state !== "unavailable" ? p.state : i.state, v = c1(a) ?? h1(i, "temperature"), x = c1(r) ?? h1(i, "humidity"), k = c1(n) ?? h1(i, "wind_speed"), y = c1(s) ?? i.attributes.wind_bearing ?? null, C = c1(l) ?? h1(i, "uv_index"), M = c1(o) ?? h1(i, "pressure"), S = c1(d) ?? h1(i, "cloud_coverage"), z = c1(c) ?? h1(i, "apparent_temperature"), P = c1(_) ?? h1(i, "dew_point"), q = c1(h) ?? h1(i, "visibility"), B = c1(u) ?? h1(i, "precipitation"), l1 = c1(f) ?? h1(i, "precipitation_probability"), I = e.config.unit_system.length || "", H = g?.attributes.next_rising, V = g?.attributes.next_setting, _1 = m3(e, i, m);
   return {
     name: t.name ?? i.attributes.friendly_name ?? t.entity,
     condition: m,
@@ -11359,7 +11359,7 @@ function c8(e, t) {
     dewPoint: P,
     visibility: q,
     precipitation: B,
-    precipitationProbability: s1,
+    precipitationProbability: l1,
     temperatureUnit: Ee(a) ?? i.attributes.temperature_unit ?? e.config.unit_system.temperature ?? "°C",
     windSpeedUnit: Ee(n) ?? i.attributes.wind_speed_unit ?? e.config.unit_system.wind_speed ?? `${I}/h`,
     pressureUnit: Ee(o) ?? i.attributes.pressure_unit ?? e.config.unit_system.pressure ?? (I === "km" ? "hPa" : "inHg"),
@@ -11605,28 +11605,29 @@ var f8, g8, ai, Am, v3 = A((() => {
 }));
 function y3(e) {
   const t = {
-    ...d1.daily,
+    ...n1.daily,
     ...e.daily ?? {}
   }, i = {
-    ...d1.hourly,
+    ...n1.hourly,
     ...e.hourly ?? {}
   };
-  t.days = p8(t.days, 2, 7, d1.daily.days), i.hours = p8(i.hours, 2, 48, d1.hourly.hours), t.enabled = !!t.enabled, i.enabled = !!i.enabled;
+  t.days = p8(t.days, 2, 7, n1.daily.days), i.hours = p8(i.hours, 2, 48, n1.hourly.hours), t.enabled = !!t.enabled, i.enabled = !!i.enabled;
   const a = Om(e.alerts_entities);
   return {
-    ...d1,
+    ...n1,
     ...e,
     entity: e.entity ?? "",
-    show_current: !!(e.show_current ?? d1.show_current),
-    show_alerts: !!(e.show_alerts ?? d1.show_alerts),
+    show_name: !!(e.show_name ?? n1.show_name),
+    show_current: !!(e.show_current ?? n1.show_current),
+    show_alerts: !!(e.show_alerts ?? n1.show_alerts),
     alerts_device: m8(e.alerts_device),
     alerts_entity: m8(e.alerts_entity),
     alerts_entities: a.length ? a : void 0,
     daily: t,
     hourly: i,
     icon_style: Bm(e.icon_style),
-    animated_icons: e.animated_icons ?? d1.animated_icons,
-    animated_background: e.animated_background ?? d1.animated_background
+    animated_icons: e.animated_icons ?? n1.animated_icons,
+    animated_background: e.animated_background ?? n1.animated_background
   };
 }
 function Ze(e) {
@@ -11637,7 +11638,7 @@ function Je(e) {
   return y3(e);
 }
 function Bm(e) {
-  return ai.includes(e) ? e : d1.icon_style;
+  return ai.includes(e) ? e : n1.icon_style;
 }
 function p8(e, t, i, a) {
   const r = typeof e == "number" ? e : Number(e);
@@ -11658,17 +11659,18 @@ function Om(e) {
   }
   return t;
 }
-var K0, d1, w3 = A((() => {
+var K0, n1, w3 = A((() => {
   v3(), K0 = {
     enabled: !1,
     show_condition_icons: !0,
     show_wind_speed: !0,
     show_wind_direction: !0,
     precip_type: "rainfall"
-  }, d1 = {
+  }, n1 = {
     icon_style: "fill",
     animated_icons: !0,
     animated_background: !1,
+    show_name: !0,
     show_current: !0,
     show_sun: !1,
     show_wind_speed: !1,
@@ -11714,7 +11716,7 @@ var k3 = A((() => {
     }
     setConfig(t) {
       this._config = Ze({
-        ...d1,
+        ...n1,
         ...t
       }), this._alertsSource = this._inferAlertsSource(this._config);
     }
@@ -11875,15 +11877,26 @@ var k3 = A((() => {
         <fieldset>
           <legend>General</legend>
           ${this._picker("Weather entity", "entity", "weather", !1)}
-          <label>
-            Name (optional)
+          <label class="row">
             <input
-              type="text"
-              .value=${t.name ?? ""}
-              data-config="name"
+              type="checkbox"
+              .checked=${t.show_name}
+              data-config="show_name"
               @change=${this._value}
             />
+            Show name
           </label>
+          ${t.show_name ? w`
+                <label>
+                  Name (empty = entity label)
+                  <input
+                    type="text"
+                    .value=${t.name ?? ""}
+                    data-config="name"
+                    @change=${this._value}
+                  />
+                </label>
+              ` : b}
           <label>
             Icon style
             <select
@@ -12261,7 +12274,7 @@ var Wm = w`
       d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 3.2 4.5 8.5 4.5 8.5s4.5-5.3 4.5-8.5A4.5 4.5 0 0 0 8 1.5zm0 6.2a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4z"
     />
   </svg>
-`, n1 = class extends Q1 {
+`, s1 = class extends Q1 {
   constructor(...t) {
     super(...t), this._dailyForecast = [], this._hourlyForecast = [], this._dailyError = null, this._hourlyError = null, this._dailyPlotLeft = 0, this._dailyPlotWidth = 0, this._hourlyPlotLeft = 0, this._hourlyPlotWidth = 0, this._alertsOpen = !1, this._expandedAlertIds = [], this._dailyChart = null, this._hourlyChart = null, this._dailyChartFingerprint = "", this._hourlyChartFingerprint = "", this._dailyChartModeKey = "", this._hourlyChartModeKey = "", this._forecastKey = "", this._forecastLoading = !1;
   }
@@ -12269,7 +12282,7 @@ var Wm = w`
     return await Promise.resolve().then(() => (Vm(), Rm)), document.createElement("vedurkort-weather-card-editor");
   }
   static getStubConfig(t, i) {
-    return { ...d1 };
+    return { ...n1 };
   }
   setConfig(t) {
     this._config = t.entity ? Je(t) : Ze(t);
@@ -12563,8 +12576,8 @@ var Wm = w`
           </div>
         </ha-card>
       `;
-    const i = _3(t.condition, t.isDay, t.cloudCoverage), a = Li(t.condition, t.isDay), r = this.hass.locale?.language ?? this.hass.language ?? this.hass.config.language, n = f3(t.windSpeed, t.windSpeedUnit), s = this._config.show_current, l = this._config.daily.enabled, o = this._config.hourly.enabled, d = m0(this.hass, this._config), c = d.length > 0, _ = s && (this._config.show_sun || this._config.show_humidity || this._config.show_wind_speed || this._config.show_wind_direction || this._config.show_uv_index || this._config.show_pressure || this._config.show_cloud_coverage || this._config.show_dew_point || this._config.show_visibility || this._config.show_precipitation || this._config.show_precipitation_probability), h = this._config.show_feels_like ? A1(t.feelsLike, t.temperatureUnit) : null;
-    return !s && !l && !o && !c ? w`
+    const i = _3(t.condition, t.isDay, t.cloudCoverage), a = Li(t.condition, t.isDay), r = this.hass.locale?.language ?? this.hass.language ?? this.hass.config.language, n = f3(t.windSpeed, t.windSpeedUnit), s = this._config.show_current, l = this._config.show_name, o = l && s, d = l && !s, c = this._config.daily.enabled, _ = this._config.hourly.enabled, h = m0(this.hass, this._config), u = h.length > 0, f = s && (this._config.show_sun || this._config.show_humidity || this._config.show_wind_speed || this._config.show_wind_direction || this._config.show_uv_index || this._config.show_pressure || this._config.show_cloud_coverage || this._config.show_dew_point || this._config.show_visibility || this._config.show_precipitation || this._config.show_precipitation_probability), g = this._config.show_feels_like ? A1(t.feelsLike, t.temperatureUnit) : null;
+    return !s && !c && !_ && !u ? w`
         <ha-card>
           <div class="pad empty">
             Enable a section in the card configuration to show weather content.
@@ -12574,17 +12587,22 @@ var Wm = w`
       <ha-card class=${this._config.animated_background ? "has-bg" : ""}>
         ${$r(this._config.animated_background, a, t.cloudCoverage)}
         <div class="content">
+          ${d ? w`
+                <div class="section section-header">
+                  <div class="location">${t.name}</div>
+                </div>
+              ` : b}
           ${s ? w`
                 <div class="section section-current">
                   <div class="main">
                     <div class="main-text">
-                      <div class="location">${t.name}</div>
+                      ${o ? w`<div class="location">${t.name}</div>` : b}
                       <div class="temp-row">
                         <div class="temp">
                           ${Um(t.temperature, t.temperatureUnit)}
                         </div>
-                        ${h ? w`<div class="feels-like">
-                              Feels like ${h}
+                        ${g ? w`<div class="feels-like">
+                              Feels like ${g}
                             </div>` : b}
                       </div>
                       <div class="condition">${t.conditionLabel}</div>
@@ -12595,9 +12613,9 @@ var Wm = w`
                     ></div>
                   </div>
 
-                  ${c ? this._renderAlertsStrip(d) : b}
+                  ${u ? this._renderAlertsStrip(h) : b}
 
-                  ${_ ? w`
+                  ${f ? w`
                         <div class="details">
                           ${this._config.show_sun ? t.isDay ? this._detail("sunset", u8(t.sunset, r), "Sunset") : this._detail("sunrise", u8(t.sunrise, r), "Sunrise") : b}
                           ${this._config.show_humidity ? this._detail("humidity", A1(t.humidity, "%", 0), "Humidity") : b}
@@ -12622,23 +12640,23 @@ var Wm = w`
                         </div>
                       ` : b}
                 </div>
-              ` : c ? w`<div class="section section-alerts">
-                  ${this._renderAlertsStrip(d)}
+              ` : u ? w`<div class="section section-alerts">
+                  ${this._renderAlertsStrip(h)}
                 </div>` : b}
 
-          ${l ? w`
+          ${c ? w`
                 <div class="section section-daily">
                   ${this._renderForecastSection("daily", t, r)}
                 </div>
               ` : b}
-          ${o ? w`
+          ${_ ? w`
                 <div class="section section-hourly">
                   ${this._renderForecastSection("hourly", t, r)}
                 </div>
               ` : b}
         </div>
       </ha-card>
-      ${this._renderAlertsDialog(d, r)}
+      ${this._renderAlertsDialog(h, r)}
     `;
   }
   static {
@@ -12677,6 +12695,11 @@ var Wm = w`
         padding-top: 16px;
         border-top: 1px solid
           color-mix(in srgb, currentColor 18%, transparent);
+      }
+      .section-header + .section {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
       }
       .section-current {
         container-type: inline-size;
@@ -13204,19 +13227,19 @@ var Wm = w`
     `];
   }
 };
-Y([z2({ attribute: !1 })], n1.prototype, "hass", void 0);
-Y([i1()], n1.prototype, "_config", void 0);
-Y([i1()], n1.prototype, "_dailyForecast", void 0);
-Y([i1()], n1.prototype, "_hourlyForecast", void 0);
-Y([i1()], n1.prototype, "_dailyError", void 0);
-Y([i1()], n1.prototype, "_hourlyError", void 0);
-Y([i1()], n1.prototype, "_dailyPlotLeft", void 0);
-Y([i1()], n1.prototype, "_dailyPlotWidth", void 0);
-Y([i1()], n1.prototype, "_hourlyPlotLeft", void 0);
-Y([i1()], n1.prototype, "_hourlyPlotWidth", void 0);
-Y([i1()], n1.prototype, "_alertsOpen", void 0);
-Y([i1()], n1.prototype, "_expandedAlertIds", void 0);
-n1 = Y([S2("vedurkort-weather-card")], n1);
+Y([z2({ attribute: !1 })], s1.prototype, "hass", void 0);
+Y([i1()], s1.prototype, "_config", void 0);
+Y([i1()], s1.prototype, "_dailyForecast", void 0);
+Y([i1()], s1.prototype, "_hourlyForecast", void 0);
+Y([i1()], s1.prototype, "_dailyError", void 0);
+Y([i1()], s1.prototype, "_hourlyError", void 0);
+Y([i1()], s1.prototype, "_dailyPlotLeft", void 0);
+Y([i1()], s1.prototype, "_dailyPlotWidth", void 0);
+Y([i1()], s1.prototype, "_hourlyPlotLeft", void 0);
+Y([i1()], s1.prototype, "_hourlyPlotWidth", void 0);
+Y([i1()], s1.prototype, "_alertsOpen", void 0);
+Y([i1()], s1.prototype, "_expandedAlertIds", void 0);
+s1 = Y([S2("vedurkort-weather-card")], s1);
 console.info("%c VEÐURKORT-WEATHER-CARD %c loaded ", "background:#0b6bcb;color:#fff;border-radius:4px 0 0 4px;padding:2px 6px", "background:#222;color:#fff;border-radius:0 4px 4px 0;padding:2px 6px");
 window.customCards = window.customCards || [];
 window.customCards.push({

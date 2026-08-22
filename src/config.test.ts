@@ -10,6 +10,19 @@ describe("alerts config compatibility", () => {
     expect(cfg.alerts_entities).toBeUndefined();
   });
 
+  it("defaults show_name to true for legacy configs", () => {
+    const cfg = normalizeConfig({ entity: "weather.home" });
+    expect(cfg.show_name).toBe(true);
+  });
+
+  it("preserves show_name false", () => {
+    const cfg = normalizeEditorConfig({
+      entity: "weather.home",
+      show_name: false,
+    });
+    expect(cfg.show_name).toBe(false);
+  });
+
   it("normalizes alerts_entities lists", () => {
     const cfg = normalizeEditorConfig({
       entity: "weather.home",

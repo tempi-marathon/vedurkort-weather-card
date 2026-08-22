@@ -727,6 +727,9 @@ export class VedurkortWeatherCard extends LitElement {
 
     const bft = windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit);
     const showCurrent = this._config.show_current;
+    const showName = this._config.show_name;
+    const showNameInCurrent = showName && showCurrent;
+    const showNameHeader = showName && !showCurrent;
     const showDaily = this._config.daily.enabled;
     const showHourly = this._config.hourly.enabled;
     const alerts = resolveAlerts(this.hass, this._config);
@@ -766,12 +769,21 @@ export class VedurkortWeatherCard extends LitElement {
           snap.cloudCoverage,
         )}
         <div class="content">
+          ${showNameHeader
+            ? html`
+                <div class="section section-header">
+                  <div class="location">${snap.name}</div>
+                </div>
+              `
+            : nothing}
           ${showCurrent
             ? html`
                 <div class="section section-current">
                   <div class="main">
                     <div class="main-text">
-                      <div class="location">${snap.name}</div>
+                      ${showNameInCurrent
+                        ? html`<div class="location">${snap.name}</div>`
+                        : nothing}
                       <div class="temp-row">
                         <div class="temp">
                           ${formatTemp(snap.temperature, snap.temperatureUnit)}
@@ -980,6 +992,11 @@ export class VedurkortWeatherCard extends LitElement {
         padding-top: 16px;
         border-top: 1px solid
           color-mix(in srgb, currentColor 18%, transparent);
+      }
+      .section-header + .section {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
       }
       .section-current {
         container-type: inline-size;

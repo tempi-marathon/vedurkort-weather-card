@@ -53,10 +53,11 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `type` | string | **Required** | Must be `custom:vedurkort-weather-card`. |
 | `entity` | string | **Required** | A `weather.*` entity. |
 | `name` | string | none | Override the location/title. Falls back to the entity friendly name. |
+| `show_name` | boolean | `true` | Show the location/title header at the top of the card. |
 | `icon_style` | string | `fill` | Meteocons style: `fill`, `flat`, `line`, or `monochrome`. |
 | `animated_icons` | boolean | `true` | Use animated Meteocons (`true`) or static SVGs (`false`). |
 | `animated_background` | boolean | `false` | Enable CSS weather background by condition. Cloud layer opacity is lightly scaled from `cloud_coverage` when available. |
-| `show_current` | boolean | `true` | Show the current weather header (location, condition, temperature, icon). Detail chips only appear when this is on. |
+| `show_current` | boolean | `true` | Show the current weather section (condition, temperature, icon). Detail chips only appear when this is on. |
 | `show_sun` | boolean | `false` | Show the next sunrise or sunset (sunset while the sun is up, sunrise while down). |
 | `show_humidity` | boolean | `false` | Show humidity. |
 | `show_wind_speed` | boolean | `false` | Show wind speed with Beaufort icon; value stays in system/entity unit. |
