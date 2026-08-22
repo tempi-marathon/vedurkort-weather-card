@@ -22,10 +22,12 @@ export interface VedurkortCardConfig {
   type?: string;
   entity: string;
   name?: string;
+  /** Show location/title header (uses `name` or entity friendly name). */
+  show_name: boolean;
   icon_style: IconStyle;
   animated_icons: boolean;
   animated_background: boolean;
-  /** Current conditions header (location, condition, temp, icon). */
+  /** Current conditions (condition, temp, icon, detail chips). */
   show_current: boolean;
   show_sun: boolean;
   show_wind_speed: boolean;
@@ -81,6 +83,7 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   icon_style: "fill",
   animated_icons: true,
   animated_background: false,
+  show_name: true,
   show_current: true,
   show_sun: false,
   show_wind_speed: false,
@@ -134,6 +137,7 @@ function mergeConfigFields(
     ...DEFAULT_CONFIG,
     ...input,
     entity: input.entity ?? "",
+    show_name: Boolean(input.show_name ?? DEFAULT_CONFIG.show_name),
     show_current: Boolean(
       input.show_current ?? DEFAULT_CONFIG.show_current,
     ),

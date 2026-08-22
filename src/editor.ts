@@ -346,15 +346,28 @@ export class VedurkortWeatherCardEditor extends LitElement {
         <fieldset>
           <legend>General</legend>
           ${this._picker("Weather entity", "entity", "weather", false)}
-          <label>
-            Name (optional)
+          <label class="row">
             <input
-              type="text"
-              .value=${c.name ?? ""}
-              data-config="name"
+              type="checkbox"
+              .checked=${c.show_name}
+              data-config="show_name"
               @change=${this._value}
             />
+            Show name
           </label>
+          ${c.show_name
+            ? html`
+                <label>
+                  Name (empty = entity label)
+                  <input
+                    type="text"
+                    .value=${c.name ?? ""}
+                    data-config="name"
+                    @change=${this._value}
+                  />
+                </label>
+              `
+            : nothing}
           <label>
             Icon style
             <select
