@@ -169,7 +169,7 @@ export function buildHourlySeries(
   return {
     labels,
     high: slice.map((i) => i.temperature ?? null),
-    low: slice.map(() => null),
+    low: slice.map((i) => i.templow ?? null),
     precip: slice.map((i) =>
       precipType === "probability"
         ? (i.precipitation_probability ?? null)

@@ -256,8 +256,8 @@ export type ForecastType = "daily" | "hourly";
 
 /**
  * Subscribe to forecasts the same way core Lovelace does
- * (`weather/subscribe_forecast`). Falls back to the
- * `weather.get_forecasts` service (return_response), then legacy attributes.
+ * (`weather/subscribe_forecast`, HA 2023.9+). Falls back to the
+ * `weather.get_forecasts` service when subscribe is unavailable.
  */
 export async function subscribeForecast(
   hass: HomeAssistant,
@@ -291,35 +291,23 @@ export async function subscribeForecast(
       unsub?.();
     };
   } catch (subErr) {
-    // Fall through to service call
     try {
       const items = await fetchForecastViaService(hass, entityId, type);
-      apply(items, items.length ? null : null);
-      if (!items.length) {
-        const legacy = getLegacyForecast(hass, entityId);
-        if (legacy.length) {
-          apply(legacy);
-        } else {
-          apply(
-            [],
-            subErr instanceof Error
-              ? subErr.message
-              : `Forecast type "${type}" not available for ${entityId}`,
-          );
-        }
-      }
-    } catch (svcErr) {
-      const legacy = getLegacyForecast(hass, entityId);
-      if (legacy.length) {
-        apply(legacy);
+      if (items.length) {
+        apply(items, null);
       } else {
         apply(
           [],
-          svcErr instanceof Error
-            ? svcErr.message
-            : "Failed to load forecast",
+          subErr instanceof Error
+            ? subErr.message
+            : `Forecast type "${type}" not available for ${entityId}`,
         );
       }
+    } catch (svcErr) {
+      apply(
+        [],
+        svcErr instanceof Error ? svcErr.message : "Failed to load forecast",
+      );
     }
     return () => {
       cancelled = true;

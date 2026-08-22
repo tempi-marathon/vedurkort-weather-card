@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { VedurkortCardConfig } from "../config";
 import type { HassEntity, HomeAssistant } from "../types";
 import {
+  fetchForecastOnce,
   getWeatherSnapshot,
   isDaytimeAt,
   isSunUp,
+  subscribeForecast,
 } from "./adapter";
 
 function mockHass(
@@ -138,5 +140,118 @@ describe("weather adapter", () => {
     const noon = new Date();
     noon.setHours(12, 0, 0, 0);
     expect(isDaytimeAt(hass, noon.toISOString())).toBe(true);
+  });
+});
+
+describe("subscribeForecast", () => {
+  it("delivers items from weather/subscribe_forecast", async () => {
+    let handler: ((event: { forecast?: { datetime: string }[] }) => void) | undefined;
+    const hass = mockHass({
+      "weather.home": {
+        entity_id: "weather.home",
+        state: "sunny",
+        attributes: {},
+      },
+    });
+    hass.connection.subscribeMessage = async (cb) => {
+      handler = cb as typeof handler;
+      return () => undefined;
+    };
+
+    const updates: Array<{ data: { datetime: string }[]; error: string | null }> =
+      [];
+    const unsub = await subscribeForecast(
+      hass,
+      "weather.home",
+      "daily",
+      (data, error) => {
+        updates.push({ data, error });
+      },
+    );
+    handler?.({ forecast: [{ datetime: "2026-08-22" }] });
+    expect(updates.at(-1)).toEqual({
+      data: [{ datetime: "2026-08-22" }],
+      error: null,
+    });
+    unsub();
+  });
+
+  it("does not fall back to attributes.forecast when subscribe and service fail", async () => {
+    const hass = mockHass({
+      "weather.home": {
+        entity_id: "weather.home",
+        state: "sunny",
+        attributes: {
+          forecast: [{ datetime: "2020-01-01", temperature: 1 }],
+        },
+      },
+    });
+    hass.connection.subscribeMessage = async () => {
+      throw new Error("subscribe unavailable");
+    };
+    hass.callWS = async () => {
+      throw new Error("service unavailable");
+    };
+
+    const updates: Array<[unknown[], string | null]> = [];
+    await subscribeForecast(hass, "weather.home", "daily", (data, error) => {
+      updates.push([data, error]);
+    });
+
+    expect(updates).toHaveLength(1);
+    expect(updates[0]![0]).toEqual([]);
+    expect(updates[0]![1]).toBe("subscribe unavailable");
+  });
+
+  it("uses service response instead of attributes.forecast when subscribe fails", async () => {
+    const hass = mockHass({
+      "weather.home": {
+        entity_id: "weather.home",
+        state: "sunny",
+        attributes: {
+          forecast: [{ datetime: "2020-01-01", temperature: 1 }],
+        },
+      },
+    });
+    hass.connection.subscribeMessage = async () => {
+      throw new Error("subscribe unavailable");
+    };
+    hass.callWS = async <T>() =>
+      ({
+        response: {
+          "weather.home": {
+            forecast: [{ datetime: "2026-08-22", temperature: 20 }],
+          },
+        },
+      }) as T;
+
+    const updates: Array<[unknown[], string | null]> = [];
+    await subscribeForecast(hass, "weather.home", "daily", (data, error) => {
+      updates.push([data, error]);
+    });
+
+    expect(updates[0]![0]).toEqual([
+      { datetime: "2026-08-22", temperature: 20 },
+    ]);
+    expect(updates[0]![1]).toBeNull();
+  });
+});
+
+describe("fetchForecastOnce", () => {
+  it("falls back to attributes.forecast when subscribe fails", async () => {
+    const legacy = [{ datetime: "2020-01-01", temperature: 5 }];
+    const hass = mockHass({
+      "weather.home": {
+        entity_id: "weather.home",
+        state: "sunny",
+        attributes: { forecast: legacy },
+      },
+    });
+    hass.connection.subscribeMessage = async () => {
+      throw new Error("subscribe unavailable");
+    };
+
+    const items = await fetchForecastOnce(hass, "weather.home", "daily");
+    expect(items).toEqual(legacy);
   });
 });

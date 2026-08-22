@@ -24,6 +24,17 @@ describe("forecast-chart", () => {
     expect(series.low).toEqual([12, 14]);
   });
 
+  it("buildHourlySeries maps templow when present", () => {
+    const items: ForecastItem[] = [
+      { datetime: "2026-08-22T14:00:00", temperature: 10, templow: 6 },
+      { datetime: "2026-08-22T15:00:00", temperature: 12, templow: 8 },
+      { datetime: "2026-08-22T16:00:00", temperature: 14 },
+    ];
+    const now = Date.parse("2026-08-22T14:30:00");
+    const series = buildHourlySeries(items, 3, "rainfall", "en", now);
+    expect(series.low).toEqual([6, 8, null]);
+  });
+
   it("buildHourlySeries anchors at the current hour", () => {
     const items: ForecastItem[] = [
       { datetime: "2026-08-22T14:00:00", temperature: 10 },
