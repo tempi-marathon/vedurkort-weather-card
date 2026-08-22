@@ -53,6 +53,11 @@ Regional variants (e.g. `nl-BE`, `en-GB`) map to the base code above when it is 
 
 Not translated by the card: weather condition names (from Home Assistant entity states), alert event/headline text from CAP or MeteoAlarm, and raw API error messages from forecast services.
 
+## Requirements
+
+- **Home Assistant 2023.9+** for live daily/hourly forecasts (`weather/subscribe_forecast`). Older cores may still work via the `weather.get_forecasts` service fallback when subscribe is unavailable.
+- The config editor probes forecasts via subscribe and, as a last resort, legacy `attributes.forecast` on the weather entity (no service calls, to avoid HA error toasts).
+
 ## Installation
 
 ### HACS
