@@ -470,15 +470,22 @@ export class VedurkortWeatherCard extends LitElement {
     if (!alerts.length) return nothing;
     const top = alerts[0]!;
     const icon = highestSeverityIcon(alerts);
+    const single = alerts.length === 1;
+    const timeStatus = single ? formatAlertTimeStatus(top) : "";
     return html`
       <button
         type="button"
-        class="alerts-strip ${severityAccentClass(top)}"
+        class="alerts-strip ${single ? "alerts-strip--single" : "alerts-strip--multi"} ${severityAccentClass(top)}"
         @click=${() => this._openAlerts(alerts)}
         aria-haspopup="dialog"
       >
         <span class="alerts-strip-icon" .innerHTML=${this._icon(icon)}></span>
-        <span class="alerts-strip-label">${summaryLabel(alerts)}</span>
+        <span class="alerts-strip-text">
+          <span class="alerts-strip-label">${summaryLabel(alerts)}</span>
+          ${timeStatus
+            ? html`<span class="alerts-strip-sub">${timeStatus}</span>`
+            : nothing}
+        </span>
         <span class="alerts-strip-chevron" aria-hidden="true">›</span>
       </button>
     `;
@@ -765,7 +772,6 @@ export class VedurkortWeatherCard extends LitElement {
                   <div class="main">
                     <div class="main-text">
                       <div class="location">${snap.name}</div>
-                      ${this._renderAlertsStrip(alerts)}
                       <div class="temp-row">
                         <div class="temp">
                           ${formatTemp(snap.temperature, snap.temperatureUnit)}
@@ -783,6 +789,10 @@ export class VedurkortWeatherCard extends LitElement {
                       .innerHTML=${this._icon(iconName)}
                     ></div>
                   </div>
+
+                  ${showAlertsStrip
+                    ? this._renderAlertsStrip(alerts)
+                    : nothing}
 
                   ${showDetails
                     ? html`
@@ -991,9 +1001,8 @@ export class VedurkortWeatherCard extends LitElement {
         align-items: center;
         gap: 8px;
         width: 100%;
-        margin-top: 8px;
-        margin-bottom: 8px;
-        padding: 7px 10px;
+        margin-top: 12px;
+        margin-bottom: 0;
         border: 1px solid color-mix(in srgb, var(--vk-alert-accent, #f59e0b) 70%, transparent);
         border-radius: 8px;
         background: color-mix(
@@ -1006,6 +1015,15 @@ export class VedurkortWeatherCard extends LitElement {
         text-align: left;
         cursor: pointer;
         box-sizing: border-box;
+      }
+      .alerts-strip--single {
+        padding: 8px 10px;
+      }
+      .alerts-strip--multi {
+        padding: 5px 10px;
+      }
+      .section-current .alerts-strip + .details {
+        margin-top: 12px;
       }
       .alerts-strip:hover,
       .alerts-strip:focus-visible {
@@ -1055,21 +1073,41 @@ export class VedurkortWeatherCard extends LitElement {
         );
       }
       .alerts-strip-icon {
-        width: 28px;
-        height: 28px;
         flex-shrink: 0;
         display: inline-flex;
+      }
+      .alerts-strip--single .alerts-strip-icon {
+        width: 28px;
+        height: 28px;
+      }
+      .alerts-strip--multi .alerts-strip-icon {
+        width: 22px;
+        height: 22px;
       }
       .alerts-strip-icon svg {
         width: 100%;
         height: 100%;
       }
-      .alerts-strip-label {
+      .alerts-strip-text {
         flex: 1;
         min-width: 0;
+        display: grid;
+        gap: 2px;
+      }
+      .alerts-strip-label {
         font-size: 0.88rem;
         font-weight: 600;
         line-height: 1.25;
+      }
+      .alerts-strip--multi .alerts-strip-label {
+        font-size: 0.84rem;
+        font-weight: 650;
+      }
+      .alerts-strip-sub {
+        font-size: 0.78rem;
+        font-weight: 500;
+        opacity: 0.82;
+        line-height: 1.2;
       }
       .alerts-strip-chevron {
         opacity: 0.7;

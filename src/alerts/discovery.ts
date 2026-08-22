@@ -45,6 +45,52 @@ function deviceLabel(hass: HomeAssistant, deviceId: string): string {
   return named.trim() || `CAP Alerts (${deviceId.slice(0, 8)})`;
 }
 
+/** Entity registry platform is `cap_alerts` (MeteoAlarm is the data provider, not the platform). */
+export function isCapAlertsEntity(
+  hass: HomeAssistant,
+  entityId: string,
+): boolean {
+  const reg = hass.entities?.[entityId];
+  if (reg?.platform === "cap_alerts") return true;
+  const attrs = hass.states[entityId]?.attributes;
+  return typeof attrs?.incident_platform_version === "string";
+}
+
+/** Core HA MeteoAlarm binary sensor (platform `meteoalarm`). */
+export function isMeteoAlarmEntity(
+  hass: HomeAssistant,
+  entityId: string,
+): boolean {
+  const reg = hass.entities?.[entityId];
+  if (reg?.platform === "meteoalarm") return true;
+  const attribution = String(
+    hass.states[entityId]?.attributes?.attribution ?? "",
+  ).toLowerCase();
+  return attribution.includes("meteoalarm");
+}
+
+export function deviceIdFromEntity(
+  hass: HomeAssistant,
+  entityId: string,
+): string | undefined {
+  const deviceId = hass.entities?.[entityId]?.device_id;
+  return deviceId ?? undefined;
+}
+
+/** Pick a stable entity on a device for the editor picker display value. */
+export function anchorEntityForDevice(
+  hass: HomeAssistant,
+  deviceId: string,
+): string | undefined {
+  const entities = hass.entities;
+  if (!entities) return undefined;
+  const onDevice = Object.values(entities).filter(
+    (e) => e.device_id === deviceId,
+  );
+  const count = onDevice.find((e) => e.entity_id.includes("alert_count"));
+  return count?.entity_id ?? onDevice[0]?.entity_id;
+}
+
 /**
  * Resolve which CAP device to use: explicit config, else the only discovered device.
  */

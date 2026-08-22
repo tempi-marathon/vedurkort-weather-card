@@ -131,8 +131,8 @@ export function highestSeverityIcon(alerts: WeatherAlert[]): MeteoconName {
 
 export function summaryLabel(alerts: WeatherAlert[]): string {
   if (alerts.length === 0) return "";
-  if (alerts.length === 1) return alertTitle(alerts[0]!);
-  return `${alerts.length} alerts · ${shortEvent(alerts[0]!)}`;
+  if (alerts.length === 1) return shortEvent(alerts[0]!);
+  return `${alerts.length} active warnings`;
 }
 
 /** Primary line for an alert row. */

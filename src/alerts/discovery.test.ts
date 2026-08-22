@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { findCapAlertDevices, resolveCapDeviceId } from "./discovery";
+import {
+  anchorEntityForDevice,
+  deviceIdFromEntity,
+  findCapAlertDevices,
+  isCapAlertsEntity,
+  isMeteoAlarmEntity,
+  resolveCapDeviceId,
+} from "./discovery";
 import { resolveAlerts } from "./resolve";
 import type { HassEntity, HomeAssistant } from "../types";
 
@@ -60,6 +67,49 @@ describe("findCapAlertDevices", () => {
     };
     expect(resolveCapDeviceId(hass)).toBe("dev-nl");
     expect(resolveCapDeviceId(hass, "explicit")).toBe("explicit");
+  });
+});
+
+describe("alert entity helpers", () => {
+  it("detects cap_alerts platform entities", () => {
+    const hass = baseHass({
+      "sensor.cap_alerts_nl_alert_count": entity(
+        "sensor.cap_alerts_nl_alert_count",
+        "0",
+      ),
+    });
+    hass.entities = {
+      "sensor.cap_alerts_nl_alert_count": {
+        entity_id: "sensor.cap_alerts_nl_alert_count",
+        device_id: "dev-nl",
+        platform: "cap_alerts",
+      },
+    };
+    expect(isCapAlertsEntity(hass, "sensor.cap_alerts_nl_alert_count")).toBe(
+      true,
+    );
+    expect(deviceIdFromEntity(hass, "sensor.cap_alerts_nl_alert_count")).toBe(
+      "dev-nl",
+    );
+    expect(anchorEntityForDevice(hass, "dev-nl")).toBe(
+      "sensor.cap_alerts_nl_alert_count",
+    );
+  });
+
+  it("detects core meteoalarm platform entities", () => {
+    const hass = baseHass({
+      "binary_sensor.meteoalarm": entity("binary_sensor.meteoalarm", "off", {
+        attribution: "Information provided by MeteoAlarm",
+      }),
+    });
+    hass.entities = {
+      "binary_sensor.meteoalarm": {
+        entity_id: "binary_sensor.meteoalarm",
+        platform: "meteoalarm",
+      },
+    };
+    expect(isMeteoAlarmEntity(hass, "binary_sensor.meteoalarm")).toBe(true);
+    expect(isCapAlertsEntity(hass, "binary_sensor.meteoalarm")).toBe(false);
   });
 });
 

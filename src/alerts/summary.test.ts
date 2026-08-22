@@ -120,7 +120,7 @@ describe("summaryLabel", () => {
     ).toBe("Gele waarschuwing voor hittegolf");
   });
 
-  it("lists count plus top event without color", () => {
+  it("lists active warning count for multiple alerts", () => {
     expect(
       summaryLabel([
         alert({
@@ -134,7 +134,7 @@ describe("summaryLabel", () => {
           awarenessColor: "yellow",
         }),
       ]),
-    ).toBe("2 alerts · Hittegolf");
+    ).toBe("2 active warnings");
   });
 });
 
