@@ -21,7 +21,11 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - **Meteocons only** — styles `fill` / `flat` / `line` / `monochrome`, animated or static (8 combinations)
 - Day/night condition icons (hourly icons follow sun rising/setting; daily uses daytime variants where available). Cloudy / precip / storm icons also follow `cloud_coverage` (sunless when ≥65% or unavailable)
 - Optional CSS animated backgrounds (cloud opacity lightly follows `cloud_coverage`)
-- Optional current-weather details: next sunrise/sunset, humidity, wind speed & direction (separate chips; Beaufort icon for speed), UV, pressure, cloud coverage, dew point, visibility (2–3 column grid by card width)
+- Optional current-weather details: next sunrise/sunset, humidity, wind speed, direction & gust (separate chips; Beaufort icon for speed/gust), UV, pressure, cloud coverage, dew point, visibility (2–3 column grid by card width)
+- Layout presets: `default`, `compact`, or `minimal` density
+- Tap / hold / double-tap Lovelace actions on the current-weather block (defaults to more-info)
+- Hourly chart horizontal scroll when showing more than 12 hours
+- Localized UI (see [Localization](#localization))
 - Feels-like temperature shown beside the main temperature when enabled
 - Subtle section dividers when more than one section is shown
 - CSS tooltips on detail and forecast icons (shadow-DOM friendly)
@@ -30,6 +34,24 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - Optional sensor overrides with entity pickers in the UI editor
 - Separate `daily` and `hourly` config blocks
 - Optional **weather alerts** — summary strip below current weather (via [CAP Alerts](https://github.com/seevee/cap_alerts) or core MeteoAlarm); tap to open a detail dialog
+
+## Localization
+
+The card uses your Home Assistant language (`Settings → System → General → Language`), via `hass.locale.language` with fallbacks to `hass.language` and `hass.config.language`.
+
+**Supported UI languages:**
+
+| Code | Language |
+| --- | --- |
+| `nl` | Dutch |
+| `en` | English |
+| `is` | Icelandic |
+
+Regional variants (e.g. `nl-BE`, `en-GB`) map to the base code above when it is supported.
+
+**Fallback:** If your language is not supported, the card uses **English**. The same English fallback applies to any individual string that is missing from a supported locale.
+
+Not translated by the card: weather condition names (from Home Assistant entity states), alert event/headline text from CAP or MeteoAlarm, and raw API error messages from forecast services.
 
 ## Installation
 
@@ -54,6 +76,7 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `entity` | string | **Required** | A `weather.*` entity. |
 | `name` | string | none | Override the location/title. Falls back to the entity friendly name. |
 | `show_name` | boolean | `true` | Show the location/title header at the top of the card. |
+| `layout` | string | `default` | Visual density: `default`, `compact` (smaller hero), or `minimal` (smaller temp + icon; denser detail chips). |
 | `icon_style` | string | `fill` | Meteocons style: `fill`, `flat`, `line`, or `monochrome`. |
 | `animated_icons` | boolean | `true` | Use animated Meteocons (`true`) or static SVGs (`false`). |
 | `animated_background` | boolean | `false` | Enable CSS weather background by condition. Cloud layer opacity is lightly scaled from `cloud_coverage` when available. |
@@ -62,6 +85,7 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `show_humidity` | boolean | `false` | Show humidity. |
 | `show_wind_speed` | boolean | `false` | Show wind speed with Beaufort icon; value stays in system/entity unit. |
 | `show_wind_direction` | boolean | `false` | Show wind direction (compass label + Meteocons wind-direction icon). |
+| `show_wind_gust` | boolean | `false` | Show wind gust with Beaufort icon. |
 | `show_uv_index` | boolean | `false` | Show UV index. |
 | `show_pressure` | boolean | `false` | Show pressure. |
 | `show_cloud_coverage` | boolean | `false` | Show cloud coverage (%). |
@@ -74,13 +98,16 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `hourly` | object | see below | Hourly forecast section options. |
 | `show_alerts` | boolean | `false` | Show a weather-alert summary when an alert source is configured and at least one **active** warning exists. Hidden when idle. Requires `show_current: true` for strip placement on the current-weather section. |
 | `alerts_device` | string | none | [CAP Alerts](https://github.com/seevee/cap_alerts) **device id** — discovers all per-alert sensors under that device. Recommended for CAP Alerts usage. Auto-detected when you have exactly one CAP device. |
-| `alerts_entity` | string | none | Single alert entity (e.g. `binary_sensor.meteoalarm`). Core MeteoAlarm exposes **one** alert at a time. |
-| `alerts_entities` | list | none | Extra alert entity IDs to merge (YAML only). |
+| `alerts_entities` | list | none | One or more alert entities (e.g. `binary_sensor.meteoalarm`). Active warnings from all entities are merged. |
+| `tap_action` | object | more-info | Lovelace action on tap of the current-weather block. |
+| `hold_action` | object | none | Lovelace action on hold. |
+| `double_tap_action` | object | none | Lovelace action on double-tap. |
 | `condition_entity` | string | none | Optional override for the **current** condition (background scene, main icon, condition label). Forecast sections still use `entity`. Handy for testing scenes via an `input_select` of HA condition strings. |
 | `temperature_entity` | string | none | Optional sensor override for current temperature. |
 | `humidity_entity` | string | none | Optional sensor override for humidity. |
 | `wind_speed_entity` | string | none | Optional sensor override for wind speed. |
 | `wind_bearing_entity` | string | none | Optional sensor override for wind bearing (degrees). |
+| `wind_gust_entity` | string | none | Optional sensor override for wind gust. |
 | `uv_index_entity` | string | none | Optional sensor override for UV index. |
 | `pressure_entity` | string | none | Optional sensor override for pressure. |
 | `cloud_coverage_entity` | string | none | Optional sensor override for cloud coverage. |
@@ -162,7 +189,7 @@ Alerts are optional and **off by default** (`show_alerts: false`). Existing card
 2. Turn on **Show weather alerts**.
 3. Choose **Alert source**:
    - **CAP Alerts device** — pick the device created by [CAP Alerts](https://github.com/seevee/cap_alerts) (or leave blank if exactly one CAP device exists; the card auto-detects it).
-   - **Single alert entity** — e.g. `binary_sensor.meteoalarm`.
+   - **Alert entities** — pick one or more MeteoAlarm or CAP binary/sensor entities.
 
 **Important:** Do **not** select dozens of individual CAP “Minor … warning” sensors in entity mode. CAP Alerts creates one sensor per active alert under a device — point the card at the **device**, not each sensor.
 
@@ -180,17 +207,16 @@ alerts_device: REPLACE_WITH_CAP_DEVICE_ID
 
 Find the device id in **Settings → Devices → CAP Alerts** (or let the editor list it).
 
-### Europe MeteoAlarm YAML example (single alert)
+### Europe MeteoAlarm YAML example
 
 ```yaml
 type: custom:vedurkort-weather-card
 entity: weather.home
 show_current: true
 show_alerts: true
-alerts_entity: binary_sensor.meteoalarm
+alerts_entities:
+  - binary_sensor.meteoalarm
 ```
-
-Merge extra entities in YAML with `alerts_entities:` if needed.
 
 ### Alerts-only card
 
@@ -241,7 +267,8 @@ type: custom:vedurkort-weather-card
 entity: weather.forecast_thuis
 show_current: true
 show_alerts: true
-alerts_entity: binary_sensor.meteoalarm
+alerts_entities:
+  - binary_sensor.meteoalarm
 ```
 
 ### Test backgrounds without changing your weather entity

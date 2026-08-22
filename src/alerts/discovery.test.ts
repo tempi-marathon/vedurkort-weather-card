@@ -171,7 +171,7 @@ describe("resolveAlerts auto CAP device", () => {
 
     const alerts = resolveAlerts(hass, {
       show_alerts: true,
-      alerts_entity: "binary_sensor.meteoalarm",
+      alerts_entities: ["binary_sensor.meteoalarm"],
     });
     expect(alerts).toHaveLength(1);
     expect(alerts[0]!.provider).toBe("meteoalarm");

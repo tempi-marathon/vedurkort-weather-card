@@ -10,14 +10,14 @@ import type { WeatherAlert } from "./types";
 
 /**
  * Resolve active alerts from config + hass state.
- * Order: alerts_device (or sole discovered CAP device) → alerts_entities → alerts_entity.
+ * Order: alerts_device (or sole discovered CAP device) → alerts_entities.
  * Returns [] when show_alerts is off or nothing active.
  */
 export function resolveAlerts(
   hass: HomeAssistant,
   config: Pick<
     VedurkortCardConfig,
-    "show_alerts" | "alerts_device" | "alerts_entity" | "alerts_entities"
+    "show_alerts" | "alerts_device" | "alerts_entities"
   >,
 ): WeatherAlert[] {
   if (!config.show_alerts) return [];
@@ -34,7 +34,7 @@ function collectAlertEntities(
   hass: HomeAssistant,
   config: Pick<
     VedurkortCardConfig,
-    "alerts_device" | "alerts_entity" | "alerts_entities"
+    "alerts_device" | "alerts_entities"
   >,
 ): HassEntity[] {
   const out: HassEntity[] = [];
@@ -49,9 +49,7 @@ function collectAlertEntities(
   };
 
   const deviceId = resolveCapDeviceId(hass, config.alerts_device);
-  const hasExplicitEntity =
-    Boolean(config.alerts_entity) ||
-    Boolean(config.alerts_entities?.length);
+  const hasExplicitEntity = Boolean(config.alerts_entities?.length);
 
   // Prefer CAP device when set or uniquely discoverable; skip auto device
   // when the user explicitly chose entity source(s) only.
@@ -64,7 +62,6 @@ function collectAlertEntities(
   for (const id of config.alerts_entities ?? []) {
     push(id);
   }
-  push(config.alerts_entity);
 
   return out;
 }

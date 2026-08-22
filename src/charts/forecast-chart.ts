@@ -15,6 +15,8 @@ import {
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import type { ForecastBlockConfig, PrecipType } from "../config";
+import { sliceHourlyForecast } from "./hourly-window";
+import { localize } from "../localize";
 import type { ForecastItem } from "../types";
 
 Chart.register(
@@ -152,8 +154,9 @@ export function buildHourlySeries(
   hours: number,
   precipType: PrecipType,
   language?: string,
+  nowMs?: number,
 ): ChartSeries {
-  const slice = items.slice(0, hours);
+  const slice = sliceHourlyForecast(items, hours, nowMs);
   const labels = slice.map((i) => {
     try {
       return new Intl.DateTimeFormat(language, {
@@ -193,12 +196,16 @@ function buildDatasets(
   precipType: PrecipType,
   precipUnit: string,
   chrome: ChartChrome,
+  language?: string,
 ): ChartConfiguration["data"]["datasets"] {
   const hasLow = series.low.some((v) => v != null);
   const datasets: ChartConfiguration["data"]["datasets"] = [
     {
       type: "line",
-      label: mode === "daily" ? "High" : "Temp",
+      label:
+        mode === "daily"
+          ? localize("chart_high", language)
+          : localize("chart_temp", language),
       data: series.high,
       borderColor: "rgba(255, 152, 0, 1)",
       backgroundColor: "rgba(255, 152, 0, 0.15)",
@@ -223,7 +230,7 @@ function buildDatasets(
   if (hasLow) {
     datasets.push({
       type: "line",
-      label: "Low",
+      label: localize("chart_low", language),
       data: series.low,
       borderColor: "rgba(68, 115, 158, 1)",
       backgroundColor: "rgba(68, 115, 158, 0.15)",
@@ -247,7 +254,10 @@ function buildDatasets(
 
   datasets.push({
     type: "bar",
-    label: precipType === "probability" ? "Precip %" : "Precip",
+    label:
+      precipType === "probability"
+        ? localize("chart_precip_pct", language)
+        : localize("chart_precip", language),
     data: series.precip,
     backgroundColor: "rgba(132, 209, 253, 0.55)",
     borderRadius: 3,
@@ -335,12 +345,20 @@ export function createForecastChart(
   chrome: ChartChrome,
   precipUnit = "mm",
   temperatureUnit = "°C",
+  language?: string,
 ): Chart {
   const config: ChartConfiguration = {
     type: "bar",
     data: {
       labels: series.labels,
-      datasets: buildDatasets(series, mode, precipType, precipUnit, chrome),
+      datasets: buildDatasets(
+        series,
+        mode,
+        precipType,
+        precipUnit,
+        chrome,
+        language,
+      ),
     },
     options: {
       responsive: true,
@@ -371,7 +389,7 @@ export function createForecastChart(
           position: "top",
           ticks: {
             maxRotation: 0,
-            autoSkip: true,
+            autoSkip: mode !== "hourly",
             color: chrome.tick,
             font: { size: 11, weight: "bold" },
           },
@@ -426,6 +444,7 @@ export function syncForecastChart(
   chrome: ChartChrome,
   precipUnit = "mm",
   temperatureUnit = "°C",
+  language?: string,
 ): void {
   const nextDatasets = buildDatasets(
     series,
@@ -433,6 +452,7 @@ export function syncForecastChart(
     precipType,
     precipUnit,
     chrome,
+    language,
   );
   const structureChanged =
     chart.data.datasets.length !== nextDatasets.length ||

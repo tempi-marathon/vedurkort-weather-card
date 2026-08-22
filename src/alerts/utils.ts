@@ -1,4 +1,5 @@
 import type { AlertSeverity } from "./types";
+import { localize, type LocalizeKey } from "../localize";
 
 export function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
@@ -111,18 +112,23 @@ export function titleCaseSeverity(severity: AlertSeverity): string {
   return severity.charAt(0).toUpperCase() + severity.slice(1);
 }
 
-const PHASE_LABELS: Record<string, string> = {
-  new: "New",
-  update: "Update",
-  cancel: "Cancel",
-  expired: "Expired",
+const PHASE_KEYS: Record<string, LocalizeKey> = {
+  new: "phase_new",
+  update: "phase_update",
+  cancel: "phase_cancel",
+  expired: "phase_expired",
 };
 
-export function phaseLabel(phase: string | undefined): string | undefined {
+export function phaseLabel(
+  phase: string | undefined,
+  language?: string,
+): string | undefined {
   if (!phase) return undefined;
   const key = phase.trim().toLowerCase();
   if (!key) return undefined;
-  return PHASE_LABELS[key] ?? phase.charAt(0).toUpperCase() + phase.slice(1);
+  const locKey = PHASE_KEYS[key];
+  if (locKey) return localize(locKey, language);
+  return phase.charAt(0).toUpperCase() + phase.slice(1);
 }
 
 /** CAP/provider entity icon — only keep validated `mdi:…` strings for Meteocon mapping. */

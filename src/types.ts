@@ -28,6 +28,17 @@ export interface HassDeviceRegistryEntry {
   name_by_user?: string | null;
 }
 
+export interface ActionConfig {
+  action: string;
+  entity?: string;
+  navigation_path?: string;
+  url_path?: string;
+  service?: string;
+  service_data?: Record<string, unknown>;
+  data?: Record<string, unknown>;
+  confirmation?: Record<string, unknown>;
+}
+
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
   /** Entity registry — used to resolve CAP Alerts device children. */

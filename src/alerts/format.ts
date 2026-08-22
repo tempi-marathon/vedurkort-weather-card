@@ -1,4 +1,5 @@
 import type { WeatherAlert } from "./types";
+import { localize } from "../localize";
 
 /** Format onset/expires for alert detail (date + time). */
 export function formatAlertDateTime(
@@ -60,6 +61,7 @@ export function alertTimePhase(
 export function formatAlertTimeStatus(
   alert: WeatherAlert,
   nowMs: number = Date.now(),
+  language?: string,
 ): string {
   const onsetMs = alert.onset ? Date.parse(alert.onset) : Number.NaN;
   const expiresMs = alert.expires ? Date.parse(alert.expires) : Number.NaN;
@@ -68,16 +70,24 @@ export function formatAlertTimeStatus(
   const phase = alertTimePhase(alert, nowMs);
 
   if (phase === "preparation" && onsetOk) {
-    return `Starts in ${formatDurationMs(onsetMs - nowMs)}`;
+    return localize("alert_starts_in", language, {
+      duration: formatDurationMs(onsetMs - nowMs),
+    });
   }
   if (phase === "active" && expiresOk && expiresMs > nowMs) {
-    return `Ends in ${formatDurationMs(expiresMs - nowMs)}`;
+    return localize("alert_ends_in", language, {
+      duration: formatDurationMs(expiresMs - nowMs),
+    });
   }
   if (phase === "active" && onsetOk && onsetMs <= nowMs) {
-    return `Started ${formatDurationMs(nowMs - onsetMs)} ago`;
+    return localize("alert_started_ago", language, {
+      duration: formatDurationMs(nowMs - onsetMs),
+    });
   }
   if (phase === "ended" && expiresOk) {
-    return `Ended ${formatDurationMs(nowMs - expiresMs)} ago`;
+    return localize("alert_ended_ago", language, {
+      duration: formatDurationMs(nowMs - expiresMs),
+    });
   }
   return "";
 }

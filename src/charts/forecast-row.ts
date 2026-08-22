@@ -8,6 +8,7 @@ import {
   windSpeedToBeaufort,
 } from "../icons/condition-map";
 import { getMeteoconSvg } from "../icons/meteocons";
+import { localize } from "../localize";
 import type { ForecastItem, HomeAssistant } from "../types";
 import { tipWrap } from "../ui/tooltip";
 import { formatConditionLabel, isDaytimeAt, isSunUp } from "../weather/adapter";
@@ -72,8 +73,13 @@ export function renderForecastRow(
           item.wind_speed != null
             ? `${Math.round(item.wind_speed)} ${opts.windSpeedUnit}`
             : "—";
-        const speedTip = `Wind ${speedText} (Beaufort ${bft})`;
-        const dirTip = `Wind direction ${dirLabel}`;
+        const speedTip = localize("wind_tip", opts.language, {
+          speed: speedText,
+          bft: String(bft),
+        });
+        const dirTip = localize("wind_direction_tip", opts.language, {
+          dir: dirLabel,
+        });
         const showWind = opts.showWindSpeed || opts.showWindDirection;
         return html`
           <div class="forecast-col">

@@ -14,6 +14,7 @@ export interface WeatherSnapshot {
   humidity: number | null;
   windSpeed: number | null;
   windBearing: number | string | null;
+  windGust: number | null;
   uvIndex: number | null;
   pressure: number | null;
   cloudCoverage: number | null;
@@ -129,6 +130,9 @@ export function getWeatherSnapshot(
   const bearingOverride = config.wind_bearing_entity
     ? hass.states[config.wind_bearing_entity]
     : undefined;
+  const gustOverride = config.wind_gust_entity
+    ? hass.states[config.wind_gust_entity]
+    : undefined;
   const uvOverride = config.uv_index_entity
     ? hass.states[config.uv_index_entity]
     : undefined;
@@ -174,6 +178,8 @@ export function getWeatherSnapshot(
     stateNumber(bearingOverride) ??
     (entity.attributes.wind_bearing as number | string | undefined) ??
     null;
+  const windGust =
+    stateNumber(gustOverride) ?? numAttr(entity, "wind_gust");
   const uvIndex = stateNumber(uvOverride) ?? numAttr(entity, "uv_index");
   const pressure = stateNumber(pressureOverride) ?? numAttr(entity, "pressure");
   const cloudCoverage =
@@ -206,6 +212,7 @@ export function getWeatherSnapshot(
     humidity,
     windSpeed,
     windBearing,
+    windGust,
     uvIndex,
     pressure,
     cloudCoverage,
@@ -397,17 +404,6 @@ function getLegacyForecast(
 ): ForecastItem[] {
   const entity = hass.states[entityId];
   return (entity?.attributes.forecast as ForecastItem[] | undefined) ?? [];
-}
-
-/** @deprecated Prefer subscribeForecast; kept for one-shot callers */
-export async function fetchForecast(
-  hass: HomeAssistant,
-  entityId: string,
-  type: ForecastType,
-): Promise<ForecastItem[]> {
-  const viaService = await fetchForecastViaService(hass, entityId, type);
-  if (viaService.length) return viaService;
-  return getLegacyForecast(hass, entityId);
 }
 
 export function formatConditionLabel(
