@@ -15,7 +15,7 @@ import {
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import type { ForecastBlockConfig, PrecipType } from "../config";
-import { findHourlyNowPosition, sliceHourlyForecast } from "./hourly-window";
+import { sliceHourlyForecast } from "./hourly-window";
 import { localize } from "../localize";
 import type { ForecastItem } from "../types";
 
@@ -38,8 +38,6 @@ export interface ChartSeries {
   high: (number | null)[];
   low: (number | null)[];
   precip: (number | null)[];
-  /** Hourly forecast timestamps (for live “now” line). */
-  datetimes?: string[];
 }
 
 export interface ChartChrome {
@@ -78,46 +76,6 @@ function withAlpha(color: string, alpha: number): string {
   }
   return `rgba(127, 127, 127, ${alpha})`;
 }
-
-function nowLinePixelX(chart: Chart): number | null {
-  const datetimes = (chart.options as { vkNowDatetimes?: string[] })
-    .vkNowDatetimes;
-  if (!datetimes?.length) return null;
-
-  const position = findHourlyNowPosition(datetimes);
-  if (position < 0) return null;
-
-  const xScale = chart.scales.x;
-  if (!xScale) return null;
-
-  const i = Math.floor(position);
-  const frac = position - i;
-  const x0 = xScale.getPixelForValue(i);
-  if (frac <= 0 || i >= datetimes.length - 1) return x0;
-  const x1 = xScale.getPixelForValue(i + 1);
-  return x0 + frac * (x1 - x0);
-}
-
-const nowLinePlugin = {
-  id: "vkNowLine",
-  afterDraw(chart: Chart) {
-    const x = nowLinePixelX(chart);
-    if (x == null) return;
-    const { top, bottom } = chart.chartArea;
-    const ctx = chart.ctx;
-    ctx.save();
-    ctx.strokeStyle = "rgba(255, 152, 0, 0.85)";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 3]);
-    ctx.beginPath();
-    ctx.moveTo(x, top);
-    ctx.lineTo(x, bottom);
-    ctx.stroke();
-    ctx.restore();
-  },
-};
-
-Chart.register(nowLinePlugin);
 
 /**
  * Chart chrome. Prefer the card's computed text color so weekday labels
@@ -217,7 +175,6 @@ export function buildHourlySeries(
         ? (i.precipitation_probability ?? null)
         : (i.precipitation ?? null),
     ),
-    datetimes: slice.map((i) => i.datetime),
   };
 }
 
@@ -407,9 +364,6 @@ export function createForecastChart(
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
-      ...(mode === "hourly" && series.datetimes?.length
-        ? ({ vkNowDatetimes: series.datetimes } as Record<string, unknown>)
-        : {}),
       layout: {
         padding: { left: 2, right: 2, top: 6, bottom: 14 },
       },
@@ -520,12 +474,6 @@ export function syncForecastChart(
   }
 
   chart.data.labels = series.labels;
-  if (mode === "hourly" && series.datetimes?.length) {
-    (chart.options as { vkNowDatetimes?: string[] }).vkNowDatetimes =
-      series.datetimes;
-  } else {
-    delete (chart.options as { vkNowDatetimes?: string[] }).vkNowDatetimes;
-  }
   applyChrome(chart, chrome);
   if (chart.options.plugins?.tooltip) {
     chart.options.plugins.tooltip.callbacks = tooltipCallbacks(

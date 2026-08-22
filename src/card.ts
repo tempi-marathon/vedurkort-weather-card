@@ -95,7 +95,9 @@ export class VedurkortWeatherCard extends LitElement {
   private _unbindActions: (() => void) | undefined;
   private _unbindFocusTrap: (() => void) | undefined;
   private _alertsTrigger: HTMLElement | null = null;
-  private _nowLineTimer: ReturnType<typeof setInterval> | undefined;
+  private _hourlyScrollKey = "";
+  private _hourlyScrollUserAdjusted = false;
+  private _hourlyScrollProgrammatic = false;
 
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
     await import("./editor");
@@ -156,6 +158,9 @@ export class VedurkortWeatherCard extends LitElement {
     ) {
       this.updateComplete.then(() => void this._renderCharts());
     }
+    if (changed.has("_hourlyForecast") || changed.has("_config")) {
+      this.updateComplete.then(() => this._maybeScrollHourlyToNow());
+    }
     if (changed.has("_alertsOpen")) {
       this.updateComplete.then(() => this._syncAlertsDialogA11y());
     }
@@ -172,7 +177,6 @@ export class VedurkortWeatherCard extends LitElement {
     this._unbindActions = undefined;
     this._unbindFocusTrap?.();
     this._unbindFocusTrap = undefined;
-    this._clearNowLineTimer();
   }
 
   private _bindCardActions(): void {
@@ -209,21 +213,6 @@ export class VedurkortWeatherCard extends LitElement {
     if (!modal) return;
     modal.focus();
     this._unbindFocusTrap = trapFocus(modal);
-  }
-
-  private _syncNowLineTimer(): void {
-    this._clearNowLineTimer();
-    if (!this._config?.hourly.enabled || !this._hourlyChart) return;
-    this._nowLineTimer = setInterval(() => {
-      this._hourlyChart?.update("none");
-    }, 60_000);
-  }
-
-  private _clearNowLineTimer(): void {
-    if (this._nowLineTimer) {
-      clearInterval(this._nowLineTimer);
-      this._nowLineTimer = undefined;
-    }
   }
 
   private _teardownForecast(): void {
@@ -322,7 +311,6 @@ export class VedurkortWeatherCard extends LitElement {
       this._hourlyPlotLeft = 0;
       this._hourlyPlotWidth = 0;
     }
-    if (mode === "hourly") this._clearNowLineTimer();
   }
 
   private _destroyCharts(): void {
@@ -387,9 +375,36 @@ export class VedurkortWeatherCard extends LitElement {
       this._renderOneChart("hourly");
     } else {
       this._destroyChart("hourly");
+      this._hourlyScrollKey = "";
+      this._hourlyScrollUserAdjusted = false;
     }
-    await this.updateComplete;
-    this._scrollHourlyToNow();
+  }
+
+  private _hourlyWindowKey(): string {
+    if (!this._config?.hourly.enabled) return "";
+    const slice = sliceHourlyForecast(
+      this._hourlyForecast,
+      this._config.hourly.hours,
+    );
+    if (!slice.length) return "";
+    return `${this._config.hourly.hours}:${slice.map((i) => i.datetime).join(",")}`;
+  }
+
+  private _maybeScrollHourlyToNow(): void {
+    if (!this._config?.hourly.enabled || this._config.hourly.hours <= 12) return;
+    const key = this._hourlyWindowKey();
+    if (!key) return;
+    if (key !== this._hourlyScrollKey) {
+      this._hourlyScrollKey = key;
+      this._hourlyScrollUserAdjusted = false;
+    }
+    if (this._hourlyScrollUserAdjusted) return;
+    void this.updateComplete.then(() => this._scrollHourlyToNow());
+  }
+
+  private _onHourlyScroll(): void {
+    if (this._hourlyScrollProgrammatic) return;
+    this._hourlyScrollUserAdjusted = true;
   }
 
   private _scrollHourlyToNow(): void {
@@ -410,7 +425,11 @@ export class VedurkortWeatherCard extends LitElement {
       Number.parseFloat(
         getComputedStyle(scrollEl).getPropertyValue("--forecast-col-width"),
       ) || 42;
+    this._hourlyScrollProgrammatic = true;
     scrollEl.scrollLeft = Math.max(0, pos * colWidth - scrollEl.clientWidth * 0.2);
+    requestAnimationFrame(() => {
+      this._hourlyScrollProgrammatic = false;
+    });
   }
 
   private _chartTextColor(): string {
@@ -537,7 +556,6 @@ export class VedurkortWeatherCard extends LitElement {
       this._hourlyChartFingerprint = fingerprint;
       this._hourlyChartModeKey = modeKey;
     }
-    if (mode === "hourly") this._syncNowLineTimer();
     requestAnimationFrame(() => this._syncPlotArea(mode));
   }
 
@@ -780,7 +798,10 @@ export class VedurkortWeatherCard extends LitElement {
       mode === "hourly" && this._config.hourly.hours > 12;
 
     return html`
-      <div class="forecast forecast-${mode}${scrollable ? " forecast-scroll" : ""}">
+      <div
+        class="forecast forecast-${mode}${scrollable ? " forecast-scroll" : ""}"
+        @scroll=${scrollable ? this._onHourlyScroll : nothing}
+      >
         ${error
           ? html`<div class="warn">${this._forecastErrorText(error, language)}</div>`
           : nothing}

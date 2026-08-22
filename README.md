@@ -24,7 +24,7 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - Optional current-weather details: next sunrise/sunset, humidity, wind speed, direction & gust (separate chips; Beaufort icon for speed/gust), UV, pressure, cloud coverage, dew point, visibility (2–3 column grid by card width)
 - Layout presets: `default`, `compact`, or `minimal` density
 - Tap / hold / double-tap Lovelace actions on the current-weather block (defaults to more-info)
-- Hourly chart “now” marker and horizontal scroll when showing more than 12 hours
+- Hourly chart horizontal scroll when showing more than 12 hours
 - Localized UI (see [Localization](#localization))
 - Feels-like temperature shown beside the main temperature when enabled
 - Subtle section dividers when more than one section is shown

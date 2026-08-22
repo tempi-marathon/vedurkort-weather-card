@@ -24,7 +24,7 @@ describe("forecast-chart", () => {
     expect(series.low).toEqual([12, 14]);
   });
 
-  it("buildHourlySeries includes datetimes from the current hour", () => {
+  it("buildHourlySeries anchors at the current hour", () => {
     const items: ForecastItem[] = [
       { datetime: "2026-08-22T14:00:00", temperature: 10 },
       { datetime: "2026-08-22T15:00:00", temperature: 12 },
@@ -33,11 +33,8 @@ describe("forecast-chart", () => {
     ];
     const now = Date.parse("2026-08-22T15:45:00");
     const series = buildHourlySeries(items, 3, "rainfall", "en", now);
-    expect(series.datetimes).toEqual([
-      "2026-08-22T15:00:00",
-      "2026-08-22T16:00:00",
-      "2026-08-22T17:00:00",
-    ]);
+    expect(series.labels).toHaveLength(3);
+    expect(series.high).toEqual([12, 14, 16]);
   });
 
   it("findHourlyNowPosition interpolates between hour columns", () => {
