@@ -3,25 +3,10 @@ import type { ForecastItem } from "../types";
 import {
   buildDailySeries,
   buildHourlySeries,
-  findHourlyNowIndex,
+  findHourlyNowPosition,
   forecastHasPrecipProbability,
   seriesFingerprint,
 } from "./forecast-chart";
-
-const hourlyItems: ForecastItem[] = [
-  {
-    datetime: new Date(Date.now() - 3600_000).toISOString(),
-    temperature: 10,
-  },
-  {
-    datetime: new Date().toISOString(),
-    temperature: 12,
-  },
-  {
-    datetime: new Date(Date.now() + 3600_000).toISOString(),
-    temperature: 14,
-  },
-];
 
 describe("forecast-chart", () => {
   it("buildDailySeries slices and labels", () => {
@@ -36,13 +21,34 @@ describe("forecast-chart", () => {
     expect(series.low).toEqual([12, 14]);
   });
 
-  it("buildHourlySeries sets nowIndex", () => {
-    const series = buildHourlySeries(hourlyItems, 3, "rainfall", "en");
-    expect(series.nowIndex).toBe(1);
+  it("buildHourlySeries includes datetimes", () => {
+    const items: ForecastItem[] = [
+      { datetime: "2026-08-22T14:00:00", temperature: 10 },
+      { datetime: "2026-08-22T15:00:00", temperature: 12 },
+      { datetime: "2026-08-22T16:00:00", temperature: 14 },
+    ];
+    const series = buildHourlySeries(items, 3, "rainfall", "en");
+    expect(series.datetimes).toEqual([
+      "2026-08-22T14:00:00",
+      "2026-08-22T15:00:00",
+      "2026-08-22T16:00:00",
+    ]);
   });
 
-  it("findHourlyNowIndex picks closest hour", () => {
-    expect(findHourlyNowIndex(hourlyItems, 3)).toBe(1);
+  it("findHourlyNowPosition interpolates between hour columns", () => {
+    const datetimes = [
+      "2026-08-22T14:00:00",
+      "2026-08-22T15:00:00",
+      "2026-08-22T16:00:00",
+    ];
+    const now = new Date("2026-08-22T15:15:00").getTime();
+    expect(findHourlyNowPosition(datetimes, now)).toBeCloseTo(1.25, 5);
+  });
+
+  it("findHourlyNowPosition at exact hour", () => {
+    const datetimes = ["2026-08-22T15:00:00", "2026-08-22T16:00:00"];
+    const now = new Date("2026-08-22T15:00:00").getTime();
+    expect(findHourlyNowPosition(datetimes, now)).toBe(0);
   });
 
   it("seriesFingerprint is stable", () => {

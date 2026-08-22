@@ -177,7 +177,7 @@ describe("resolveAlerts", () => {
     expect(
       resolveAlerts(h, {
         show_alerts: false,
-        alerts_entity: "binary_sensor.meteoalarm",
+        alerts_entities: ["binary_sensor.meteoalarm"],
       }),
     ).toEqual([]);
   });
@@ -195,7 +195,7 @@ describe("resolveAlerts", () => {
     });
     const alerts = resolveAlerts(h, {
       show_alerts: true,
-      alerts_entity: "binary_sensor.meteoalarm",
+      alerts_entities: ["binary_sensor.meteoalarm"],
     });
     expect(alerts).toHaveLength(1);
     expect(summaryLabel(alerts)).toBe("Wind");

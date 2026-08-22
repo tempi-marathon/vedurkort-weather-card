@@ -1,4 +1,5 @@
 import type { MeteoconName } from "../icons/allowlist";
+import { localize } from "../localize";
 import type { AlertSeverity, WeatherAlert } from "./types";
 
 /**
@@ -129,10 +130,15 @@ export function highestSeverityIcon(alerts: WeatherAlert[]): MeteoconName {
   return alertIconName(alerts[0]!);
 }
 
-export function summaryLabel(alerts: WeatherAlert[]): string {
+export function summaryLabel(
+  alerts: WeatherAlert[],
+  language?: string,
+): string {
   if (alerts.length === 0) return "";
   if (alerts.length === 1) return shortEvent(alerts[0]!);
-  return `${alerts.length} active warnings`;
+  return localize("active_warnings", language, {
+    count: String(alerts.length),
+  });
 }
 
 /** Primary line for an alert row. */

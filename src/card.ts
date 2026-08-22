@@ -1,6 +1,7 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { Chart } from "chart.js";
+import { bindCardActions, effectiveTapAction } from "./actions";
 import { formatAlertDateTime, formatAlertTimeStatus, sanitizeAlertHtml } from "./alerts/format";
 import { resolveAlerts } from "./alerts/resolve";
 import {
@@ -12,20 +13,13 @@ import {
   alertSubtitle,
 } from "./alerts/summary";
 import type { WeatherAlert } from "./alerts/types";
+import { phaseLabel } from "./alerts/utils";
 import {
   backgroundStyles,
   conditionToScene,
   renderBackground,
 } from "./backgrounds/scenes";
-import {
-  buildDailySeries,
-  buildHourlySeries,
-  chartChromeForScene,
-  createForecastChart,
-  getChartPlotArea,
-  seriesFingerprint,
-  syncForecastChart,
-} from "./charts/forecast-chart";
+import { loadForecastChartModule } from "./charts/chart-loader";
 import { renderForecastRow } from "./charts/forecast-row";
 import {
   DEFAULT_CONFIG,
@@ -42,7 +36,9 @@ import {
   windSpeedToBeaufort,
 } from "./icons/condition-map";
 import { getMeteoconSvg } from "./icons/meteocons";
+import { localize, resolveLanguage } from "./localize";
 import type { ForecastItem, HomeAssistant, LovelaceCardEditor } from "./types";
+import { trapFocus } from "./ui/focus-trap";
 import { tipWrap } from "./ui/tooltip";
 import {
   formatNumber,
@@ -88,6 +84,14 @@ export class VedurkortWeatherCard extends LitElement {
   private _unsubDaily: (() => void) | undefined;
   private _unsubHourly: (() => void) | undefined;
   private _forecastLoading = false;
+  private _chartMod: Awaited<
+    ReturnType<typeof loadForecastChartModule>
+  > | null = null;
+  private _chartModLoading = false;
+  private _unbindActions: (() => void) | undefined;
+  private _unbindFocusTrap: (() => void) | undefined;
+  private _alertsTrigger: HTMLElement | null = null;
+  private _nowLineTimer: ReturnType<typeof setInterval> | undefined;
 
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
     await import("./editor");
@@ -114,6 +118,8 @@ export class VedurkortWeatherCard extends LitElement {
     let size = this._config.show_current ? 3 : 1;
     if (this._config.daily.enabled) size += 3;
     if (this._config.hourly.enabled) size += 3;
+    if (this._config.layout === "compact") size = Math.max(2, size - 1);
+    if (this._config.layout === "minimal") size = Math.max(1, size - 2);
     if (
       this._config.show_alerts &&
       this.hass &&
@@ -144,7 +150,13 @@ export class VedurkortWeatherCard extends LitElement {
       changed.has("_config") ||
       changed.has("hass")
     ) {
-      this.updateComplete.then(() => this._renderCharts());
+      this.updateComplete.then(() => void this._renderCharts());
+    }
+    if (changed.has("_alertsOpen")) {
+      this.updateComplete.then(() => this._syncAlertsDialogA11y());
+    }
+    if (changed.has("_config") || changed.has("hass")) {
+      this.updateComplete.then(() => this._bindCardActions());
     }
   }
 
@@ -152,6 +164,62 @@ export class VedurkortWeatherCard extends LitElement {
     super.disconnectedCallback();
     this._teardownForecast();
     this._destroyCharts();
+    this._unbindActions?.();
+    this._unbindActions = undefined;
+    this._unbindFocusTrap?.();
+    this._unbindFocusTrap = undefined;
+    this._clearNowLineTimer();
+  }
+
+  private _bindCardActions(): void {
+    this._unbindActions?.();
+    this._unbindActions = undefined;
+    if (!this._config?.entity || !this.hass) return;
+    const target = this.renderRoot.querySelector(
+      ".action-target",
+    ) as HTMLElement | null;
+    if (!target) return;
+    this._unbindActions = bindCardActions(
+      target,
+      this.hass,
+      this._config.entity,
+      {
+        tap: effectiveTapAction(this._config),
+        hold: this._config.hold_action,
+        double_tap: this._config.double_tap_action,
+      },
+    );
+  }
+
+  private _syncAlertsDialogA11y(): void {
+    this._unbindFocusTrap?.();
+    this._unbindFocusTrap = undefined;
+    if (!this._alertsOpen) {
+      this._alertsTrigger?.focus();
+      this._alertsTrigger = null;
+      return;
+    }
+    const modal = this.renderRoot.querySelector(
+      ".alerts-modal",
+    ) as HTMLElement | null;
+    if (!modal) return;
+    modal.focus();
+    this._unbindFocusTrap = trapFocus(modal);
+  }
+
+  private _syncNowLineTimer(): void {
+    this._clearNowLineTimer();
+    if (!this._config?.hourly.enabled || !this._hourlyChart) return;
+    this._nowLineTimer = setInterval(() => {
+      this._hourlyChart?.update("none");
+    }, 60_000);
+  }
+
+  private _clearNowLineTimer(): void {
+    if (this._nowLineTimer) {
+      clearInterval(this._nowLineTimer);
+      this._nowLineTimer = undefined;
+    }
   }
 
   private _teardownForecast(): void {
@@ -215,8 +283,11 @@ export class VedurkortWeatherCard extends LitElement {
         this._destroyChart("hourly");
       }
     } catch (err) {
+      const language = resolveLanguage(this.hass);
       const message =
-        err instanceof Error ? err.message : "Failed to load forecast";
+        err instanceof Error
+          ? err.message
+          : localize("forecast_failed", language);
       if (wantDaily) {
         this._dailyForecast = [];
         this._dailyError = message;
@@ -247,6 +318,7 @@ export class VedurkortWeatherCard extends LitElement {
       this._hourlyPlotLeft = 0;
       this._hourlyPlotWidth = 0;
     }
+    if (mode === "hourly") this._clearNowLineTimer();
   }
 
   private _destroyCharts(): void {
@@ -255,9 +327,11 @@ export class VedurkortWeatherCard extends LitElement {
   }
 
   private _syncPlotArea(mode: "daily" | "hourly"): void {
+    const mod = this._chartMod;
+    if (!mod) return;
     const chart = mode === "daily" ? this._dailyChart : this._hourlyChart;
     if (!chart) return;
-    const area = getChartPlotArea(chart);
+    const area = mod.getChartPlotArea(chart);
     if (!area) return;
     if (mode === "daily") {
       if (
@@ -281,6 +355,25 @@ export class VedurkortWeatherCard extends LitElement {
       this._destroyCharts();
       return;
     }
+    if (!this._config.daily.enabled && !this._config.hourly.enabled) {
+      this._destroyCharts();
+      this._chartMod = null;
+      return;
+    }
+    void this._renderChartsAsync();
+  }
+
+  private async _renderChartsAsync(): Promise<void> {
+    if (!this._config) return;
+    if (!this._chartMod && !this._chartModLoading) {
+      this._chartModLoading = true;
+      try {
+        this._chartMod = await loadForecastChartModule();
+      } finally {
+        this._chartModLoading = false;
+      }
+    }
+    if (!this._chartMod) return;
     if (this._config.daily.enabled) {
       this._renderOneChart("daily");
     } else {
@@ -307,6 +400,8 @@ export class VedurkortWeatherCard extends LitElement {
   }
 
   private _renderOneChart(mode: "daily" | "hourly"): void {
+    const mod = this._chartMod;
+    if (!mod) return;
     const canvas = this.renderRoot.querySelector(
       `canvas.forecast-canvas-${mode}`,
     ) as HTMLCanvasElement | null;
@@ -321,7 +416,7 @@ export class VedurkortWeatherCard extends LitElement {
       snap?.isDay ?? true,
     );
     const textColor = this._chartTextColor();
-    const chrome = chartChromeForScene(
+    const chrome = mod.chartChromeForScene(
       this._config.animated_background,
       scene,
       textColor,
@@ -330,10 +425,7 @@ export class VedurkortWeatherCard extends LitElement {
       (snap?.entity.attributes.precipitation_unit as string | undefined) ??
       "mm";
     const temperatureUnit = snap?.temperatureUnit ?? "°C";
-    const language =
-      this.hass.locale?.language ??
-      this.hass.language ??
-      this.hass.config.language;
+    const language = resolveLanguage(this.hass);
 
     const precipType =
       mode === "daily"
@@ -343,13 +435,13 @@ export class VedurkortWeatherCard extends LitElement {
       mode === "daily" ? this._dailyForecast : this._hourlyForecast;
     const series =
       mode === "daily"
-        ? buildDailySeries(
+        ? mod.buildDailySeries(
             items,
             this._config.daily.days,
             precipType,
             language,
           )
-        : buildHourlySeries(
+        : mod.buildHourlySeries(
             items,
             this._config.hourly.hours,
             precipType,
@@ -362,7 +454,7 @@ export class VedurkortWeatherCard extends LitElement {
     }
 
     const modeKey = `${mode}:${precipType}:${precipUnit}:${temperatureUnit}:${textColor}:${this._config.animated_background}:${scene}`;
-    const fingerprint = seriesFingerprint(series);
+    const fingerprint = mod.seriesFingerprint(series);
     const existing = mode === "daily" ? this._dailyChart : this._hourlyChart;
     const existingKey =
       mode === "daily" ? this._dailyChartModeKey : this._hourlyChartModeKey;
@@ -377,7 +469,7 @@ export class VedurkortWeatherCard extends LitElement {
     }
 
     if (existing && existingKey.split(":")[0] === mode) {
-      syncForecastChart(
+      mod.syncForecastChart(
         existing,
         series,
         mode,
@@ -385,6 +477,7 @@ export class VedurkortWeatherCard extends LitElement {
         chrome,
         precipUnit,
         temperatureUnit,
+        language,
       );
       if (mode === "daily") {
         this._dailyChartFingerprint = fingerprint;
@@ -398,7 +491,7 @@ export class VedurkortWeatherCard extends LitElement {
     }
 
     this._destroyChart(mode);
-    const chart = createForecastChart(
+    const chart = mod.createForecastChart(
       canvas,
       series,
       mode,
@@ -406,6 +499,7 @@ export class VedurkortWeatherCard extends LitElement {
       chrome,
       precipUnit,
       temperatureUnit,
+      language,
     );
     if (mode === "daily") {
       this._dailyChart = chart;
@@ -416,6 +510,7 @@ export class VedurkortWeatherCard extends LitElement {
       this._hourlyChartFingerprint = fingerprint;
       this._hourlyChartModeKey = modeKey;
     }
+    if (mode === "hourly") this._syncNowLineTimer();
     requestAnimationFrame(() => this._syncPlotArea(mode));
   }
 
@@ -447,6 +542,7 @@ export class VedurkortWeatherCard extends LitElement {
   }
 
   private _openAlerts(alerts: WeatherAlert[], preferredId?: string): void {
+    this._alertsTrigger = document.activeElement as HTMLElement | null;
     this._expandedAlertIds = preferredId
       ? [preferredId]
       : alerts[0]
@@ -466,12 +562,12 @@ export class VedurkortWeatherCard extends LitElement {
       : [...this._expandedAlertIds, id];
   }
 
-  private _renderAlertsStrip(alerts: WeatherAlert[]) {
+  private _renderAlertsStrip(alerts: WeatherAlert[], language?: string) {
     if (!alerts.length) return nothing;
     const top = alerts[0]!;
     const icon = highestSeverityIcon(alerts);
     const single = alerts.length === 1;
-    const timeStatus = single ? formatAlertTimeStatus(top) : "";
+    const timeStatus = single ? formatAlertTimeStatus(top, Date.now(), language) : "";
     return html`
       <button
         type="button"
@@ -481,7 +577,7 @@ export class VedurkortWeatherCard extends LitElement {
       >
         <span class="alerts-strip-icon" .innerHTML=${this._icon(icon)}></span>
         <span class="alerts-strip-text">
-          <span class="alerts-strip-label">${summaryLabel(alerts)}</span>
+          <span class="alerts-strip-label">${summaryLabel(alerts, language)}</span>
           ${timeStatus
             ? html`<span class="alerts-strip-sub">${timeStatus}</span>`
             : nothing}
@@ -491,16 +587,22 @@ export class VedurkortWeatherCard extends LitElement {
     `;
   }
 
-  private _renderAlertBadges(alert: WeatherAlert) {
+  private _forecastErrorText(error: string, language?: string): string {
+    if (error === "Failed to load forecast") {
+      return localize("forecast_failed", language);
+    }
+    return error;
+  }
+
+  private _renderAlertBadges(alert: WeatherAlert, language?: string) {
+    const phase = phaseLabel(alert.phase, language);
     return html`
       <div class="alerts-badges">
         <span class="alerts-badge ${severityAccentClass(alert)}"
           >${alert.severityLabel}</span
         >
-        ${alert.phase
-          ? html`<span class="alerts-badge alerts-badge-phase"
-              >${alert.phase}</span
-            >`
+        ${phase
+          ? html`<span class="alerts-badge alerts-badge-phase">${phase}</span>`
           : nothing}
       </div>
     `;
@@ -525,24 +627,26 @@ export class VedurkortWeatherCard extends LitElement {
           class="alerts-modal"
           role="dialog"
           aria-modal="true"
-          aria-label="Weather alerts"
+          aria-labelledby="alerts-modal-title"
           tabindex="-1"
         >
           <div class="alerts-modal-header">
-            <h2 class="alerts-modal-title">Weather alerts</h2>
+            <h2 id="alerts-modal-title" class="alerts-modal-title">
+              ${localize("weather_alerts", language)}
+            </h2>
             <button
               type="button"
               class="alerts-modal-close"
               @click=${() => this._closeAlerts()}
             >
-              Close
+              ${localize("close", language)}
             </button>
           </div>
           <ul class="alerts-accordion">
             ${alerts.map((alert) => {
               const expanded = this._expandedAlertIds.includes(alert.id);
               const subtitle = alertSubtitle(alert);
-              const relative = formatAlertTimeStatus(alert);
+              const relative = formatAlertTimeStatus(alert, Date.now(), language);
               return html`
                 <li
                   class="alerts-acc-item ${severityAccentClass(alert)}${expanded
@@ -569,7 +673,7 @@ export class VedurkortWeatherCard extends LitElement {
                             <span>${subtitle}</span>
                           </span>`
                         : nothing}
-                      ${this._renderAlertBadges(alert)}
+                      ${this._renderAlertBadges(alert, language)}
                       ${relative
                         ? html`<span class="alerts-acc-time">${relative}</span>`
                         : nothing}
@@ -583,13 +687,13 @@ export class VedurkortWeatherCard extends LitElement {
                         <div class="alerts-acc-body">
                           <dl class="alerts-times">
                             <div>
-                              <dt>Onset</dt>
+                              <dt>${localize("onset", language)}</dt>
                               <dd>
                                 ${formatAlertDateTime(alert.onset, language)}
                               </dd>
                             </div>
                             <div>
-                              <dt>Expires</dt>
+                              <dt>${localize("expires", language)}</dt>
                               <dd>
                                 ${formatAlertDateTime(alert.expires, language)}
                               </dd>
@@ -605,7 +709,7 @@ export class VedurkortWeatherCard extends LitElement {
                             : nothing}
                           ${alert.instruction
                             ? html`<div class="alerts-instruction">
-                                <strong>Instructions</strong>
+                                <strong>${localize("instructions", language)}</strong>
                                 <div
                                   .innerHTML=${sanitizeAlertHtml(
                                     alert.instruction,
@@ -645,18 +749,27 @@ export class VedurkortWeatherCard extends LitElement {
       mode === "daily" ? this._dailyPlotLeft : this._hourlyPlotLeft;
     const plotWidth =
       mode === "daily" ? this._dailyPlotWidth : this._hourlyPlotWidth;
+    const scrollable =
+      mode === "hourly" && this._config.hourly.hours > 12;
 
     return html`
-      <div class="forecast forecast-${mode}">
-        ${error ? html`<div class="warn">${error}</div>` : nothing}
+      <div class="forecast forecast-${mode}${scrollable ? " forecast-scroll" : ""}">
+        ${error
+          ? html`<div class="warn">${this._forecastErrorText(error, language)}</div>`
+          : nothing}
         ${!error && !slice.length
           ? html`<div class="warn">
-              No ${mode} forecast data available on
-              <code>${this._config.entity}</code>
+              ${localize("no_forecast", language, {
+                mode: localize(
+                  mode === "daily" ? "mode_daily" : "mode_hourly",
+                  language,
+                ),
+              })} <code>${this._config.entity}</code>
             </div>`
           : nothing}
         ${slice.length
           ? html`
+              <div class="forecast-scroll-inner" style=${scrollable ? `--cols: ${slice.length}` : ""}>
               <div class="chart-wrap">
                 <canvas class="forecast-canvas-${mode}"></canvas>
               </div>
@@ -679,6 +792,7 @@ export class VedurkortWeatherCard extends LitElement {
                   weatherEntityId: this._config.entity,
                 })}
               </div>
+              </div>
             `
           : nothing}
       </div>
@@ -687,9 +801,10 @@ export class VedurkortWeatherCard extends LitElement {
 
   protected render() {
     if (!this._config) return html``;
+    const language = resolveLanguage(this.hass);
     if (!this.hass) {
       return html`<ha-card
-        ><div class="pad">Waiting for Home Assistant…</div></ha-card
+        ><div class="pad">${localize("waiting", language)}</div></ha-card
       >`;
     }
 
@@ -697,7 +812,7 @@ export class VedurkortWeatherCard extends LitElement {
       return html`
         <ha-card>
           <div class="pad empty">
-            Configure a weather entity for this card.
+            ${localize("configure_entity", language)}
           </div>
         </ha-card>
       `;
@@ -708,7 +823,7 @@ export class VedurkortWeatherCard extends LitElement {
       return html`
         <ha-card>
           <div class="pad warn">
-            Entity not found: <code>${this._config.entity}</code>
+            ${localize("entity_not_found", language)}: <code>${this._config.entity}</code>
           </div>
         </ha-card>
       `;
@@ -720,12 +835,10 @@ export class VedurkortWeatherCard extends LitElement {
       snap.cloudCoverage,
     );
     const scene = conditionToScene(snap.condition, snap.isDay);
-    const language =
-      this.hass.locale?.language ??
-      this.hass.language ??
-      this.hass.config.language;
 
     const bft = windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit);
+    const gustBft = windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit);
+    const layout = this._config.layout ?? "default";
     const showCurrent = this._config.show_current;
     const showName = this._config.show_name;
     const showNameInCurrent = showName && showCurrent;
@@ -740,6 +853,7 @@ export class VedurkortWeatherCard extends LitElement {
         this._config.show_humidity ||
         this._config.show_wind_speed ||
         this._config.show_wind_direction ||
+        this._config.show_wind_gust ||
         this._config.show_uv_index ||
         this._config.show_pressure ||
         this._config.show_cloud_coverage ||
@@ -755,14 +869,19 @@ export class VedurkortWeatherCard extends LitElement {
       return html`
         <ha-card>
           <div class="pad empty">
-            Enable a section in the card configuration to show weather content.
+            ${localize("enable_section", language)}
           </div>
         </ha-card>
       `;
     }
 
     return html`
-      <ha-card class=${this._config.animated_background ? "has-bg" : ""}>
+      <ha-card class="${[
+        this._config.animated_background ? "has-bg" : "",
+        `layout-${layout}`,
+      ]
+        .filter(Boolean)
+        .join(" ")}">
         ${renderBackground(
           this._config.animated_background,
           scene,
@@ -779,7 +898,7 @@ export class VedurkortWeatherCard extends LitElement {
           ${showCurrent
             ? html`
                 <div class="section section-current">
-                  <div class="main">
+                  <div class="main action-target">
                     <div class="main-text">
                       ${showNameInCurrent
                         ? html`<div class="location">${snap.name}</div>`
@@ -790,7 +909,7 @@ export class VedurkortWeatherCard extends LitElement {
                         </div>
                         ${feelsLikeText
                           ? html`<div class="feels-like">
-                              Feels like ${feelsLikeText}
+                              ${localize("feels_like", language)} ${feelsLikeText}
                             </div>`
                           : nothing}
                       </div>
@@ -803,7 +922,7 @@ export class VedurkortWeatherCard extends LitElement {
                   </div>
 
                   ${showAlertsStrip
-                    ? this._renderAlertsStrip(alerts)
+                    ? this._renderAlertsStrip(alerts, language)
                     : nothing}
 
                   ${showDetails
@@ -814,25 +933,28 @@ export class VedurkortWeatherCard extends LitElement {
                               ? this._detail(
                                   "sunset",
                                   formatTime(snap.sunset, language),
-                                  "Sunset",
+                                  localize("sunset", language),
                                 )
                               : this._detail(
                                   "sunrise",
                                   formatTime(snap.sunrise, language),
-                                  "Sunrise",
+                                  localize("sunrise", language),
                                 )
                             : nothing}
                           ${this._config.show_humidity
                             ? this._detail(
                                 "humidity",
                                 formatNumber(snap.humidity, "%", 0),
-                                "Humidity",
+                                localize("humidity", language),
                               )
                             : nothing}
                           ${this._config.show_wind_speed &&
                           snap.windSpeed != null
                             ? tipWrap(
-                                `Wind ${Math.round(snap.windSpeed)} ${snap.windSpeedUnit} (Beaufort ${bft})`,
+                                localize("wind_tip", language, {
+                                  speed: `${Math.round(snap.windSpeed)} ${snap.windSpeedUnit}`,
+                                  bft: String(bft),
+                                }),
                                 html`
                                   <span
                                     class="detail-icon"
@@ -840,6 +962,26 @@ export class VedurkortWeatherCard extends LitElement {
                                   ></span>
                                   <span
                                     >${Math.round(snap.windSpeed)}
+                                    ${snap.windSpeedUnit}</span
+                                  >
+                                `,
+                                "detail",
+                              )
+                            : nothing}
+                          ${this._config.show_wind_gust &&
+                          snap.windGust != null
+                            ? tipWrap(
+                                localize("wind_tip", language, {
+                                  speed: `${Math.round(snap.windGust)} ${snap.windSpeedUnit}`,
+                                  bft: String(gustBft),
+                                }),
+                                html`
+                                  <span
+                                    class="detail-icon"
+                                    .innerHTML=${this._icon(beaufortIcon(gustBft))}
+                                  ></span>
+                                  <span
+                                    >${Math.round(snap.windGust)}
                                     ${snap.windSpeedUnit}</span
                                   >
                                 `,
@@ -854,14 +996,14 @@ export class VedurkortWeatherCard extends LitElement {
                                 bearingToLabel(
                                   snap.windBearing ?? undefined,
                                 ),
-                                "Wind direction",
+                                localize("wind_direction", language),
                               )
                             : nothing}
                           ${this._config.show_uv_index
                             ? this._detail(
                                 uvIndexIcon(snap.uvIndex),
                                 formatNumber(snap.uvIndex, "", 0),
-                                "UV index",
+                                localize("uv_index", language),
                               )
                             : nothing}
                           ${this._config.show_pressure
@@ -872,14 +1014,14 @@ export class VedurkortWeatherCard extends LitElement {
                                   ` ${snap.pressureUnit}`,
                                   0,
                                 ),
-                                "Pressure",
+                                localize("pressure", language),
                               )
                             : nothing}
                           ${this._config.show_cloud_coverage
                             ? this._detail(
                                 "cloudy",
                                 formatNumber(snap.cloudCoverage, "%", 0),
-                                "Cloud coverage",
+                                localize("cloud_coverage", language),
                               )
                             : nothing}
                           ${this._config.show_dew_point
@@ -889,7 +1031,7 @@ export class VedurkortWeatherCard extends LitElement {
                                   snap.dewPoint,
                                   snap.temperatureUnit,
                                 ),
-                                "Dew point",
+                                localize("dew_point", language),
                               )
                             : nothing}
                           ${this._config.show_visibility
@@ -900,7 +1042,7 @@ export class VedurkortWeatherCard extends LitElement {
                                   ` ${snap.visibilityUnit}`,
                                   0,
                                 ),
-                                "Visibility",
+                                localize("visibility", language),
                               )
                             : nothing}
                           ${this._config.show_precipitation
@@ -910,7 +1052,7 @@ export class VedurkortWeatherCard extends LitElement {
                                   snap.precipitation,
                                   snap.precipitationUnit,
                                 ),
-                                "Precipitation",
+                                localize("precipitation", language),
                               )
                             : nothing}
                           ${this._config.show_precipitation_probability
@@ -921,7 +1063,7 @@ export class VedurkortWeatherCard extends LitElement {
                                   "%",
                                   0,
                                 ),
-                                "Precipitation probability",
+                                localize("precipitation_probability", language),
                               )
                             : nothing}
                         </div>
@@ -931,7 +1073,7 @@ export class VedurkortWeatherCard extends LitElement {
               `
             : showAlertsStrip
               ? html`<div class="section section-alerts">
-                  ${this._renderAlertsStrip(alerts)}
+                  ${this._renderAlertsStrip(alerts, language)}
                 </div>`
               : nothing}
 
@@ -1007,6 +1149,51 @@ export class VedurkortWeatherCard extends LitElement {
         align-items: center;
         justify-content: space-between;
         gap: 12px;
+      }
+      .action-target {
+        cursor: pointer;
+      }
+      ha-card.layout-compact .main {
+        gap: 10px;
+      }
+      ha-card.layout-compact .main-icon {
+        width: 72px;
+        height: 72px;
+      }
+      ha-card.layout-compact .temp {
+        font-size: 2rem;
+      }
+      ha-card.layout-compact .chart-wrap {
+        height: 150px;
+      }
+      ha-card.layout-minimal .main {
+        gap: 8px;
+      }
+      ha-card.layout-minimal .main-icon {
+        width: 56px;
+        height: 56px;
+      }
+      ha-card.layout-minimal .temp {
+        font-size: 1.75rem;
+      }
+      ha-card.layout-minimal .condition {
+        font-size: 0.85rem;
+      }
+      ha-card.layout-minimal .location {
+        font-size: 0.95rem;
+      }
+      ha-card.layout-minimal .details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 8px;
+        margin-top: 10px;
+        font-size: 0.82rem;
+      }
+      ha-card.layout-minimal .detail-icon {
+        width: 22px;
+        height: 22px;
+      }
+      ha-card.layout-minimal .chart-wrap {
+        height: 130px;
       }
       .location {
         font-size: 1.05rem;
@@ -1469,6 +1656,26 @@ export class VedurkortWeatherCard extends LitElement {
       }
       .forecast {
         margin-top: 0;
+      }
+      .forecast-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-left: -4px;
+        margin-right: -4px;
+        padding-left: 4px;
+        padding-right: 4px;
+      }
+      .forecast-scroll-inner {
+        min-width: 100%;
+      }
+      .forecast-scroll .forecast-scroll-inner {
+        min-width: max(100%, calc(var(--cols, 12) * 52px));
+      }
+      .forecast-scroll .chart-wrap {
+        min-width: max(100%, calc(var(--cols, 12) * 52px));
+      }
+      .forecast-scroll .forecast-row {
+        min-width: max(100%, calc(var(--cols, 12) * 52px));
       }
       .chart-wrap {
         height: 180px;

@@ -1,6 +1,9 @@
 import { ICON_STYLES, type IconStyle } from "./icons/allowlist";
+import type { ActionConfig } from "./types";
 
 export type PrecipType = "rainfall" | "probability";
+export type CardLayout = "default" | "compact" | "minimal";
+export const CARD_LAYOUTS: CardLayout[] = ["default", "compact", "minimal"];
 
 export interface ForecastBlockConfig {
   enabled: boolean;
@@ -24,6 +27,8 @@ export interface VedurkortCardConfig {
   name?: string;
   /** Show location/title header (uses `name` or entity friendly name). */
   show_name: boolean;
+  /** Visual density: default, compact (inline hero), minimal (temp + icon). */
+  layout: CardLayout;
   icon_style: IconStyle;
   animated_icons: boolean;
   animated_background: boolean;
@@ -32,6 +37,7 @@ export interface VedurkortCardConfig {
   show_sun: boolean;
   show_wind_speed: boolean;
   show_wind_direction: boolean;
+  show_wind_gust: boolean;
   show_humidity: boolean;
   show_uv_index: boolean;
   show_pressure: boolean;
@@ -48,9 +54,7 @@ export interface VedurkortCardConfig {
   show_alerts: boolean;
   /** CAP Alerts (or similar) device id — discovers child alert sensors. */
   alerts_device?: string;
-  /** Single alert entity (e.g. binary_sensor.meteoalarm). */
-  alerts_entity?: string;
-  /** Additional alert entities to merge. */
+  /** MeteoAlarm / CAP alert entities to read (one or more). */
   alerts_entities?: string[];
   /** Optional override for current condition (scene, icon, label). Forecast unchanged. */
   condition_entity?: string;
@@ -58,6 +62,10 @@ export interface VedurkortCardConfig {
   humidity_entity?: string;
   wind_speed_entity?: string;
   wind_bearing_entity?: string;
+  wind_gust_entity?: string;
+  tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
   uv_index_entity?: string;
   pressure_entity?: string;
   cloud_coverage_entity?: string;
@@ -84,10 +92,12 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   animated_icons: true,
   animated_background: false,
   show_name: true,
+  layout: "default",
   show_current: true,
   show_sun: false,
   show_wind_speed: false,
   show_wind_direction: false,
+  show_wind_gust: false,
   show_humidity: false,
   show_uv_index: false,
   show_pressure: false,
@@ -131,7 +141,7 @@ function mergeConfigFields(
   daily.enabled = Boolean(daily.enabled);
   hourly.enabled = Boolean(hourly.enabled);
 
-  const alertsEntities = normalizeStringList(input.alerts_entities);
+  const alertsEntities = normalizeAlertEntities(input);
 
   return {
     ...DEFAULT_CONFIG,
@@ -143,14 +153,17 @@ function mergeConfigFields(
     ),
     show_alerts: Boolean(input.show_alerts ?? DEFAULT_CONFIG.show_alerts),
     alerts_device: emptyToUndef(input.alerts_device),
-    alerts_entity: emptyToUndef(input.alerts_entity),
     alerts_entities: alertsEntities.length ? alertsEntities : undefined,
     daily,
     hourly,
     icon_style: normalizeIconStyle(input.icon_style),
+    layout: normalizeLayout(input.layout),
     animated_icons: input.animated_icons ?? DEFAULT_CONFIG.animated_icons,
     animated_background:
       input.animated_background ?? DEFAULT_CONFIG.animated_background,
+    tap_action: input.tap_action,
+    hold_action: input.hold_action,
+    double_tap_action: input.double_tap_action,
   };
 }
 
@@ -174,6 +187,12 @@ function normalizeIconStyle(value: unknown): IconStyle {
   return ICON_STYLES.includes(value as IconStyle)
     ? (value as IconStyle)
     : DEFAULT_CONFIG.icon_style;
+}
+
+function normalizeLayout(value: unknown): CardLayout {
+  return CARD_LAYOUTS.includes(value as CardLayout)
+    ? (value as CardLayout)
+    : DEFAULT_CONFIG.layout;
 }
 
 function clampInt(
@@ -205,4 +224,22 @@ function normalizeStringList(value: unknown): string[] {
     out.push(t);
   }
   return out;
+}
+
+/** Merge legacy `alerts_entity` into `alerts_entities` on load. */
+function normalizeAlertEntities(
+  input: Partial<VedurkortCardConfig> & {
+    alerts_entity?: string;
+    alerts_entities?: string[];
+  },
+): string[] {
+  const list = normalizeStringList(input.alerts_entities);
+  const legacy =
+    typeof input.alerts_entity === "string"
+      ? input.alerts_entity.trim()
+      : "";
+  if (legacy && !list.includes(legacy)) {
+    return [legacy, ...list];
+  }
+  return list;
 }

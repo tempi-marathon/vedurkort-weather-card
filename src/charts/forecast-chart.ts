@@ -15,6 +15,7 @@ import {
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import type { ForecastBlockConfig, PrecipType } from "../config";
+import { localize } from "../localize";
 import type { ForecastItem } from "../types";
 
 Chart.register(
@@ -36,6 +37,8 @@ export interface ChartSeries {
   high: (number | null)[];
   low: (number | null)[];
   precip: (number | null)[];
+  /** Hourly forecast timestamps (for live “now” line). */
+  datetimes?: string[];
 }
 
 export interface ChartChrome {
@@ -74,6 +77,80 @@ function withAlpha(color: string, alpha: number): string {
   }
   return `rgba(127, 127, 127, ${alpha})`;
 }
+
+/** Fractional x-axis position of “now” between hourly forecast columns (-1 if hidden). */
+export function findHourlyNowPosition(
+  datetimes: string[],
+  nowMs: number = Date.now(),
+): number {
+  if (!datetimes.length) return -1;
+
+  const times = datetimes.map((d) => new Date(d).getTime());
+  if (times.some(Number.isNaN)) return -1;
+
+  const first = times[0]!;
+  const last = times[times.length - 1]!;
+  const maxGap = 90 * 60 * 1000;
+
+  if (nowMs < first) {
+    return first - nowMs <= maxGap ? 0 : -1;
+  }
+
+  for (let i = 0; i < times.length - 1; i++) {
+    const t0 = times[i]!;
+    const t1 = times[i + 1]!;
+    if (nowMs >= t0 && nowMs <= t1) {
+      const span = t1 - t0;
+      return span > 0 ? i + (nowMs - t0) / span : i;
+    }
+  }
+
+  if (nowMs > last && nowMs - last <= maxGap) {
+    return times.length - 1;
+  }
+
+  return -1;
+}
+
+function nowLinePixelX(chart: Chart): number | null {
+  const datetimes = (chart.options as { vkNowDatetimes?: string[] })
+    .vkNowDatetimes;
+  if (!datetimes?.length) return null;
+
+  const position = findHourlyNowPosition(datetimes);
+  if (position < 0) return null;
+
+  const xScale = chart.scales.x;
+  if (!xScale) return null;
+
+  const i = Math.floor(position);
+  const frac = position - i;
+  const x0 = xScale.getPixelForValue(i);
+  if (frac <= 0 || i >= datetimes.length - 1) return x0;
+  const x1 = xScale.getPixelForValue(i + 1);
+  return x0 + frac * (x1 - x0);
+}
+
+const nowLinePlugin = {
+  id: "vkNowLine",
+  afterDraw(chart: Chart) {
+    const x = nowLinePixelX(chart);
+    if (x == null) return;
+    const { top, bottom } = chart.chartArea;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 152, 0, 0.85)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, bottom);
+    ctx.stroke();
+    ctx.restore();
+  },
+};
+
+Chart.register(nowLinePlugin);
 
 /**
  * Chart chrome. Prefer the card's computed text color so weekday labels
@@ -172,6 +249,7 @@ export function buildHourlySeries(
         ? (i.precipitation_probability ?? null)
         : (i.precipitation ?? null),
     ),
+    datetimes: slice.map((i) => i.datetime),
   };
 }
 
@@ -193,12 +271,16 @@ function buildDatasets(
   precipType: PrecipType,
   precipUnit: string,
   chrome: ChartChrome,
+  language?: string,
 ): ChartConfiguration["data"]["datasets"] {
   const hasLow = series.low.some((v) => v != null);
   const datasets: ChartConfiguration["data"]["datasets"] = [
     {
       type: "line",
-      label: mode === "daily" ? "High" : "Temp",
+      label:
+        mode === "daily"
+          ? localize("chart_high", language)
+          : localize("chart_temp", language),
       data: series.high,
       borderColor: "rgba(255, 152, 0, 1)",
       backgroundColor: "rgba(255, 152, 0, 0.15)",
@@ -223,7 +305,7 @@ function buildDatasets(
   if (hasLow) {
     datasets.push({
       type: "line",
-      label: "Low",
+      label: localize("chart_low", language),
       data: series.low,
       borderColor: "rgba(68, 115, 158, 1)",
       backgroundColor: "rgba(68, 115, 158, 0.15)",
@@ -247,7 +329,10 @@ function buildDatasets(
 
   datasets.push({
     type: "bar",
-    label: precipType === "probability" ? "Precip %" : "Precip",
+    label:
+      precipType === "probability"
+        ? localize("chart_precip_pct", language)
+        : localize("chart_precip", language),
     data: series.precip,
     backgroundColor: "rgba(132, 209, 253, 0.55)",
     borderRadius: 3,
@@ -335,17 +420,28 @@ export function createForecastChart(
   chrome: ChartChrome,
   precipUnit = "mm",
   temperatureUnit = "°C",
+  language?: string,
 ): Chart {
   const config: ChartConfiguration = {
     type: "bar",
     data: {
       labels: series.labels,
-      datasets: buildDatasets(series, mode, precipType, precipUnit, chrome),
+      datasets: buildDatasets(
+        series,
+        mode,
+        precipType,
+        precipUnit,
+        chrome,
+        language,
+      ),
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
+      ...(mode === "hourly" && series.datetimes?.length
+        ? ({ vkNowDatetimes: series.datetimes } as Record<string, unknown>)
+        : {}),
       layout: {
         padding: { left: 2, right: 2, top: 6, bottom: 14 },
       },
@@ -426,6 +522,7 @@ export function syncForecastChart(
   chrome: ChartChrome,
   precipUnit = "mm",
   temperatureUnit = "°C",
+  language?: string,
 ): void {
   const nextDatasets = buildDatasets(
     series,
@@ -433,6 +530,7 @@ export function syncForecastChart(
     precipType,
     precipUnit,
     chrome,
+    language,
   );
   const structureChanged =
     chart.data.datasets.length !== nextDatasets.length ||
@@ -454,6 +552,12 @@ export function syncForecastChart(
   }
 
   chart.data.labels = series.labels;
+  if (mode === "hourly" && series.datetimes?.length) {
+    (chart.options as { vkNowDatetimes?: string[] }).vkNowDatetimes =
+      series.datetimes;
+  } else {
+    delete (chart.options as { vkNowDatetimes?: string[] }).vkNowDatetimes;
+  }
   applyChrome(chart, chrome);
   if (chart.options.plugins?.tooltip) {
     chart.options.plugins.tooltip.callbacks = tooltipCallbacks(
