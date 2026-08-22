@@ -3,10 +3,13 @@ import type { ForecastItem } from "../types";
 import {
   buildDailySeries,
   buildHourlySeries,
-  findHourlyNowPosition,
   forecastHasPrecipProbability,
   seriesFingerprint,
 } from "./forecast-chart";
+import {
+  findHourlyNowPosition,
+  sliceHourlyForecast,
+} from "./hourly-window";
 
 describe("forecast-chart", () => {
   it("buildDailySeries slices and labels", () => {
@@ -21,17 +24,19 @@ describe("forecast-chart", () => {
     expect(series.low).toEqual([12, 14]);
   });
 
-  it("buildHourlySeries includes datetimes", () => {
+  it("buildHourlySeries includes datetimes from the current hour", () => {
     const items: ForecastItem[] = [
       { datetime: "2026-08-22T14:00:00", temperature: 10 },
       { datetime: "2026-08-22T15:00:00", temperature: 12 },
       { datetime: "2026-08-22T16:00:00", temperature: 14 },
+      { datetime: "2026-08-22T17:00:00", temperature: 16 },
     ];
-    const series = buildHourlySeries(items, 3, "rainfall", "en");
+    const now = Date.parse("2026-08-22T15:45:00");
+    const series = buildHourlySeries(items, 3, "rainfall", "en", now);
     expect(series.datetimes).toEqual([
-      "2026-08-22T14:00:00",
       "2026-08-22T15:00:00",
       "2026-08-22T16:00:00",
+      "2026-08-22T17:00:00",
     ]);
   });
 
@@ -49,6 +54,24 @@ describe("forecast-chart", () => {
     const datetimes = ["2026-08-22T15:00:00", "2026-08-22T16:00:00"];
     const now = new Date("2026-08-22T15:00:00").getTime();
     expect(findHourlyNowPosition(datetimes, now)).toBe(0);
+  });
+
+  it("sliceHourlyForecast starts at the current hour", () => {
+    const items: ForecastItem[] = [
+      { datetime: "2026-08-22T12:00:00", temperature: 10 },
+      { datetime: "2026-08-22T13:00:00", temperature: 11 },
+      { datetime: "2026-08-22T14:00:00", temperature: 12 },
+      { datetime: "2026-08-22T15:00:00", temperature: 13 },
+      { datetime: "2026-08-22T16:00:00", temperature: 14 },
+      { datetime: "2026-08-22T17:00:00", temperature: 15 },
+    ];
+    const now = new Date("2026-08-22T15:45:00").getTime();
+    const slice = sliceHourlyForecast(items, 3, now);
+    expect(slice.map((i) => i.datetime)).toEqual([
+      "2026-08-22T15:00:00",
+      "2026-08-22T16:00:00",
+      "2026-08-22T17:00:00",
+    ]);
   });
 
   it("seriesFingerprint is stable", () => {

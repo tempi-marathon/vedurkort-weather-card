@@ -20,6 +20,10 @@ import {
   renderBackground,
 } from "./backgrounds/scenes";
 import { loadForecastChartModule } from "./charts/chart-loader";
+import {
+  findHourlyNowPosition,
+  sliceHourlyForecast,
+} from "./charts/hourly-window";
 import { renderForecastRow } from "./charts/forecast-row";
 import {
   DEFAULT_CONFIG,
@@ -384,6 +388,29 @@ export class VedurkortWeatherCard extends LitElement {
     } else {
       this._destroyChart("hourly");
     }
+    await this.updateComplete;
+    this._scrollHourlyToNow();
+  }
+
+  private _scrollHourlyToNow(): void {
+    if (!this._config?.hourly.enabled) return;
+    const scrollEl = this.renderRoot.querySelector(
+      ".forecast-hourly.forecast-scroll",
+    ) as HTMLElement | null;
+    if (!scrollEl) return;
+
+    const slice = sliceHourlyForecast(
+      this._hourlyForecast,
+      this._config.hourly.hours,
+    );
+    const pos = findHourlyNowPosition(slice.map((i) => i.datetime));
+    if (pos < 0) return;
+
+    const colWidth =
+      Number.parseFloat(
+        getComputedStyle(scrollEl).getPropertyValue("--forecast-col-width"),
+      ) || 42;
+    scrollEl.scrollLeft = Math.max(0, pos * colWidth - scrollEl.clientWidth * 0.2);
   }
 
   private _chartTextColor(): string {
@@ -744,7 +771,7 @@ export class VedurkortWeatherCard extends LitElement {
     const slice =
       mode === "daily"
         ? items.slice(0, this._config.daily.days)
-        : items.slice(0, this._config.hourly.hours);
+        : sliceHourlyForecast(items, this._config.hourly.hours);
     const plotLeft =
       mode === "daily" ? this._dailyPlotLeft : this._hourlyPlotLeft;
     const plotWidth =
@@ -775,7 +802,7 @@ export class VedurkortWeatherCard extends LitElement {
               </div>
               <div
                 class="forecast-row-slot"
-                style=${plotWidth
+                style=${!scrollable && plotWidth
                   ? `margin-left:${plotLeft}px;width:${plotWidth}px`
                   : ""}
               >
@@ -1658,7 +1685,10 @@ export class VedurkortWeatherCard extends LitElement {
         margin-top: 0;
       }
       .forecast-scroll {
+        --forecast-col-width: 42px;
         overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
         -webkit-overflow-scrolling: touch;
         margin-left: -4px;
         margin-right: -4px;
@@ -1669,13 +1699,27 @@ export class VedurkortWeatherCard extends LitElement {
         min-width: 100%;
       }
       .forecast-scroll .forecast-scroll-inner {
-        min-width: max(100%, calc(var(--cols, 12) * 52px));
+        width: max(100%, calc(var(--cols, 12) * var(--forecast-col-width)));
       }
       .forecast-scroll .chart-wrap {
-        min-width: max(100%, calc(var(--cols, 12) * 52px));
+        width: max(100%, calc(var(--cols, 12) * var(--forecast-col-width)));
+        height: 150px;
+        overflow: hidden;
       }
-      .forecast-scroll .forecast-row {
-        min-width: max(100%, calc(var(--cols, 12) * 52px));
+      .forecast-scroll .forecast-row-slot {
+        margin-left: 0;
+        width: max(100%, calc(var(--cols, 12) * var(--forecast-col-width)));
+      }
+      .forecast-scroll .forecast-icon {
+        width: 32px;
+        height: 32px;
+      }
+      .forecast-scroll .wind-icon {
+        width: 20px;
+        height: 20px;
+      }
+      .forecast-scroll .wind-meta {
+        font-size: 0.65rem;
       }
       .chart-wrap {
         height: 180px;

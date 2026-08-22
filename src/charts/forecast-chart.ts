@@ -15,6 +15,7 @@ import {
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import type { ForecastBlockConfig, PrecipType } from "../config";
+import { findHourlyNowPosition, sliceHourlyForecast } from "./hourly-window";
 import { localize } from "../localize";
 import type { ForecastItem } from "../types";
 
@@ -76,40 +77,6 @@ function withAlpha(color: string, alpha: number): string {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
   return `rgba(127, 127, 127, ${alpha})`;
-}
-
-/** Fractional x-axis position of “now” between hourly forecast columns (-1 if hidden). */
-export function findHourlyNowPosition(
-  datetimes: string[],
-  nowMs: number = Date.now(),
-): number {
-  if (!datetimes.length) return -1;
-
-  const times = datetimes.map((d) => new Date(d).getTime());
-  if (times.some(Number.isNaN)) return -1;
-
-  const first = times[0]!;
-  const last = times[times.length - 1]!;
-  const maxGap = 90 * 60 * 1000;
-
-  if (nowMs < first) {
-    return first - nowMs <= maxGap ? 0 : -1;
-  }
-
-  for (let i = 0; i < times.length - 1; i++) {
-    const t0 = times[i]!;
-    const t1 = times[i + 1]!;
-    if (nowMs >= t0 && nowMs <= t1) {
-      const span = t1 - t0;
-      return span > 0 ? i + (nowMs - t0) / span : i;
-    }
-  }
-
-  if (nowMs > last && nowMs - last <= maxGap) {
-    return times.length - 1;
-  }
-
-  return -1;
 }
 
 function nowLinePixelX(chart: Chart): number | null {
@@ -229,8 +196,9 @@ export function buildHourlySeries(
   hours: number,
   precipType: PrecipType,
   language?: string,
+  nowMs?: number,
 ): ChartSeries {
-  const slice = items.slice(0, hours);
+  const slice = sliceHourlyForecast(items, hours, nowMs);
   const labels = slice.map((i) => {
     try {
       return new Intl.DateTimeFormat(language, {
@@ -467,7 +435,7 @@ export function createForecastChart(
           position: "top",
           ticks: {
             maxRotation: 0,
-            autoSkip: true,
+            autoSkip: mode !== "hourly",
             color: chrome.tick,
             font: { size: 11, weight: "bold" },
           },
