@@ -13,8 +13,27 @@ export interface HassConnection {
   ) => Promise<() => void>;
 }
 
+/** Entity registry entry (present on hass in Lovelace). */
+export interface HassEntityRegistryEntry {
+  entity_id: string;
+  device_id?: string | null;
+  platform?: string;
+  disabled_by?: string | null;
+}
+
+/** Device registry entry (present on hass in Lovelace). */
+export interface HassDeviceRegistryEntry {
+  id: string;
+  name?: string | null;
+  name_by_user?: string | null;
+}
+
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
+  /** Entity registry — used to resolve CAP Alerts device children. */
+  entities?: Record<string, HassEntityRegistryEntry>;
+  /** Device registry — used to label CAP Alerts devices in the editor. */
+  devices?: Record<string, HassDeviceRegistryEntry>;
   locale?: { language?: string };
   language?: string;
   config: {

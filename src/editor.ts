@@ -1,5 +1,12 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import {
+  anchorEntityForDevice,
+  deviceIdFromEntity,
+  findCapAlertDevices,
+  isCapAlertsEntity,
+  isMeteoAlarmEntity,
+} from "./alerts/discovery";
 import { forecastHasPrecipProbability } from "./charts/forecast-chart";
 import {
   DEFAULT_CONFIG,
@@ -8,8 +15,10 @@ import {
   type VedurkortEditorConfig,
 } from "./config";
 import { ICON_STYLES } from "./icons/allowlist";
-import type { HomeAssistant } from "./types";
+import type { HassEntity, HomeAssistant } from "./types";
 import { fetchForecastOnce } from "./weather/adapter";
+
+type AlertsSource = "cap" | "entity";
 
 @customElement("vedurkort-weather-card-editor")
 export class VedurkortWeatherCardEditor extends LitElement {
@@ -18,6 +27,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
   /** null = unknown/loading, true/false = probed from forecast sample */
   @state() private _dailyHasProbability: boolean | null = null;
   @state() private _hourlyHasProbability: boolean | null = null;
+  @state() private _alertsSource: AlertsSource = "cap";
 
   private _probeKey = "";
 
@@ -26,6 +36,15 @@ export class VedurkortWeatherCardEditor extends LitElement {
       ...DEFAULT_CONFIG,
       ...config,
     });
+    this._alertsSource = this._inferAlertsSource(this._config);
+  }
+
+  private _inferAlertsSource(config: VedurkortEditorConfig): AlertsSource {
+    if (config.alerts_device) return "cap";
+    if (config.alerts_entity || (config.alerts_entities?.length ?? 0) > 0) {
+      return "entity";
+    }
+    return "cap";
   }
 
   protected updated(changed: Map<string, unknown>): void {
@@ -135,14 +154,106 @@ export class VedurkortWeatherCardEditor extends LitElement {
     );
   }
 
+  private _setAlertsSource(source: AlertsSource): void {
+    this._alertsSource = source;
+    if (!this._config) return;
+    const next = structuredClone(this._config);
+    if (source === "cap") {
+      next.alerts_entity = undefined;
+      next.alerts_entities = undefined;
+      const devices = this.hass ? findCapAlertDevices(this.hass) : [];
+      if (!next.alerts_device && devices.length === 1) {
+        next.alerts_device = devices[0]!.id;
+      }
+    } else {
+      next.alerts_device = undefined;
+    }
+    this._fire(
+      next.entity ? normalizeConfig(next) : normalizeEditorConfig(next),
+    );
+  }
+
+  private _capAnchorEntityChanged(ev: CustomEvent): void {
+    if (!this._config) return;
+    const entityId = (ev.detail as { value?: string })?.value ?? "";
+    const next = structuredClone(this._config);
+    if (!entityId) {
+      next.alerts_device = undefined;
+    } else {
+      const deviceId = deviceIdFromEntity(this.hass, entityId);
+      if (!deviceId) return;
+      next.alerts_device = deviceId;
+    }
+    next.alerts_entity = undefined;
+    next.alerts_entities = undefined;
+    this._fire(
+      next.entity ? normalizeConfig(next) : normalizeEditorConfig(next),
+    );
+  }
+
+  private _capEntityFilter = (state: HassEntity): boolean =>
+    isCapAlertsEntity(this.hass, state.entity_id);
+
+  private _alertEntityFilter = (state: HassEntity): boolean =>
+    isMeteoAlarmEntity(this.hass, state.entity_id) ||
+    isCapAlertsEntity(this.hass, state.entity_id);
+
+  private _alertsSourceSelectorChanged(ev: CustomEvent): void {
+    const value = (ev.detail as { value?: string })?.value;
+    if (value === "cap" || value === "entity") {
+      this._setAlertsSource(value);
+    }
+  }
+
+  private _alertsSourceSelector = {
+    select: {
+      options: [
+        { value: "cap", label: "CAP Alerts device" },
+        { value: "entity", label: "Single alert entity" },
+      ],
+    },
+  } as const;
+
+  private _renderCapDeviceField() {
+    const devices = this.hass ? findCapAlertDevices(this.hass) : [];
+    const deviceId =
+      this._config.alerts_device ??
+      (devices.length === 1 ? devices[0]!.id : undefined);
+    const displayEntity = deviceId
+      ? (anchorEntityForDevice(this.hass, deviceId) ?? "")
+      : "";
+
+    return html`
+      <p class="hint">
+        Pick any entity on your CAP Alerts device (for example
+        <code>sensor.…_alert_count</code>). The card uses that device and
+        includes all active alerts on it — not just the one entity you pick.
+        ${devices.length === 1
+          ? " One CAP Alerts device was found."
+          : nothing}
+      </p>
+      <div class="field">
+        <span class="label">CAP Alerts device</span>
+        <ha-entity-picker
+          .hass=${this.hass}
+          .value=${displayEntity}
+          .includeDomains=${["sensor", "binary_sensor"]}
+          .entityFilter=${this._capEntityFilter}
+          .allowCustomEntity=${false}
+          @value-changed=${this._capAnchorEntityChanged}
+        ></ha-entity-picker>
+      </div>
+    `;
+  }
+
   private _picker(
     label: string,
     key: keyof VedurkortEditorConfig,
     domainFilter?: string | string[],
     allowCustom = true,
+    entityFilter?: (state: HassEntity) => boolean,
   ) {
     const value = (this._config[key] as string | undefined) ?? "";
-    // ha-entity-picker is provided by Home Assistant frontend
     return html`
       <div class="field">
         <span class="label">${label}</span>
@@ -154,6 +265,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
               ? domainFilter
               : [domainFilter]
             : undefined}
+          .entityFilter=${entityFilter}
           .allowCustomEntity=${allowCustom}
           data-config=${key}
           @value-changed=${(ev: CustomEvent) =>
@@ -509,6 +621,65 @@ export class VedurkortWeatherCardEditor extends LitElement {
         </fieldset>
 
         <fieldset>
+          <legend>Weather alerts</legend>
+          <label class="row enable">
+            <input
+              type="checkbox"
+              .checked=${c.show_alerts}
+              data-config="show_alerts"
+              @change=${this._value}
+            />
+            Show weather alerts
+          </label>
+          ${c.show_alerts
+            ? html`
+                <p class="hint">
+                  Choose where alerts come from. Recommended:
+                  <a
+                    href="https://github.com/seevee/cap_alerts"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >CAP Alerts</a
+                  >
+                  (one device for your region). Europe alternative: a single
+                  <a
+                    href="https://www.home-assistant.io/integrations/meteoalarm/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >MeteoAlarm</a
+                  >
+                  binary sensor (one alert at a time).
+                </p>
+                <div class="field">
+                  <span class="label">Alert source</span>
+                  <ha-selector
+                    .hass=${this.hass}
+                    .selector=${this._alertsSourceSelector}
+                    .value=${this._alertsSource}
+                    @value-changed=${this._alertsSourceSelectorChanged}
+                  ></ha-selector>
+                </div>
+                ${this._alertsSource === "cap"
+                  ? this._renderCapDeviceField()
+                  : html`
+                      <p class="hint">
+                        Pick a MeteoAlarm or CAP Alerts entity (filtered by
+                        integration). For multiple concurrent alerts, use CAP
+                        Alerts device mode instead.
+                      </p>
+                      ${this._picker(
+                        "Alert entity",
+                        "alerts_entity",
+                        ["binary_sensor", "sensor"],
+                        false,
+                        this._alertEntityFilter,
+                      )}
+                    `}
+              `
+            : nothing}
+        </fieldset>
+
+        <fieldset>
           <legend>Optional sensors</legend>
           <p class="hint">
             Override values from the weather entity with dedicated sensors.
@@ -622,5 +793,6 @@ export class VedurkortWeatherCardEditor extends LitElement {
 declare global {
   interface HTMLElementTagNameMap {
     "vedurkort-weather-card-editor": VedurkortWeatherCardEditor;
+    "ha-selector": HTMLElement;
   }
 }

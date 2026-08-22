@@ -1,6 +1,17 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import type { Chart } from "chart.js";
+import { formatAlertDateTime, formatAlertTimeStatus, sanitizeAlertHtml } from "./alerts/format";
+import { resolveAlerts } from "./alerts/resolve";
+import {
+  highestSeverityIcon,
+  severityAccentClass,
+  summaryLabel,
+  alertIconName,
+  alertTitle,
+  alertSubtitle,
+} from "./alerts/summary";
+import type { WeatherAlert } from "./alerts/types";
 import {
   backgroundStyles,
   conditionToScene,
@@ -42,6 +53,15 @@ import {
   subscribeForecast,
 } from "./weather/adapter";
 
+/** Tiny map pin for alert location line (not MDI / not Meteocon). */
+const LOCATION_PIN = html`
+  <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true">
+    <path
+      d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 3.2 4.5 8.5 4.5 8.5s4.5-5.3 4.5-8.5A4.5 4.5 0 0 0 8 1.5zm0 6.2a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4z"
+    />
+  </svg>
+`;
+
 @customElement("vedurkort-weather-card")
 export class VedurkortWeatherCard extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
@@ -55,6 +75,8 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _dailyPlotWidth = 0;
   @state() private _hourlyPlotLeft = 0;
   @state() private _hourlyPlotWidth = 0;
+  @state() private _alertsOpen = false;
+  @state() private _expandedAlertIds: string[] = [];
 
   private _dailyChart: Chart | null = null;
   private _hourlyChart: Chart | null = null;
@@ -92,6 +114,13 @@ export class VedurkortWeatherCard extends LitElement {
     let size = this._config.show_current ? 3 : 1;
     if (this._config.daily.enabled) size += 3;
     if (this._config.hourly.enabled) size += 3;
+    if (
+      this._config.show_alerts &&
+      this.hass &&
+      resolveAlerts(this.hass, this._config).length > 0
+    ) {
+      size += 1;
+    }
     return size;
   }
 
@@ -102,6 +131,12 @@ export class VedurkortWeatherCard extends LitElement {
       this.hass
     ) {
       void this._ensureForecastSubscription();
+      if (
+        this._alertsOpen &&
+        resolveAlerts(this.hass, this._config).length === 0
+      ) {
+        this._alertsOpen = false;
+      }
     }
     if (
       changed.has("_dailyForecast") ||
@@ -411,6 +446,185 @@ export class VedurkortWeatherCard extends LitElement {
     );
   }
 
+  private _openAlerts(alerts: WeatherAlert[], preferredId?: string): void {
+    this._expandedAlertIds = preferredId
+      ? [preferredId]
+      : alerts[0]
+        ? [alerts[0].id]
+        : [];
+    this._alertsOpen = true;
+  }
+
+  private _closeAlerts(): void {
+    this._alertsOpen = false;
+    this._expandedAlertIds = [];
+  }
+
+  private _toggleAlertExpanded(id: string): void {
+    this._expandedAlertIds = this._expandedAlertIds.includes(id)
+      ? this._expandedAlertIds.filter((x) => x !== id)
+      : [...this._expandedAlertIds, id];
+  }
+
+  private _renderAlertsStrip(alerts: WeatherAlert[]) {
+    if (!alerts.length) return nothing;
+    const top = alerts[0]!;
+    const icon = highestSeverityIcon(alerts);
+    const single = alerts.length === 1;
+    const timeStatus = single ? formatAlertTimeStatus(top) : "";
+    return html`
+      <button
+        type="button"
+        class="alerts-strip ${single ? "alerts-strip--single" : "alerts-strip--multi"} ${severityAccentClass(top)}"
+        @click=${() => this._openAlerts(alerts)}
+        aria-haspopup="dialog"
+      >
+        <span class="alerts-strip-icon" .innerHTML=${this._icon(icon)}></span>
+        <span class="alerts-strip-text">
+          <span class="alerts-strip-label">${summaryLabel(alerts)}</span>
+          ${timeStatus
+            ? html`<span class="alerts-strip-sub">${timeStatus}</span>`
+            : nothing}
+        </span>
+        <span class="alerts-strip-chevron" aria-hidden="true">›</span>
+      </button>
+    `;
+  }
+
+  private _renderAlertBadges(alert: WeatherAlert) {
+    return html`
+      <div class="alerts-badges">
+        <span class="alerts-badge ${severityAccentClass(alert)}"
+          >${alert.severityLabel}</span
+        >
+        ${alert.phase
+          ? html`<span class="alerts-badge alerts-badge-phase"
+              >${alert.phase}</span
+            >`
+          : nothing}
+      </div>
+    `;
+  }
+
+  private _renderAlertsDialog(alerts: WeatherAlert[], language?: string) {
+    if (!this._alertsOpen || !alerts.length) return nothing;
+
+    return html`
+      <div
+        class="alerts-modal-root"
+        role="presentation"
+        @keydown=${(ev: KeyboardEvent) => {
+          if (ev.key === "Escape") this._closeAlerts();
+        }}
+      >
+        <div
+          class="alerts-modal-backdrop"
+          @click=${() => this._closeAlerts()}
+        ></div>
+        <div
+          class="alerts-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Weather alerts"
+          tabindex="-1"
+        >
+          <div class="alerts-modal-header">
+            <h2 class="alerts-modal-title">Weather alerts</h2>
+            <button
+              type="button"
+              class="alerts-modal-close"
+              @click=${() => this._closeAlerts()}
+            >
+              Close
+            </button>
+          </div>
+          <ul class="alerts-accordion">
+            ${alerts.map((alert) => {
+              const expanded = this._expandedAlertIds.includes(alert.id);
+              const subtitle = alertSubtitle(alert);
+              const relative = formatAlertTimeStatus(alert);
+              return html`
+                <li
+                  class="alerts-acc-item ${severityAccentClass(alert)}${expanded
+                    ? " is-expanded"
+                    : ""}"
+                >
+                  <button
+                    type="button"
+                    class="alerts-acc-header"
+                    aria-expanded=${expanded}
+                    @click=${() => this._toggleAlertExpanded(alert.id)}
+                  >
+                    <span
+                      class="alerts-acc-icon"
+                      .innerHTML=${this._icon(alertIconName(alert))}
+                    ></span>
+                    <span class="alerts-acc-main">
+                      <span class="alerts-acc-title">${alertTitle(alert)}</span>
+                      ${subtitle
+                        ? html`<span class="alerts-acc-sub">
+                            <span class="alerts-acc-pin" aria-hidden="true"
+                              >${LOCATION_PIN}</span
+                            >
+                            <span>${subtitle}</span>
+                          </span>`
+                        : nothing}
+                      ${this._renderAlertBadges(alert)}
+                      ${relative
+                        ? html`<span class="alerts-acc-time">${relative}</span>`
+                        : nothing}
+                    </span>
+                    <span class="alerts-acc-chevron" aria-hidden="true"
+                      >${expanded ? "▾" : "›"}</span
+                    >
+                  </button>
+                  ${expanded
+                    ? html`
+                        <div class="alerts-acc-body">
+                          <dl class="alerts-times">
+                            <div>
+                              <dt>Onset</dt>
+                              <dd>
+                                ${formatAlertDateTime(alert.onset, language)}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt>Expires</dt>
+                              <dd>
+                                ${formatAlertDateTime(alert.expires, language)}
+                              </dd>
+                            </div>
+                          </dl>
+                          ${alert.description
+                            ? html`<div
+                                class="alerts-body"
+                                .innerHTML=${sanitizeAlertHtml(
+                                  alert.description,
+                                )}
+                              ></div>`
+                            : nothing}
+                          ${alert.instruction
+                            ? html`<div class="alerts-instruction">
+                                <strong>Instructions</strong>
+                                <div
+                                  .innerHTML=${sanitizeAlertHtml(
+                                    alert.instruction,
+                                  )}
+                                ></div>
+                              </div>`
+                            : nothing}
+                        </div>
+                      `
+                    : nothing}
+                </li>
+              `;
+            })}
+          </ul>
+        </div>
+      </div>
+    `;
+  }
+
   private _renderForecastSection(
     mode: "daily" | "hourly",
     snap: NonNullable<ReturnType<typeof getWeatherSnapshot>>,
@@ -515,6 +729,8 @@ export class VedurkortWeatherCard extends LitElement {
     const showCurrent = this._config.show_current;
     const showDaily = this._config.daily.enabled;
     const showHourly = this._config.hourly.enabled;
+    const alerts = resolveAlerts(this.hass, this._config);
+    const showAlertsStrip = alerts.length > 0;
     const showDetails =
       showCurrent &&
       (this._config.show_sun ||
@@ -532,7 +748,7 @@ export class VedurkortWeatherCard extends LitElement {
       ? formatNumber(snap.feelsLike, snap.temperatureUnit)
       : null;
 
-    if (!showCurrent && !showDaily && !showHourly) {
+    if (!showCurrent && !showDaily && !showHourly && !showAlertsStrip) {
       return html`
         <ha-card>
           <div class="pad empty">
@@ -573,6 +789,10 @@ export class VedurkortWeatherCard extends LitElement {
                       .innerHTML=${this._icon(iconName)}
                     ></div>
                   </div>
+
+                  ${showAlertsStrip
+                    ? this._renderAlertsStrip(alerts)
+                    : nothing}
 
                   ${showDetails
                     ? html`
@@ -697,7 +917,11 @@ export class VedurkortWeatherCard extends LitElement {
                     : nothing}
                 </div>
               `
-            : nothing}
+            : showAlertsStrip
+              ? html`<div class="section section-alerts">
+                  ${this._renderAlertsStrip(alerts)}
+                </div>`
+              : nothing}
 
           ${showDaily
             ? html`
@@ -715,6 +939,7 @@ export class VedurkortWeatherCard extends LitElement {
             : nothing}
         </div>
       </ha-card>
+      ${this._renderAlertsDialog(alerts, language)}
     `;
   }
 
@@ -770,6 +995,364 @@ export class VedurkortWeatherCard extends LitElement {
         font-size: 1.05rem;
         font-weight: 600;
         opacity: 0.95;
+      }
+      .alerts-strip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        margin-top: 12px;
+        margin-bottom: 0;
+        border: 1px solid color-mix(in srgb, var(--vk-alert-accent, #f59e0b) 70%, transparent);
+        border-radius: 8px;
+        background: color-mix(
+          in srgb,
+          var(--vk-alert-accent, #f59e0b) 38%,
+          var(--card-background-color, #fff) 40%
+        );
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        box-sizing: border-box;
+      }
+      .alerts-strip--single {
+        padding: 8px 10px;
+      }
+      .alerts-strip--multi {
+        padding: 5px 10px;
+      }
+      .section-current .alerts-strip + .details {
+        margin-top: 12px;
+      }
+      .alerts-strip:hover,
+      .alerts-strip:focus-visible {
+        background: color-mix(
+          in srgb,
+          var(--vk-alert-accent, #f59e0b) 48%,
+          var(--card-background-color, #fff) 30%
+        );
+        outline: none;
+      }
+      .alerts-strip.sev-green {
+        --vk-alert-accent: #22c55e;
+      }
+      .alerts-strip.sev-yellow {
+        --vk-alert-accent: #eab308;
+      }
+      .alerts-strip.sev-orange {
+        --vk-alert-accent: #f97316;
+      }
+      .alerts-strip.sev-red {
+        --vk-alert-accent: #ef4444;
+      }
+      .alerts-strip.sev-purple {
+        --vk-alert-accent: #a855f7;
+      }
+      .alerts-strip.sev-unknown {
+        --vk-alert-accent: #94a3b8;
+      }
+      ha-card.has-bg .alerts-strip {
+        background: color-mix(
+          in srgb,
+          var(--vk-alert-accent, #f59e0b) 42%,
+          rgba(0, 0, 0, 0.4)
+        );
+        border-color: color-mix(
+          in srgb,
+          var(--vk-alert-accent, #f59e0b) 80%,
+          #fff
+        );
+      }
+      ha-card.has-bg .alerts-strip:hover,
+      ha-card.has-bg .alerts-strip:focus-visible {
+        background: color-mix(
+          in srgb,
+          var(--vk-alert-accent, #f59e0b) 52%,
+          rgba(0, 0, 0, 0.35)
+        );
+      }
+      .alerts-strip-icon {
+        flex-shrink: 0;
+        display: inline-flex;
+      }
+      .alerts-strip--single .alerts-strip-icon {
+        width: 28px;
+        height: 28px;
+      }
+      .alerts-strip--multi .alerts-strip-icon {
+        width: 22px;
+        height: 22px;
+      }
+      .alerts-strip-icon svg {
+        width: 100%;
+        height: 100%;
+      }
+      .alerts-strip-text {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+      }
+      .alerts-strip-label {
+        font-size: 0.88rem;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+      .alerts-strip--multi .alerts-strip-label {
+        font-size: 0.84rem;
+        font-weight: 650;
+      }
+      .alerts-strip-sub {
+        font-size: 0.78rem;
+        font-weight: 500;
+        opacity: 0.82;
+        line-height: 1.2;
+      }
+      .alerts-strip-chevron {
+        opacity: 0.7;
+        font-size: 1.2rem;
+        line-height: 1;
+      }
+      .alerts-modal-root {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        box-sizing: border-box;
+      }
+      .alerts-modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+      }
+      .alerts-modal {
+        position: relative;
+        z-index: 1;
+        width: min(520px, 100%);
+        max-height: min(85vh, 720px);
+        overflow: auto;
+        border-radius: 12px;
+        background: var(--card-background-color, #fff);
+        color: var(--primary-text-color, #212121);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+        padding: 14px 16px 16px;
+        box-sizing: border-box;
+      }
+      .alerts-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .alerts-modal-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 650;
+      }
+      .alerts-modal-close {
+        appearance: none;
+        border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+        background: color-mix(in srgb, currentColor 6%, transparent);
+        color: inherit;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .alerts-modal-close:hover,
+      .alerts-modal-close:focus-visible {
+        background: color-mix(in srgb, currentColor 12%, transparent);
+        outline: none;
+      }
+      .alerts-accordion {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 8px;
+      }
+      .alerts-acc-item {
+        border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+        border-left: 3px solid var(--vk-alert-accent, #94a3b8);
+        border-radius: 10px;
+        overflow: hidden;
+        background: color-mix(in srgb, currentColor 3%, transparent);
+        transition: background 0.15s ease, border-color 0.15s ease;
+      }
+      .alerts-acc-item:hover,
+      .alerts-acc-item:has(.alerts-acc-header:focus-visible) {
+        background: color-mix(in srgb, currentColor 7%, transparent);
+        border-color: color-mix(in srgb, currentColor 22%, transparent);
+      }
+      .alerts-acc-item.sev-green {
+        --vk-alert-accent: #22c55e;
+      }
+      .alerts-acc-item.sev-yellow {
+        --vk-alert-accent: #eab308;
+      }
+      .alerts-acc-item.sev-orange {
+        --vk-alert-accent: #f97316;
+      }
+      .alerts-acc-item.sev-red {
+        --vk-alert-accent: #ef4444;
+      }
+      .alerts-acc-item.sev-purple {
+        --vk-alert-accent: #a855f7;
+      }
+      .alerts-acc-item.sev-unknown {
+        --vk-alert-accent: #94a3b8;
+      }
+      .alerts-acc-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+        padding: 10px 12px;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .alerts-acc-header:focus-visible {
+        outline: none;
+      }
+      .alerts-acc-item.is-expanded .alerts-acc-header {
+        padding-bottom: 8px;
+      }
+      .alerts-acc-icon {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+      .alerts-acc-icon svg {
+        width: 100%;
+        height: 100%;
+      }
+      .alerts-acc-main {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+        flex: 1;
+      }
+      .alerts-acc-title {
+        font-weight: 650;
+        font-size: 0.95rem;
+        line-height: 1.25;
+      }
+      .alerts-acc-sub {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.82rem;
+        opacity: 0.78;
+        line-height: 1.3;
+      }
+      .alerts-acc-pin {
+        display: inline-flex;
+        flex-shrink: 0;
+        opacity: 0.85;
+      }
+      .alerts-acc-pin svg {
+        display: block;
+      }
+      .alerts-acc-time {
+        font-size: 0.8rem;
+        opacity: 0.72;
+      }
+      .alerts-acc-chevron {
+        opacity: 0.65;
+        font-size: 1.1rem;
+        line-height: 1;
+        margin-top: 4px;
+      }
+      .alerts-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .alerts-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        text-transform: capitalize;
+        background: color-mix(
+          in srgb,
+          var(--vk-alert-accent, #94a3b8) 22%,
+          transparent
+        );
+        color: inherit;
+        border: 1px solid
+          color-mix(in srgb, var(--vk-alert-accent, #94a3b8) 45%, transparent);
+      }
+      .alerts-badge.sev-green {
+        --vk-alert-accent: #22c55e;
+      }
+      .alerts-badge.sev-yellow {
+        --vk-alert-accent: #eab308;
+      }
+      .alerts-badge.sev-orange {
+        --vk-alert-accent: #f97316;
+      }
+      .alerts-badge.sev-red {
+        --vk-alert-accent: #ef4444;
+      }
+      .alerts-badge.sev-purple {
+        --vk-alert-accent: #a855f7;
+      }
+      .alerts-badge.sev-unknown {
+        --vk-alert-accent: #94a3b8;
+      }
+      .alerts-badge-phase {
+        --vk-alert-accent: color-mix(in srgb, currentColor 55%, transparent);
+        font-weight: 600;
+        text-transform: none;
+      }
+      .alerts-acc-body {
+        display: grid;
+        gap: 10px;
+        padding: 0 12px 12px 54px;
+      }
+      .alerts-times {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin: 0;
+        font-size: 0.85rem;
+      }
+      .alerts-times dt {
+        opacity: 0.65;
+        font-size: 0.75rem;
+        margin: 0;
+      }
+      .alerts-times dd {
+        margin: 2px 0 0;
+        font-weight: 600;
+      }
+      .alerts-body,
+      .alerts-instruction {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+      .alerts-body {
+        white-space: normal;
+      }
+      .alerts-instruction {
+        opacity: 0.92;
       }
       .condition {
         text-transform: capitalize;
