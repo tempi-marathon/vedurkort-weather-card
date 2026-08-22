@@ -1,4 +1,6 @@
 import "./card";
+import { getWeatherEntitySuggestion } from "./entity-suggestion";
+import type { GetEntitySuggestion } from "./entity-suggestion";
 
 console.info(
   "%c VEÐURKORT-WEATHER-CARD %c loaded ",
@@ -14,6 +16,7 @@ window.customCards.push({
     "Weather card with animated Meteocons icons, optional CSS backgrounds, and Chart.js forecasts",
   preview: true,
   documentationURL: "https://github.com/tempi-marathon/vedurkort-weather-card",
+  getEntitySuggestion: getWeatherEntitySuggestion satisfies GetEntitySuggestion,
 });
 
 declare global {
@@ -24,6 +27,7 @@ declare global {
       description: string;
       preview?: boolean;
       documentationURL?: string;
+      getEntitySuggestion?: GetEntitySuggestion;
     }>;
   }
 }
