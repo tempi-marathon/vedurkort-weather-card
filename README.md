@@ -23,7 +23,8 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - Optional CSS animated backgrounds (cloud opacity lightly follows `cloud_coverage`)
 - Optional current-weather details: next sunrise/sunset, humidity, wind speed, direction & gust (separate chips; Beaufort icon for speed/gust), UV, pressure, cloud coverage, dew point, visibility (2–3 column grid by card width)
 - Layout presets: `default`, `compact`, or `minimal` density
-- Tap / hold / double-tap Lovelace actions on the current-weather block (defaults to more-info)
+- Tap / hold / double-tap Lovelace actions on the current-weather block (defaults to a detail sheet; use `tap_action: { action: more-info }` for the HA entity dialog)
+- Tap any detail chip to open a metric detail sheet with forecast chart, interpretation, and related stats
 - Hourly chart horizontal scroll when showing more than 12 hours
 - Localized UI (see [Localization](#localization))
 - Feels-like temperature shown beside the main temperature when enabled
@@ -104,7 +105,7 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `show_alerts` | boolean | `false` | Show a weather-alert summary when an alert source is configured and at least one **active** warning exists. Hidden when idle. Requires `show_current: true` for strip placement on the current-weather section. |
 | `alerts_device` | string | none | [CAP Alerts](https://github.com/seevee/cap_alerts) **device id** — discovers all per-alert sensors under that device. Recommended for CAP Alerts usage. Auto-detected when you have exactly one CAP device. |
 | `alerts_entities` | list | none | One or more alert entities (e.g. `binary_sensor.meteoalarm`). Active warnings from all entities are merged. |
-| `tap_action` | object | more-info | Lovelace action on tap of the current-weather block. |
+| `tap_action` | object | detail | Lovelace action on tap of the current-weather block. Default opens the current-conditions detail sheet. Use `{ action: more-info }` for Home Assistant’s entity dialog. |
 | `hold_action` | object | none | Lovelace action on hold. |
 | `double_tap_action` | object | none | Lovelace action on double-tap. |
 | `condition_entity` | string | none | Optional override for the **current** condition (background scene, main icon, condition label). Forecast sections still use `entity`. Handy for testing scenes via an `input_select` of HA condition strings. |
@@ -146,6 +147,21 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `precip_type` | string | `rainfall` | Precipitation series: `rainfall` or `probability`. |
 
 Enable any combination of `show_current`, `daily.enabled`, and `hourly.enabled`. When both forecasts are on, daily is shown above hourly. If all three are off, the card shows a short configuration hint.
+
+## Detail sheets
+
+Tap the **current-weather block** (temperature + condition) or any **detail chip** to open a centered detail sheet. When `animated_background` is enabled, the sheet reuses the same CSS weather scene as the card.
+
+Each sheet shows a large hero value, a short interpretation line, optional **24-hour forecast chart** (from hourly forecast data), and related stats. Charts are available for temperature, humidity, wind speed, precipitation, precipitation probability, and cloud coverage. UV, pressure, visibility, dew point, and gust show current values and copy without a chart when hourly forecast lacks that field.
+
+**Tap action default:** opens the current-conditions sheet. Restore Home Assistant’s entity dialog with:
+
+```yaml
+tap_action:
+  action: more-info
+```
+
+Hourly forecast is subscribed automatically when `show_current` is on (even if the hourly forecast section is disabled), so chip charts have data on first tap.
 
 ## Weather alerts
 

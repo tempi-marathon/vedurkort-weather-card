@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 import { effectiveTapAction, fireCardAction } from "./actions";
 
 describe("actions", () => {
-  it("defaults tap to more-info on weather entity", () => {
+  it("defaults tap to detail sheet", () => {
     expect(effectiveTapAction({ entity: "weather.home" })).toEqual({
-      action: "more-info",
-      entity: "weather.home",
+      action: "detail",
     });
   });
 

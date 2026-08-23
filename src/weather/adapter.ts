@@ -29,8 +29,18 @@ export interface WeatherSnapshot {
   visibilityUnit: string;
   precipitationUnit: string;
   isDay: boolean;
+  /** Next upcoming sunrise (chip + hero at night). */
   sunrise: string | null;
+  /** Next upcoming sunset (chip + hero by day). */
   sunset: string | null;
+  /** Today's civil dawn, resolved from sun.sun. */
+  dawn: string | null;
+  /** Today's civil dusk, resolved from sun.sun. */
+  dusk: string | null;
+  /** Today's sunrise on the local calendar. */
+  todaySunrise: string | null;
+  /** Today's sunset on the local calendar. */
+  todaySunset: string | null;
   entity: HassEntity;
 }
 
@@ -55,6 +65,30 @@ function stateNumber(entity: HassEntity | undefined): number | null {
 function sensorUnit(entity: HassEntity | undefined): string | undefined {
   const u = entity?.attributes.unit_of_measurement;
   return typeof u === "string" ? u : undefined;
+}
+
+/** Map sun.sun next_* to an occurrence on today's local calendar date. */
+export function resolveSunTimeToday(
+  nextIso: string | undefined,
+  nowMs = Date.now(),
+): string | null {
+  if (!nextIso) return null;
+  const t = new Date(nextIso).getTime();
+  if (Number.isNaN(t)) return null;
+
+  const dayMs = 86_400_000;
+  const today = new Date(nowMs);
+  today.setHours(0, 0, 0, 0);
+  const todayStart = today.getTime();
+  const todayEnd = todayStart + dayMs;
+
+  for (const offset of [-dayMs, 0, dayMs]) {
+    const candidate = t + offset;
+    if (candidate >= todayStart && candidate < todayEnd) {
+      return new Date(candidate).toISOString();
+    }
+  }
+  return null;
 }
 
 export function isSunUp(hass: HomeAssistant, sunEntity = "sun.sun"): boolean {
@@ -198,6 +232,9 @@ export function getWeatherSnapshot(
   const lengthUnit = hass.config.unit_system.length || "";
   const nextRising = sun?.attributes.next_rising as string | undefined;
   const nextSetting = sun?.attributes.next_setting as string | undefined;
+  const nextDawn = sun?.attributes.next_dawn as string | undefined;
+  const nextDusk = sun?.attributes.next_dusk as string | undefined;
+  const nowMs = Date.now();
 
   const conditionLabel = formatConditionLabel(hass, entity, condition);
 
@@ -248,6 +285,10 @@ export function getWeatherSnapshot(
     isDay: isSunUp(hass, config.sun_entity ?? "sun.sun"),
     sunrise: nextRising ?? null,
     sunset: nextSetting ?? null,
+    dawn: resolveSunTimeToday(nextDawn, nowMs),
+    dusk: resolveSunTimeToday(nextDusk, nowMs),
+    todaySunrise: resolveSunTimeToday(nextRising, nowMs),
+    todaySunset: resolveSunTimeToday(nextSetting, nowMs),
     entity,
   };
 }

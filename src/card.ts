@@ -7,11 +7,17 @@ import type { WeatherAlert } from "./alerts/types";
 import { conditionToScene, renderBackground } from "./backgrounds/scenes";
 import { computeCardSize } from "./card-size";
 import { cardStyles } from "./card-styles";
-import { loadForecastChartModule } from "./charts/chart-loader";
+import {
+  loadForecastChartModule,
+} from "./charts/chart-loader";
 import {
   findHourlyNowPosition,
   sliceHourlyForecast,
 } from "./charts/hourly-window";
+import { buildDetailModel } from "./details/catalog";
+import { renderDetailSheetBody } from "./details/detail-sheet";
+import type { DetailMetricId } from "./details/types";
+import { metricSeriesFingerprint } from "./details/series";
 import {
   DEFAULT_CONFIG,
   normalizeConfig,
@@ -40,6 +46,7 @@ import {
 } from "./sections/forecast-section";
 import type { ForecastItem, HomeAssistant, LovelaceCardEditor } from "./types";
 import { trapFocus } from "./ui/focus-trap";
+import { renderViewportDialog } from "./ui/viewport-dialog";
 import {
   formatNumber,
   getWeatherSnapshot,
@@ -61,9 +68,13 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _hourlyPlotWidth = 0;
   @state() private _alertsOpen = false;
   @state() private _expandedAlertIds: string[] = [];
+  @state() private _detailMetric: DetailMetricId | null = null;
 
   private _dailyChart: Chart | null = null;
   private _hourlyChart: Chart | null = null;
+  private _metricChart: Chart | null = null;
+  private _metricChartFingerprint = "";
+  private _metricChartModeKey = "";
   private _dailyChartFingerprint = "";
   private _hourlyChartFingerprint = "";
   private _dailyChartModeKey = "";
@@ -79,9 +90,14 @@ export class VedurkortWeatherCard extends LitElement {
   private _unbindActions: (() => void) | undefined;
   private _unbindFocusTrap: (() => void) | undefined;
   private _alertsTrigger: HTMLElement | null = null;
+  private _detailTrigger: HTMLElement | null = null;
+  private _boundDialog: HTMLDialogElement | null = null;
   private _hourlyScrollKey = "";
   private _hourlyScrollUserAdjusted = false;
   private _hourlyScrollProgrammatic = false;
+  private _detailScrollKey = "";
+  private _detailScrollUserAdjusted = false;
+  private _detailScrollProgrammatic = false;
 
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
     await import("./editor");
@@ -133,8 +149,27 @@ export class VedurkortWeatherCard extends LitElement {
     if (changed.has("_hourlyForecast") || changed.has("_config")) {
       this.updateComplete.then(() => this._maybeScrollHourlyToNow());
     }
-    if (changed.has("_alertsOpen")) {
-      this.updateComplete.then(() => this._syncAlertsDialogA11y());
+    if (changed.has("_alertsOpen") || changed.has("_detailMetric")) {
+      if (!this._alertsOpen && this._detailMetric == null) {
+        this._releaseDialog();
+        (this._detailTrigger ?? this._alertsTrigger)?.focus();
+        this._alertsTrigger = null;
+        this._detailTrigger = null;
+      }
+    }
+    if (this._alertsOpen || this._detailMetric != null) {
+      this.updateComplete.then(() => this._ensureDialogOpen());
+    }
+    if (
+      changed.has("_detailMetric") ||
+      changed.has("_hourlyForecast") ||
+      changed.has("_config") ||
+      changed.has("hass")
+    ) {
+      this.updateComplete.then(() => {
+        void this._renderMetricChart();
+        this._maybeScrollDetailToNow();
+      });
     }
     if (changed.has("_config") || changed.has("hass")) {
       this.updateComplete.then(() => this._bindCardActions());
@@ -145,6 +180,7 @@ export class VedurkortWeatherCard extends LitElement {
     super.disconnectedCallback();
     this._teardownForecast();
     this._destroyCharts();
+    this._destroyMetricChart();
     this._unbindActions?.();
     this._unbindActions = undefined;
     this._unbindFocusTrap?.();
@@ -168,23 +204,47 @@ export class VedurkortWeatherCard extends LitElement {
         hold: this._config.hold_action,
         double_tap: this._config.double_tap_action,
       },
+      { onDetail: () => this._openDetail("current") },
     );
   }
 
-  private _syncAlertsDialogA11y(): void {
+  private _releaseDialog(): void {
     this._unbindFocusTrap?.();
     this._unbindFocusTrap = undefined;
-    if (!this._alertsOpen) {
-      this._alertsTrigger?.focus();
-      this._alertsTrigger = null;
-      return;
+    this._boundDialog = null;
+  }
+
+  private _ensureDialogOpen(): void {
+    if (!this._alertsOpen && this._detailMetric == null) return;
+
+    const dlg = this.renderRoot.querySelector(
+      "dialog.vk-modal",
+    ) as HTMLDialogElement | null;
+    if (!dlg) return;
+
+    if (!dlg.open) {
+      try {
+        dlg.showModal();
+      } catch {
+        return;
+      }
     }
-    const modal = this.renderRoot.querySelector(
-      ".alerts-modal",
-    ) as HTMLElement | null;
-    if (!modal) return;
-    modal.focus();
-    this._unbindFocusTrap = trapFocus(modal);
+
+    if (this._boundDialog !== dlg) {
+      this._releaseDialog();
+      this._boundDialog = dlg;
+      dlg.focus();
+      this._unbindFocusTrap = trapFocus(dlg);
+    }
+  }
+
+  private _closeDialogElements(): void {
+    for (const dlg of this.renderRoot.querySelectorAll("dialog.vk-modal")) {
+      if ((dlg as HTMLDialogElement).open) {
+        (dlg as HTMLDialogElement).close();
+      }
+    }
+    this._releaseDialog();
   }
 
   private _teardownForecast(): void {
@@ -197,7 +257,8 @@ export class VedurkortWeatherCard extends LitElement {
 
   private async _ensureForecastSubscription(): Promise<void> {
     const wantDaily = this._config.daily.enabled;
-    const wantHourly = this._config.hourly.enabled;
+    const wantHourly =
+      this._config.hourly.enabled || this._config.show_current;
     if (!wantDaily && !wantHourly) {
       this._teardownForecast();
       this._dailyForecast = [];
@@ -404,6 +465,71 @@ export class VedurkortWeatherCard extends LitElement {
     });
   }
 
+  private _scrollDetailToNow(): void {
+    if (!this._detailMetric || !this._config || !this.hass) return;
+    const scrollEl = this.renderRoot.querySelector(
+      ".detail-chart-scroll",
+    ) as HTMLElement | null;
+    if (!scrollEl) return;
+
+    const snap = getWeatherSnapshot(this.hass, this._config);
+    if (!snap) return;
+
+    const model = buildDetailModel({
+      metricId: this._detailMetric,
+      snap,
+      iconName: conditionToMeteocon(
+        snap.condition,
+        snap.isDay,
+        snap.cloudCoverage,
+      ),
+      hourlyForecast: this._hourlyForecast,
+      language: resolveLanguage(this.hass),
+      bft: windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit),
+      gustBft: windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit),
+      hourlyPrecipType: this._config.hourly.precip_type,
+    });
+    const datetimes = model.series?.points.map((p) => p.t) ?? [];
+    if (!datetimes.length) return;
+
+    const pos = findHourlyNowPosition(datetimes);
+    if (pos < 0) return;
+
+    const colWidth =
+      Number.parseFloat(
+        getComputedStyle(scrollEl).getPropertyValue("--forecast-col-width"),
+      ) || 42;
+    this._detailScrollProgrammatic = true;
+    scrollEl.scrollLeft = Math.max(0, pos * colWidth - scrollEl.clientWidth * 0.2);
+    requestAnimationFrame(() => {
+      this._detailScrollProgrammatic = false;
+    });
+  }
+
+  private _detailScrollWindowKey(): string {
+    if (!this._detailMetric || !this._config) return "";
+    const slice = sliceHourlyForecast(this._hourlyForecast, 24);
+    if (!slice.length) return "";
+    return `${this._detailMetric}:${slice.map((i) => i.datetime).join(",")}`;
+  }
+
+  private _maybeScrollDetailToNow(): void {
+    if (!this._detailMetric) return;
+    const key = this._detailScrollWindowKey();
+    if (!key) return;
+    if (key !== this._detailScrollKey) {
+      this._detailScrollKey = key;
+      this._detailScrollUserAdjusted = false;
+    }
+    if (this._detailScrollUserAdjusted) return;
+    void this.updateComplete.then(() => this._scrollDetailToNow());
+  }
+
+  private _onDetailScroll(): void {
+    if (this._detailScrollProgrammatic) return;
+    this._detailScrollUserAdjusted = true;
+  }
+
   private _chartTextColor(): string {
     const el =
       (this.renderRoot.querySelector(".content") as HTMLElement | null) ??
@@ -539,7 +665,145 @@ export class VedurkortWeatherCard extends LitElement {
     );
   };
 
+  private _destroyMetricChart(): void {
+    this._metricChart?.destroy();
+    this._metricChart = null;
+    this._metricChartFingerprint = "";
+    this._metricChartModeKey = "";
+  }
+
+  private _modalTextColor(): string {
+    const dlg = this.renderRoot.querySelector(
+      "dialog.vk-modal",
+    ) as HTMLElement | null;
+    const el =
+      dlg ??
+      (this.renderRoot.querySelector(".content") as HTMLElement | null) ??
+      (this.renderRoot.querySelector("ha-card") as HTMLElement | null) ??
+      this;
+    const styles = getComputedStyle(el);
+    return (
+      styles.getPropertyValue("--primary-text-color").trim() ||
+      styles.color ||
+      getComputedStyle(this).color
+    );
+  }
+
+  private async _renderMetricChart(): Promise<void> {
+    if (!this._detailMetric || !this._config || !this.hass) {
+      this._destroyMetricChart();
+      return;
+    }
+
+    const snap = getWeatherSnapshot(this.hass, this._config);
+    if (!snap) return;
+
+    const model = buildDetailModel({
+      metricId: this._detailMetric,
+      snap,
+      iconName: conditionToMeteocon(
+        snap.condition,
+        snap.isDay,
+        snap.cloudCoverage,
+      ),
+      hourlyForecast: this._hourlyForecast,
+      language: resolveLanguage(this.hass),
+      bft: windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit),
+      gustBft: windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit),
+      hourlyPrecipType: this._config.hourly.precip_type,
+    });
+
+    if (!model.series) {
+      this._destroyMetricChart();
+      return;
+    }
+
+    if (!this._chartMod && !this._chartModLoading) {
+      this._chartModLoading = true;
+      try {
+        this._chartMod = await loadForecastChartModule();
+      } finally {
+        this._chartModLoading = false;
+      }
+    }
+
+    const mod = this._chartMod;
+    if (!mod) return;
+
+    const canvas = this.renderRoot.querySelector(
+      "canvas.detail-chart-canvas",
+    ) as HTMLCanvasElement | null;
+    if (!canvas) {
+      this._destroyMetricChart();
+      return;
+    }
+
+    const scene = conditionToScene(snap.condition, snap.isDay);
+    const textColor = this._modalTextColor();
+    const chrome = mod.chartChromeForScene(
+      this._config.animated_background,
+      scene,
+      textColor,
+    );
+
+    const language = resolveLanguage(this.hass);
+    const temperatureUnit = snap.temperatureUnit;
+    const modeKey = `${model.series.id}:${textColor}:${this._config.animated_background}:${scene}`;
+    const fingerprint = metricSeriesFingerprint(model.series);
+
+    if (
+      this._metricChart &&
+      this._metricChartModeKey === modeKey &&
+      this._metricChartFingerprint === fingerprint
+    ) {
+      return;
+    }
+
+    if (this._metricChart && this._metricChartModeKey === modeKey) {
+      mod.syncDetailMetricChart(
+        this._metricChart,
+        model.series,
+        chrome,
+        language,
+        temperatureUnit,
+      );
+      this._metricChartFingerprint = fingerprint;
+      return;
+    }
+
+    this._destroyMetricChart();
+    this._metricChart = mod.createDetailMetricChart(
+      canvas,
+      model.series,
+      chrome,
+      language,
+      temperatureUnit,
+    );
+    this._metricChartFingerprint = fingerprint;
+    this._metricChartModeKey = modeKey;
+  }
+
+  private _openDetail(metricId: DetailMetricId): void {
+    this._closeDialogElements();
+    this._detailTrigger = document.activeElement as HTMLElement | null;
+    this._alertsOpen = false;
+    this._detailMetric = metricId;
+    this._detailScrollKey = "";
+    this._detailScrollUserAdjusted = false;
+  }
+
+  private _closeDetail(): void {
+    this._closeDialogElements();
+    this._detailMetric = null;
+    this._detailScrollKey = "";
+    this._detailScrollUserAdjusted = false;
+    this._destroyMetricChart();
+  }
+
   private _openAlerts(alerts: WeatherAlert[], preferredId?: string): void {
+    this._closeDialogElements();
+    this._detailMetric = null;
+    this._destroyMetricChart();
     this._alertsTrigger = document.activeElement as HTMLElement | null;
     this._expandedAlertIds = preferredId
       ? [preferredId]
@@ -550,8 +814,13 @@ export class VedurkortWeatherCard extends LitElement {
   };
 
   private _closeAlerts(): void {
+    this._closeDialogElements();
     this._alertsOpen = false;
     this._expandedAlertIds = [];
+  }
+
+  private _closeDetailDialog(): void {
+    this._closeDetail();
   }
 
   private _toggleAlertExpanded(id: string): void {
@@ -651,6 +920,25 @@ export class VedurkortWeatherCard extends LitElement {
 
     const forecastState = this._forecastState();
     const onOpenAlerts = (a: WeatherAlert[]) => this._openAlerts(a);
+    const onOpenDetail = (id: DetailMetricId) => this._openDetail(id);
+    const detailModel =
+      this._detailMetric != null
+        ? buildDetailModel({
+            metricId: this._detailMetric,
+            snap,
+            iconName,
+            hourlyForecast: this._hourlyForecast,
+            language,
+            bft,
+            gustBft,
+            hourlyPrecipType: this._config.hourly.precip_type,
+          })
+        : null;
+    const dialogShell = {
+      animatedBackground: this._config.animated_background,
+      scene,
+      cloudCoverage: snap.cloudCoverage,
+    };
 
     return html`
       <ha-card class="${[
@@ -683,6 +971,7 @@ export class VedurkortWeatherCard extends LitElement {
                 },
                 this._icon,
                 onOpenAlerts,
+                onOpenDetail,
               )
             : showAlertsStrip
               ? renderAlertsOnlySection(
@@ -734,7 +1023,31 @@ export class VedurkortWeatherCard extends LitElement {
           onClose: () => this._closeAlerts(),
           onToggleExpanded: (id) => this._toggleAlertExpanded(id),
         },
+        dialogShell,
       )}
+      ${detailModel
+        ? renderViewportDialog({
+            open: true,
+            title: detailModel.title,
+            titleId: "detail-modal-title",
+            language,
+            animatedBackground: dialogShell.animatedBackground,
+            scene: dialogShell.scene,
+            cloudCoverage: dialogShell.cloudCoverage,
+            onClose: () => this._closeDetailDialog(),
+            body: renderDetailSheetBody({
+              model: detailModel,
+              icon: this._icon,
+              noChartText: localize("detail_no_chart", language),
+              hass: this.hass,
+              config: this._config,
+              entityId: this._config.entity,
+              language,
+              windSpeedUnit: snap.windSpeedUnit,
+              onChartScroll: () => this._onDetailScroll(),
+            }),
+          })
+        : nothing}
     `;
   }
 

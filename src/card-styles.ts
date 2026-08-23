@@ -223,46 +223,65 @@ export const cardStyles = [
       line-height: 1;
     }
     .alerts-modal-root {
+      display: none;
+    }
+    .vk-modal:not([open]) {
+      display: none;
+    }
+    .vk-modal[open] {
+      display: block;
+    }
+    .vk-modal {
       position: fixed;
-      inset: 0;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      box-sizing: border-box;
-    }
-    .alerts-modal-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.45);
-    }
-    .alerts-modal {
-      position: relative;
-      z-index: 1;
-      width: min(520px, 100%);
+      inset: unset;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      padding: 0;
+      border: none;
+      width: min(520px, calc(100vw - 32px));
       max-height: min(85vh, 720px);
-      overflow: auto;
+      overflow: hidden;
       border-radius: 12px;
       background: var(--card-background-color, #fff);
       color: var(--primary-text-color, #212121);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
-      padding: 14px 16px 16px;
       box-sizing: border-box;
     }
-    .alerts-modal-header {
+    .vk-modal::backdrop {
+      background: rgba(0, 0, 0, 0.45);
+    }
+    .vk-modal.has-bg {
+      color: #fff;
+      --primary-text-color: #fff;
+      --secondary-text-color: rgba(255, 255, 255, 0.85);
+      background: transparent;
+    }
+    .vk-modal.has-bg .vk-bg {
+      border-radius: 12px;
+    }
+    .vk-modal-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      max-height: min(85vh, 720px);
+    }
+    .vk-modal-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 12px;
+      padding: 14px 16px 12px;
+      flex-shrink: 0;
     }
-    .alerts-modal-title {
+    .vk-modal-title {
       margin: 0;
       font-size: 1.1rem;
       font-weight: 650;
     }
-    .alerts-modal-close {
+    .vk-modal-close {
       appearance: none;
       border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
       background: color-mix(in srgb, currentColor 6%, transparent);
@@ -274,14 +293,243 @@ export const cardStyles = [
       font-weight: 600;
       cursor: pointer;
     }
-    .alerts-modal-close:hover,
-    .alerts-modal-close:focus-visible {
+    .vk-modal-close:hover,
+    .vk-modal-close:focus-visible {
       background: color-mix(in srgb, currentColor 12%, transparent);
       outline: none;
     }
+    .vk-modal-body {
+      overflow: auto;
+      padding: 0 16px 16px;
+      flex: 1;
+      min-height: 0;
+      --detail-section-gap: 18px;
+    }
+    .detail-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0 12px;
+      text-align: center;
+    }
+    .detail-hero-icon {
+      width: 56px;
+      height: 56px;
+      display: inline-flex;
+    }
+    .detail-hero-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+    .detail-hero-label {
+      font-size: 0.95rem;
+      opacity: 0.88;
+    }
+    .detail-hero-value {
+      font-size: 2.4rem;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+    .detail-hero-value.is-text {
+      font-size: 1.35rem;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      max-width: 28ch;
+    }
+    .detail-copy {
+      margin: 0 0 8px;
+      font-size: 0.95rem;
+      line-height: 1.45;
+      opacity: 0.92;
+      text-align: center;
+    }
+    .detail-chart-scroll {
+      margin: var(--detail-section-gap) -4px 14px;
+    }
+    .detail-chart-scroll .detail-chart-wrap {
+      height: 150px;
+      margin-bottom: 0;
+    }
+    .detail-chart-wrap {
+      height: 160px;
+      margin-bottom: 14px;
+    }
+    .detail-chart-wrap canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .detail-no-chart {
+      margin: 0 0 14px;
+      font-size: 0.88rem;
+      opacity: 0.75;
+      text-align: center;
+    }
+    .detail-related {
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .detail-related-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.9rem;
+      padding: 8px 0;
+      border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    }
+    .detail-related-row dt {
+      margin: 0;
+      opacity: 0.8;
+      font-weight: 500;
+    }
+    .detail-related-row dd {
+      margin: 0;
+      font-weight: 650;
+    }
+    .detail-sun-arc {
+      margin-bottom: 8px;
+    }
+    .detail-sun-chart {
+      position: relative;
+      margin-top: var(--detail-section-gap);
+      margin-bottom: 8px;
+      overflow: visible;
+    }
+    .detail-sun-arc-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+    .detail-sun-horizon {
+      stroke: color-mix(in srgb, #e57373 55%, currentColor);
+      stroke-width: 1.5;
+      opacity: 0.85;
+    }
+    .detail-sun-day-path {
+      fill: none;
+      stroke: color-mix(in srgb, currentColor 55%, transparent);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .detail-sun-night-path {
+      fill: none;
+      stroke: color-mix(in srgb, currentColor 35%, transparent);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 5 6;
+    }
+    .detail-sun-now {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 2;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(255, 241, 118, 0.95) 0%,
+        rgba(255, 213, 79, 0.75) 45%,
+        rgba(255, 193, 7, 0.15) 70%,
+        transparent 100%
+      );
+      box-shadow: 0 0 14px 4px rgba(255, 213, 79, 0.65);
+    }
+    .detail-sun-details {
+      margin: 12px 0 0;
+      display: grid;
+      gap: 0;
+    }
+    .detail-sun-detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+      font-size: 0.92rem;
+    }
+    .detail-sun-detail-row dt {
+      margin: 0;
+      opacity: 0.85;
+      font-weight: 500;
+    }
+    .detail-sun-detail-row dd {
+      margin: 0;
+      font-weight: 650;
+    }
+    .detail-sun-detail-row.is-summary dd {
+      font-weight: 700;
+    }
+    .detail-uv-hero {
+      margin-bottom: 14px;
+    }
+    .detail-uv-icon {
+      width: 72px;
+      height: 72px;
+    }
+    .detail-uv-category {
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .detail-uv-category-low {
+      color: #22c55e;
+    }
+    .detail-uv-category-moderate {
+      color: #eab308;
+    }
+    .detail-uv-category-high {
+      color: #f97316;
+    }
+    .detail-uv-category-very_high {
+      color: #ef4444;
+    }
+    .detail-uv-category-extreme {
+      color: #a855f7;
+    }
+    .detail-uv-bar-wrap {
+      margin-top: var(--detail-section-gap);
+      margin-bottom: 14px;
+    }
+    .detail-uv-bar-track {
+      position: relative;
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(
+        to right,
+        #22c55e 0%,
+        #22c55e 16%,
+        #eab308 28%,
+        #f97316 45%,
+        #ef4444 64%,
+        #a855f7 88%,
+        #a855f7 100%
+      );
+    }
+    .detail-uv-bar-dot {
+      position: absolute;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      margin-left: -7px;
+      transform: translateY(-50%);
+      border-radius: 50%;
+      background: #fff;
+      box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.35),
+        0 1px 4px rgba(0, 0, 0, 0.25);
+    }
+    .detail-uv-advice {
+      margin-top: -4px;
+    }
     .alerts-accordion {
       list-style: none;
-      margin: 0;
+      margin: var(--detail-section-gap) 0 0;
       padding: 0;
       display: grid;
       gap: 8px;
@@ -291,13 +539,15 @@ export const cardStyles = [
       border-left: 3px solid var(--vk-alert-accent, #94a3b8);
       border-radius: 10px;
       overflow: hidden;
-      background: color-mix(in srgb, currentColor 3%, transparent);
-      transition: background 0.15s ease, border-color 0.15s ease;
+      background: transparent;
+      transition: border-color 0.15s ease;
     }
     .alerts-acc-item:hover,
     .alerts-acc-item:has(.alerts-acc-header:focus-visible) {
-      background: color-mix(in srgb, currentColor 7%, transparent);
-      border-color: color-mix(in srgb, currentColor 22%, transparent);
+      border-top-color: color-mix(in srgb, currentColor 22%, transparent);
+      border-right-color: color-mix(in srgb, currentColor 22%, transparent);
+      border-bottom-color: color-mix(in srgb, currentColor 22%, transparent);
+      border-left-color: var(--vk-alert-accent, #94a3b8);
     }
     .alerts-acc-item.sev-green {
       --vk-alert-accent: #22c55e;
@@ -512,6 +762,21 @@ export const cardStyles = [
       align-items: center;
       gap: 6px;
       min-width: 0;
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      padding: 0;
+      cursor: pointer;
+      text-align: left;
+    }
+    .detail:hover,
+    .detail:focus-visible {
+      opacity: 1;
+      outline: none;
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
     .detail-icon {
       width: 26px;
