@@ -101,6 +101,7 @@ export interface ForecastItem {
   condition?: HaWeatherCondition;
   temperature?: number;
   templow?: number;
+  apparent_temperature?: number;
   precipitation?: number;
   precipitation_probability?: number;
   wind_speed?: number;

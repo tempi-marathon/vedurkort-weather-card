@@ -315,6 +315,47 @@ export class VedurkortWeatherCardEditor extends LitElement {
     );
   }
 
+  private _resetAction(
+    key: "tap_action" | "hold_action" | "double_tap_action",
+  ): void {
+    if (!this._config) return;
+    const next = structuredClone(this._config);
+    delete next[key];
+    this._fire(
+      next.entity ? normalizeConfig(next) : normalizeEditorConfig(next),
+    );
+  }
+
+  private _renderActionField(
+    labelKey: LocalizeKey,
+    configKey: "tap_action" | "hold_action" | "double_tap_action",
+    value: VedurkortEditorConfig[typeof configKey],
+  ) {
+    return html`
+      <div class="field action-field">
+        <span class="label">${this._t(labelKey)}</span>
+        <ha-selector
+          .hass=${this.hass}
+          .selector=${{ ui_action: {} }}
+          .value=${value}
+          @value-changed=${(ev: CustomEvent) =>
+            this._actionChanged(ev, configKey)}
+        ></ha-selector>
+        ${value
+          ? html`
+              <button
+                type="button"
+                class="preset-btn action-reset"
+                @click=${() => this._resetAction(configKey)}
+              >
+                ${this._t("action_reset_default")}
+              </button>
+            `
+          : nothing}
+      </div>
+    `;
+  }
+
   private _renderAlertEntitiesField() {
     const entities = this._config.alerts_entities ?? [];
 
@@ -844,36 +885,13 @@ export class VedurkortWeatherCardEditor extends LitElement {
         <fieldset>
           <legend>${this._t("legend_actions")}</legend>
           <p class="hint">${this._t("actions_default_hint")}</p>
-          <div class="field">
-            <span class="label">${this._t("tap_action")}</span>
-            <ha-selector
-              .hass=${this.hass}
-              .selector=${{ ui_action: {} }}
-              .value=${c.tap_action}
-              @value-changed=${(ev: CustomEvent) =>
-                this._actionChanged(ev, "tap_action")}
-            ></ha-selector>
-          </div>
-          <div class="field">
-            <span class="label">${this._t("hold_action")}</span>
-            <ha-selector
-              .hass=${this.hass}
-              .selector=${{ ui_action: {} }}
-              .value=${c.hold_action}
-              @value-changed=${(ev: CustomEvent) =>
-                this._actionChanged(ev, "hold_action")}
-            ></ha-selector>
-          </div>
-          <div class="field">
-            <span class="label">${this._t("double_tap_action")}</span>
-            <ha-selector
-              .hass=${this.hass}
-              .selector=${{ ui_action: {} }}
-              .value=${c.double_tap_action}
-              @value-changed=${(ev: CustomEvent) =>
-                this._actionChanged(ev, "double_tap_action")}
-            ></ha-selector>
-          </div>
+          ${this._renderActionField("tap_action", "tap_action", c.tap_action)}
+          ${this._renderActionField("hold_action", "hold_action", c.hold_action)}
+          ${this._renderActionField(
+            "double_tap_action",
+            "double_tap_action",
+            c.double_tap_action,
+          )}
         </fieldset>
 
         <fieldset>
@@ -991,6 +1009,10 @@ export class VedurkortWeatherCardEditor extends LitElement {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
+    }
+    .action-field .action-reset {
+      justify-self: start;
+      margin-top: 2px;
     }
     .preset-btn {
       appearance: none;

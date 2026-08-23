@@ -15,6 +15,8 @@ import {
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import type { ForecastBlockConfig, PrecipType } from "../config";
+import type { MetricSeries } from "../details/types";
+import { metricSeriesFingerprint } from "../details/series";
 import { sliceHourlyForecast } from "./hourly-window";
 import { localize } from "../localize";
 import type { ForecastItem } from "../types";
@@ -497,5 +499,379 @@ export function forecastHasPrecipProbability(items: ForecastItem[]): boolean {
       !Number.isNaN(Number(i.precipitation_probability)),
   );
 }
+
+function detailHourLabels(
+  points: MetricSeries["points"],
+  language?: string,
+): string[] {
+  return points.map((p) => {
+    try {
+      return new Intl.DateTimeFormat(language, { hour: "numeric" }).format(
+        new Date(p.t),
+      );
+    } catch {
+      return p.t.slice(11, 16);
+    }
+  });
+}
+
+function detailPrecipType(series: MetricSeries): PrecipType {
+  if (series.precipType) return series.precipType;
+  return series.id === "precipitation_probability" ? "probability" : "rainfall";
+}
+
+function detailPrecipUnit(series: MetricSeries): string {
+  return series.precipUnit ?? series.unit;
+}
+
+function detailShowValueLabel(ctx: {
+  dataset: { data: unknown[] };
+  dataIndex: number;
+}): boolean {
+  const v = ctx.dataset.data[ctx.dataIndex];
+  return typeof v === "number" && !Number.isNaN(v);
+}
+
+function buildCurrentDetailDatasets(
+  series: MetricSeries,
+  language?: string,
+): ChartConfiguration["data"]["datasets"] {
+  const values = series.points.map((p) => p.value);
+  const precipType = detailPrecipType(series);
+  const precipUnit = detailPrecipUnit(series);
+  const tempSuffix = series.unit.trim().startsWith("°")
+    ? series.unit.trim()
+    : `°${series.unit.trim()}`;
+
+  const datasets: ChartConfiguration["data"]["datasets"] = [
+    {
+      type: "line",
+      label: localize("chart_temp", language),
+      data: values,
+      borderColor: "rgba(255, 152, 0, 1)",
+      backgroundColor: "rgba(255, 152, 0, 0.15)",
+      tension: 0.35,
+      yAxisID: "yTemp",
+      pointRadius: 3,
+      spanGaps: true,
+      order: 0,
+      datalabels: {
+        display: detailShowValueLabel,
+        align: "top",
+        anchor: "end",
+        color: "rgba(255, 152, 0, 1)",
+        backgroundColor: "rgba(255,255,255,0.92)",
+        borderColor: "rgba(255, 152, 0, 0.85)",
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: { top: 1, bottom: 1, left: 3, right: 3 },
+        formatter: (v: number | null) =>
+          v == null || Number.isNaN(v) ? "" : `${Math.round(v)}${tempSuffix}`,
+      },
+    },
+  ];
+
+  if (series.feelsLike?.some((v) => v != null)) {
+    datasets.push({
+      type: "line",
+      label: localize("feels_like", language),
+      data: series.feelsLike,
+      borderColor: "rgba(68, 115, 158, 1)",
+      backgroundColor: "rgba(68, 115, 158, 0.12)",
+      borderDash: [5, 4],
+      tension: 0.35,
+      yAxisID: "yTemp",
+      pointRadius: 2,
+      spanGaps: true,
+      order: 0,
+      datalabels: {
+        display: false,
+      },
+    });
+  }
+
+  if (series.precip) {
+    datasets.push({
+      type: "bar",
+      label:
+        precipType === "probability"
+          ? localize("chart_precip_pct", language)
+          : localize("chart_precip", language),
+      data: series.precip,
+      backgroundColor: "rgba(132, 209, 253, 0.55)",
+      borderRadius: 3,
+      yAxisID: "yPrecip",
+      order: 1,
+      datalabels: {
+        display: detailShowValueLabel,
+        anchor: "start",
+        align: "end",
+        offset: 4,
+        clamp: false,
+        clip: false,
+        color: "rgba(30, 90, 130, 1)",
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        borderColor: "rgba(100, 180, 230, 1)",
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: { top: 2, bottom: 2, left: 4, right: 4 },
+        font: { size: 10, weight: "bold" },
+        formatter: (v: number | null) =>
+          formatPrecipLabel(v, precipType, precipUnit),
+      },
+    });
+  }
+
+  return datasets;
+}
+
+function detailValueLabel(
+  value: number | null,
+  series: MetricSeries,
+): string {
+  if (value == null || Number.isNaN(value)) return "";
+  if (series.id === "precipitation") {
+    return formatPrecipLabel(value, "rainfall", series.unit);
+  }
+  if (
+    series.id === "precipitation_probability" ||
+    series.id === "humidity" ||
+    series.id === "cloud_coverage"
+  ) {
+    return `${Math.round(value)}%`;
+  }
+  if (series.id === "current") {
+    const u = series.unit.trim().startsWith("°")
+      ? series.unit.trim()
+      : `°${series.unit.trim()}`;
+    return `${Math.round(value)}${u}`;
+  }
+  return `${Math.round(value)}`;
+}
+
+function buildDetailDatasets(
+  series: MetricSeries,
+  language?: string,
+): ChartConfiguration["data"]["datasets"] {
+  if (series.id === "current" && series.precip) {
+    return buildCurrentDetailDatasets(series, language);
+  }
+
+  const values = series.points.map((p) => p.value);
+  const showValueLabel = detailShowValueLabel;
+
+  if (series.chartType === "bar") {
+    const precipType = detailPrecipType(series);
+    return [
+      {
+        type: "bar",
+        label:
+          precipType === "probability"
+            ? localize("chart_precip_pct", language)
+            : localize("chart_precip", language),
+        data: values,
+        backgroundColor: "rgba(132, 209, 253, 0.55)",
+        borderRadius: 3,
+        yAxisID: "yPrecip",
+        order: 1,
+        datalabels: {
+          display: showValueLabel,
+          anchor: "start",
+          align: "end",
+          offset: 4,
+          clamp: false,
+          clip: false,
+          color: "rgba(30, 90, 130, 1)",
+          backgroundColor: "rgba(255,255,255,0.95)",
+          borderColor: "rgba(100, 180, 230, 1)",
+          borderWidth: 1,
+          borderRadius: 4,
+          padding: { top: 2, bottom: 2, left: 4, right: 4 },
+          font: { size: 10, weight: "bold" },
+          formatter: (v: number | null) =>
+            formatPrecipLabel(v, precipType, series.unit),
+        },
+      },
+    ];
+  }
+
+  const lineLabel =
+    series.id === "current"
+      ? localize("chart_temp", language)
+      : series.id === "wind_speed"
+        ? localize("wind_speed", language)
+        : series.id === "humidity"
+          ? localize("humidity", language)
+          : localize("cloud_coverage", language);
+
+  return [
+    {
+      type: "line",
+      label: lineLabel,
+      data: values,
+      borderColor: "rgba(255, 152, 0, 1)",
+      backgroundColor: "rgba(255, 152, 0, 0.15)",
+      tension: 0.35,
+      yAxisID: "yTemp",
+      pointRadius: 3,
+      spanGaps: true,
+      order: 0,
+      datalabels: {
+        display: showValueLabel,
+        align: "top",
+        anchor: "end",
+        color: "rgba(255, 152, 0, 1)",
+        backgroundColor: "rgba(255,255,255,0.92)",
+        borderColor: "rgba(255, 152, 0, 0.85)",
+        borderWidth: 1,
+        borderRadius: 4,
+        padding: { top: 1, bottom: 1, left: 3, right: 3 },
+        formatter: (v: number | null) => detailValueLabel(v, series),
+      },
+    },
+  ];
+}
+
+function detailTooltipCallbacks(series: MetricSeries) {
+  return {
+    label(ctx: {
+      parsed: { y: number | null };
+      dataset: { label?: string };
+    }) {
+      const value = ctx.parsed.y;
+      if (value == null || Number.isNaN(value)) return "";
+      const name = ctx.dataset.label ?? "";
+      return `${name}: ${detailValueLabel(value, series)}`;
+    },
+  };
+}
+
+function detailChartOptions(
+  series: MetricSeries,
+  chrome: ChartChrome,
+  language?: string,
+  temperatureUnit = "°C",
+): ChartConfiguration["options"] {
+  const precipType = detailPrecipType(series);
+  const precipUnit = detailPrecipUnit(series);
+  const hasPrecipBars = Boolean(series.precip);
+  const hasTempAxis =
+    series.chartType === "line" || series.id === "current";
+  const tooltipCallbacksFn = hasPrecipBars
+    ? tooltipCallbacks(precipType, precipUnit, temperatureUnit)
+    : series.chartType === "bar"
+      ? tooltipCallbacks(precipType, precipUnit, temperatureUnit)
+      : detailTooltipCallbacks(series);
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    layout: {
+      padding: { left: 2, right: 2, top: 6, bottom: 14 },
+    },
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: true,
+        callbacks: tooltipCallbacksFn,
+      },
+      datalabels: {
+        clamp: false,
+        clip: false,
+        font: { size: 10, weight: "bold" },
+      },
+    },
+    scales: {
+      x: {
+        position: "top",
+        ticks: {
+          maxRotation: 0,
+          autoSkip: false,
+          color: chrome.tick,
+          font: { size: 11, weight: "bold" },
+        },
+        grid: {
+          display: false,
+          drawTicks: false,
+        },
+        border: { display: false },
+      },
+      yTemp: {
+        type: "linear",
+        position: "left",
+        display: hasTempAxis,
+        grid: {
+          display: hasTempAxis,
+          color: chrome.grid,
+          drawTicks: false,
+        },
+        border: { display: false },
+        ticks: { display: false },
+        grace: "15%",
+      },
+      yPrecip: {
+        type: "linear",
+        position: "right",
+        display: hasPrecipBars || series.chartType === "bar",
+        grid: { drawOnChartArea: false, display: false },
+        border: { display: false },
+        beginAtZero: true,
+        ticks: { display: false },
+        grace: "25%",
+      },
+    },
+  };
+}
+
+/** Detail-sheet chart — matches hourly forecast styling (single series). */
+export function createDetailMetricChart(
+  canvas: HTMLCanvasElement,
+  series: MetricSeries,
+  chrome: ChartChrome,
+  language?: string,
+  temperatureUnit = "°C",
+): Chart {
+  const labels = detailHourLabels(series.points, language);
+  const config: ChartConfiguration = {
+    type: "bar",
+    data: {
+      labels,
+      datasets: buildDetailDatasets(series, language),
+    },
+    options: detailChartOptions(series, chrome, language, temperatureUnit),
+  };
+  const chart = new Chart(canvas, config);
+  applyChrome(chart, chrome);
+  return chart;
+}
+
+export function syncDetailMetricChart(
+  chart: Chart,
+  series: MetricSeries,
+  chrome: ChartChrome,
+  language?: string,
+  temperatureUnit = "°C",
+): void {
+  const nextOptions = detailChartOptions(
+    series,
+    chrome,
+    language,
+    temperatureUnit,
+  );
+  chart.data.labels = detailHourLabels(series.points, language);
+  chart.data.datasets = buildDetailDatasets(series, language);
+  if (nextOptions) {
+    chart.options.layout = nextOptions.layout;
+    chart.options.plugins = nextOptions.plugins;
+    chart.options.scales = nextOptions.scales;
+    chart.options.interaction = nextOptions.interaction;
+  }
+  applyChrome(chart, chrome);
+  chart.update("none");
+}
+
+export { metricSeriesFingerprint };
 
 export type { ForecastBlockConfig };
