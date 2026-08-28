@@ -10,6 +10,8 @@ import {
   alertTitle,
   highestSeverityIcon,
   severityAccentClass,
+  stripLabel,
+  stripSubtitle,
   summaryLabel,
 } from "../alerts/summary";
 import type { WeatherAlert } from "../alerts/types";
@@ -89,12 +91,15 @@ export function renderAlertsStrip(
   onOpen: (alerts: WeatherAlert[]) => void,
 ): TemplateResult | typeof nothing {
   if (!alerts.length) return nothing;
-  const { top, single, icon: alertIcon, label, timeStatus } =
-    alertsPresentation(alerts, language, Date.now());
+  const now = Date.now();
+  const top = alerts[0]!;
+  const alertIcon = highestSeverityIcon(alerts);
+  const label = stripLabel(alerts);
+  const timeStatus = stripSubtitle(alerts, now, language);
   return html`
     <button
       type="button"
-      class="alerts-strip ${single ? "alerts-strip--single" : "alerts-strip--multi"} ${severityAccentClass(top)}"
+      class="alerts-strip ${severityAccentClass(top)}"
       @click=${() => onOpen(alerts)}
       aria-haspopup="dialog"
     >

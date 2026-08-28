@@ -1,5 +1,6 @@
 import type { MeteoconName } from "../icons/allowlist";
 import { localize } from "../localize";
+import { formatAlertTimeStatus } from "./format";
 import type { AlertSeverity, WeatherAlert } from "./types";
 
 /**
@@ -139,6 +140,28 @@ export function summaryLabel(
   return localize("active_warnings", language, {
     count: String(alerts.length),
   });
+}
+
+/** Primary line for the card alerts strip (always the lead alert title). */
+export function stripLabel(alerts: WeatherAlert[]): string {
+  if (alerts.length === 0) return "";
+  return shortEvent(alerts[0]!);
+}
+
+/** Secondary line for the card alerts strip (timing + optional overflow). */
+export function stripSubtitle(
+  alerts: WeatherAlert[],
+  now: number = Date.now(),
+  language?: string,
+): string {
+  if (alerts.length === 0) return "";
+  const top = alerts[0]!;
+  const timeStatus = formatAlertTimeStatus(top, now, language);
+  if (alerts.length === 1) return timeStatus;
+  const more = localize("alerts_more", language, {
+    count: String(alerts.length - 1),
+  });
+  return timeStatus ? `${timeStatus} · ${more}` : more;
 }
 
 /** Primary line for an alert row. */

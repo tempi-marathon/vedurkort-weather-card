@@ -180,8 +180,8 @@ Veðurkort can show official weather warnings alongside current conditions. The 
 
 **Strip labels**
 
-- **One alert:** event title + relative timing (e.g. `Moderate thunderstorm warning` · `Ends in 10h`).
-- **Several alerts:** compact count (e.g. `6 active warnings`).
+- **One alert:** event title + relative timing.
+- **Several alerts:** lead warning title + relative timing and overflow.
 
 **What counts as “active”**
 
