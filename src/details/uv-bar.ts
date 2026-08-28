@@ -18,7 +18,6 @@ export function renderUvBarHero(
         icon,
         { icon: uv.heroIcon, value: uv.categoryLabel },
         {
-          iconClass: "detail-uv-icon",
           valueClass: `detail-uv-category detail-uv-category-${uv.category}`,
         },
       )}

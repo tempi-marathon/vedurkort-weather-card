@@ -314,8 +314,8 @@ export const cardStyles = [
       text-align: center;
     }
     .detail-hero-icon {
-      width: 56px;
-      height: 56px;
+      width: 72px;
+      height: 72px;
       display: inline-flex;
     }
     .detail-hero-icon svg {
@@ -467,10 +467,6 @@ export const cardStyles = [
     }
     .detail-uv-hero {
       margin-bottom: 14px;
-    }
-    .detail-uv-icon {
-      width: 72px;
-      height: 72px;
     }
     .detail-uv-category {
       font-size: 1.35rem;
