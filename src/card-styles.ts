@@ -111,6 +111,7 @@ export const cardStyles = [
       width: 100%;
       margin-top: 12px;
       margin-bottom: 0;
+      padding: 8px 10px;
       border: 1px solid color-mix(in srgb, var(--vk-alert-accent, #f59e0b) 70%, transparent);
       border-radius: 8px;
       background: color-mix(
@@ -123,12 +124,6 @@ export const cardStyles = [
       text-align: left;
       cursor: pointer;
       box-sizing: border-box;
-    }
-    .alerts-strip--single {
-      padding: 8px 10px;
-    }
-    .alerts-strip--multi {
-      padding: 5px 10px;
     }
     .section-current .alerts-strip + .details {
       margin-top: 12px;
@@ -180,14 +175,8 @@ export const cardStyles = [
     .alerts-strip-icon {
       flex-shrink: 0;
       display: inline-flex;
-    }
-    .alerts-strip--single .alerts-strip-icon {
       width: 28px;
       height: 28px;
-    }
-    .alerts-strip--multi .alerts-strip-icon {
-      width: 22px;
-      height: 22px;
     }
     .alerts-strip-icon svg {
       width: 100%;
@@ -203,10 +192,6 @@ export const cardStyles = [
       font-size: 0.88rem;
       font-weight: 600;
       line-height: 1.25;
-    }
-    .alerts-strip--multi .alerts-strip-label {
-      font-size: 0.84rem;
-      font-weight: 650;
     }
     .alerts-strip-sub {
       font-size: 0.78rem;

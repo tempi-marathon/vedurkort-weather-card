@@ -4,7 +4,7 @@ import {
   formatDurationMs,
   sanitizeAlertHtml,
 } from "./format";
-import { alertIconName, alertSubtitle, summaryLabel } from "./summary";
+import { alertIconName, alertSubtitle, stripLabel, stripSubtitle, summaryLabel } from "./summary";
 import type { WeatherAlert } from "./types";
 
 function alert(partial: Partial<WeatherAlert>): WeatherAlert {
@@ -135,6 +135,75 @@ describe("summaryLabel", () => {
         }),
       ]),
     ).toBe("2 active warnings");
+  });
+});
+
+describe("stripLabel", () => {
+  it("uses the lead alert title for a single alert", () => {
+    expect(
+      stripLabel([
+        alert({
+          event: "Gele waarschuwing voor hittegolf",
+          awarenessColor: "yellow",
+        }),
+      ]),
+    ).toBe("Gele waarschuwing voor hittegolf");
+  });
+
+  it("uses the lead alert title when multiple alerts", () => {
+    expect(
+      stripLabel([
+        alert({ id: "a", event: "Hittegolf", awarenessColor: "yellow" }),
+        alert({ id: "b", event: "Mist", awarenessColor: "yellow" }),
+      ]),
+    ).toBe("Hittegolf");
+  });
+});
+
+describe("stripSubtitle", () => {
+  const now = Date.parse("2026-08-16T12:00:00Z");
+
+  it("shows timing only for a single alert", () => {
+    expect(
+      stripSubtitle(
+        [
+          alert({
+            onset: "2026-08-16T08:00:00Z",
+            expires: "2026-08-16T18:00:00Z",
+          }),
+        ],
+        now,
+      ),
+    ).toBe("Ends in 6h");
+  });
+
+  it("shows timing and overflow for multiple alerts", () => {
+    expect(
+      stripSubtitle(
+        [
+          alert({
+            id: "a",
+            onset: "2026-08-16T08:00:00Z",
+            expires: "2026-08-16T18:00:00Z",
+          }),
+          alert({ id: "b", event: "Mist" }),
+          alert({ id: "c", event: "Wind" }),
+        ],
+        now,
+      ),
+    ).toBe("Ends in 6h · +2 more");
+  });
+
+  it("shows overflow only when timing is unknown", () => {
+    expect(
+      stripSubtitle(
+        [
+          alert({ id: "a", event: "Hittegolf" }),
+          alert({ id: "b", event: "Mist" }),
+        ],
+        now,
+      ),
+    ).toBe("+1 more");
   });
 });
 
