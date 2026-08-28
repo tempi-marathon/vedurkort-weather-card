@@ -16,6 +16,7 @@ import {
   sliceHourlyForecast,
 } from "./charts/hourly-window";
 import { buildDetailModel } from "./details/catalog";
+import { buildCurrentConditionsCopy } from "./details/copy";
 import { renderDetailSheetBody } from "./details/detail-sheet";
 import type { DetailMetricId } from "./details/types";
 import { metricSeriesFingerprint } from "./details/series";
@@ -921,6 +922,11 @@ export class VedurkortWeatherCard extends LitElement {
     const feelsLikeText = this._config.show_feels_like
       ? formatNumber(snap.feelsLike, snap.temperatureUnit)
       : null;
+    const conditionText = buildCurrentConditionsCopy(
+      snap,
+      sliceHourlyForecast(this._hourlyForecast, 24),
+      language,
+    );
 
     if (!showCurrent && !showDaily && !showHourly && !showAlertsStrip) {
       return html`
@@ -980,6 +986,7 @@ export class VedurkortWeatherCard extends LitElement {
                   showDetails,
                   showNameInCurrent,
                   feelsLikeText,
+                  conditionText,
                   bft,
                   gustBft,
                 },

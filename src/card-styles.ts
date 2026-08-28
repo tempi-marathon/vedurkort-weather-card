@@ -697,10 +697,10 @@ export const cardStyles = [
       opacity: 0.92;
     }
     .condition {
-      text-transform: capitalize;
       opacity: 0.8;
       font-size: 0.95rem;
       margin-top: 2px;
+      line-height: 1.35;
     }
     .temp-row {
       display: flex;

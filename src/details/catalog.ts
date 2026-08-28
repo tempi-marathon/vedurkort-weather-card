@@ -216,6 +216,7 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
       : seriesFromHourly(ctx.hourlyForecast, seriesMetric, unit, 24);
 
   const { high, low } = highLowFromHourly(ctx.hourlyForecast);
+  const hourlySlice = sliceHourlyForecast(ctx.hourlyForecast, 24);
   const copyMetricId =
     group === "wind" ? ("wind_speed" as DetailMetricId) : ctx.metricId;
   const copy = buildInterpretationCopy({
@@ -227,6 +228,7 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
     gustBft: ctx.gustBft,
     high,
     low,
+    hourly: hourlySlice,
   });
 
   const model: DetailModel = {
