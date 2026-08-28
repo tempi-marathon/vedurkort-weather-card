@@ -154,9 +154,6 @@ export const cardStyles = [
     .alerts-strip.sev-red {
       --vk-alert-accent: #ef4444;
     }
-    .alerts-strip.sev-purple {
-      --vk-alert-accent: #a855f7;
-    }
     .alerts-strip.sev-unknown {
       --vk-alert-accent: #94a3b8;
     }
@@ -557,9 +554,6 @@ export const cardStyles = [
     .alerts-acc-item.sev-red {
       --vk-alert-accent: #ef4444;
     }
-    .alerts-acc-item.sev-purple {
-      --vk-alert-accent: #a855f7;
-    }
     .alerts-acc-item.sev-unknown {
       --vk-alert-accent: #94a3b8;
     }
@@ -663,9 +657,6 @@ export const cardStyles = [
     }
     .alerts-badge.sev-red {
       --vk-alert-accent: #ef4444;
-    }
-    .alerts-badge.sev-purple {
-      --vk-alert-accent: #a855f7;
     }
     .alerts-badge.sev-unknown {
       --vk-alert-accent: #94a3b8;

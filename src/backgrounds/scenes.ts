@@ -190,7 +190,10 @@ const NIGHT_STARS: StarSpec[] = (() => {
 export function conditionToScene(
   condition: HaWeatherCondition | undefined,
   isDay: boolean,
+  escalate = false,
 ): BackgroundScene {
+  if (escalate) return "exceptional";
+
   switch (condition) {
     case "sunny":
       return isDay ? "clear-day" : "clear-night";

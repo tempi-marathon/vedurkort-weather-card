@@ -189,6 +189,8 @@ Veðurkort can show official weather warnings alongside current conditions. The 
 - **Green (level 1)** is filtered out — in Europe that means “no particular awareness needed”, not a real warning.
 - Cancelled / expired CAP phases are hidden.
 
+When a **red / extreme** warning is **currently active**, the card switches to the exceptional animated background and shows the Meteocons extreme variant of the current weather condition icon. Yellow and orange alerts, and red alerts before their onset time, do not change the scene or main icon.
+
 ### What you need
 
 | Source | Best for | Install |
