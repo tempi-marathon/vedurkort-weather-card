@@ -2727,8 +2727,8 @@ var m3 = [g3, w0`
       text-align: center;
     }
     .detail-hero-icon {
-      width: 56px;
-      height: 56px;
+      width: 72px;
+      height: 72px;
       display: inline-flex;
     }
     .detail-hero-icon svg {
@@ -2880,10 +2880,6 @@ var m3 = [g3, w0`
     }
     .detail-uv-hero {
       margin-bottom: 14px;
-    }
-    .detail-uv-icon {
-      width: 72px;
-      height: 72px;
     }
     .detail-uv-category {
       font-size: 1.35rem;
@@ -13701,10 +13697,7 @@ function Zv(e, t, i) {
       ${M0(t, {
     icon: e.heroIcon,
     value: e.categoryLabel
-  }, {
-    iconClass: "detail-uv-icon",
-    valueClass: `detail-uv-category detail-uv-category-${e.category}`
-  })}
+  }, { valueClass: `detail-uv-category detail-uv-category-${e.category}` })}
       <div class="detail-uv-bar-wrap">
         <div class="detail-uv-bar-track">
           <span
