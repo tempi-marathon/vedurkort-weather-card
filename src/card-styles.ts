@@ -624,12 +624,12 @@ export const cardStyles = [
       text-transform: capitalize;
       background: color-mix(
         in srgb,
-        var(--vk-alert-accent, #94a3b8) 22%,
+        var(--vk-alert-accent, #94a3b8) 38%,
         transparent
       );
       color: inherit;
       border: 1px solid
-        color-mix(in srgb, var(--vk-alert-accent, #94a3b8) 45%, transparent);
+        color-mix(in srgb, var(--vk-alert-accent, #94a3b8) 70%, transparent);
     }
     .alerts-badge.sev-green {
       --vk-alert-accent: #22c55e;
@@ -650,6 +650,18 @@ export const cardStyles = [
       --vk-alert-accent: color-mix(in srgb, currentColor 55%, transparent);
       font-weight: 600;
       text-transform: none;
+    }
+    .vk-modal.has-bg .alerts-badge {
+      background: color-mix(
+        in srgb,
+        var(--vk-alert-accent, #94a3b8) 42%,
+        rgba(0, 0, 0, 0.4)
+      );
+      border-color: color-mix(
+        in srgb,
+        var(--vk-alert-accent, #94a3b8) 80%,
+        #fff
+      );
     }
     .alerts-acc-body {
       display: grid;
