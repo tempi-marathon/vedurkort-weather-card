@@ -1,7 +1,9 @@
 import { bearingToLabel, windSpeedToBeaufort } from "../icons/condition-map";
 import { localize, type LocalizeKey } from "../localize";
+import type { ForecastItem } from "../types";
 import type { WeatherSnapshot } from "../weather/adapter";
 import type { DetailMetricId, MetricSeries } from "./types";
+import { buildOutlookPhrase } from "./outlook";
 import { uvCategory } from "./uv-bar-model";
 
 function loc(
@@ -21,6 +23,7 @@ export interface CopyContext {
   gustBft: number;
   high: number | null;
   low: number | null;
+  hourly: ForecastItem[];
 }
 
 function humidityComfort(dewPoint: number | null): string {
@@ -165,26 +168,32 @@ function formatDuration(ms: number, language: string | undefined): string {
   return loc("duration_mins", language, { mins: String(mins) });
 }
 
+export function buildCurrentConditionsCopy(
+  snap: WeatherSnapshot,
+  hourly: ForecastItem[],
+  language: string | undefined,
+): string {
+  if (snap.temperature == null) {
+    return loc("copy_current_unknown", language);
+  }
+  if (!hourly.length) {
+    return loc("copy_current_simple", language, {
+      condition: snap.conditionLabel,
+    });
+  }
+  const outlook = buildOutlookPhrase(hourly, snap, language);
+  return loc("copy_current_with_outlook", language, {
+    condition: snap.conditionLabel,
+    outlook,
+  });
+}
+
 export function buildInterpretationCopy(ctx: CopyContext): string {
-  const { metricId, snap, series, language, bft, gustBft, high, low } = ctx;
+  const { metricId, snap, series, language, bft, gustBft, hourly } = ctx;
 
   switch (metricId) {
-    case "current": {
-      if (snap.temperature == null) {
-        return loc("copy_current_unknown", language);
-      }
-      if (high != null && low != null) {
-        return loc("copy_current_range", language, {
-          condition: snap.conditionLabel,
-          high: String(Math.round(high)),
-          low: String(Math.round(low)),
-          unit: snap.temperatureUnit,
-        });
-      }
-      return loc("copy_current_simple", language, {
-        condition: snap.conditionLabel,
-      });
-    }
+    case "current":
+      return buildCurrentConditionsCopy(snap, hourly, language);
     case "humidity":
     case "dew_point":
       return loc(humidityCopyKey(snap.dewPoint), language);

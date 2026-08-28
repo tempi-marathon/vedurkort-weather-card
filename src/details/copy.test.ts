@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildInterpretationCopy } from "./copy";
+import type { ForecastItem } from "../types";
+import {
+  buildCurrentConditionsCopy,
+  buildInterpretationCopy,
+} from "./copy";
 import type { WeatherSnapshot } from "../weather/adapter";
 
 function snap(partial: Partial<WeatherSnapshot> = {}): WeatherSnapshot {
@@ -37,70 +41,149 @@ function snap(partial: Partial<WeatherSnapshot> = {}): WeatherSnapshot {
   };
 }
 
+function hourly(partial: Partial<ForecastItem>[] = []): ForecastItem[] {
+  return partial.map((item, index) => ({
+    datetime: item.datetime ?? `2026-08-23T${String(10 + index).padStart(2, "0")}:00:00+00:00`,
+    ...item,
+  }));
+}
+
+function copyCtx(
+  metricId: Parameters<typeof buildInterpretationCopy>[0]["metricId"],
+  partial: Partial<Parameters<typeof buildInterpretationCopy>[0]> = {},
+) {
+  return {
+    metricId,
+    snap: snap(),
+    series: null,
+    language: "en",
+    bft: 3,
+    gustBft: 5,
+    high: null,
+    low: null,
+    hourly: [] as ForecastItem[],
+    ...partial,
+  };
+}
+
 describe("buildInterpretationCopy", () => {
   it("describes UV category", () => {
-    const copy = buildInterpretationCopy({
-      metricId: "uv_index",
-      snap: snap({ uvIndex: 6 }),
-      series: null,
-      language: "en",
-      bft: 3,
-      gustBft: 5,
-      high: null,
-      low: null,
-    });
+    const copy = buildInterpretationCopy(copyCtx("uv_index"));
     expect(copy).toContain("High");
   });
 
   it("describes humidity comfort from dew point", () => {
-    const copy = buildInterpretationCopy({
-      metricId: "humidity",
-      snap: snap({ dewPoint: 14 }),
-      series: null,
-      language: "en",
-      bft: 3,
-      gustBft: 5,
-      high: null,
-      low: null,
-    });
-    expect(copy.length).toBeGreaterThan(0);
-  });
-
-  it("includes temperature unit on both high and low", () => {
-    const copy = buildInterpretationCopy({
-      metricId: "current",
-      snap: snap(),
-      series: null,
-      language: "en",
-      bft: 3,
-      gustBft: 5,
-      high: 22,
-      low: 12,
-    });
-    expect(copy).toBe(
-      "Partly cloudy. High 22°C, low 12°C in the next 24 hours.",
+    const copy = buildInterpretationCopy(
+      copyCtx("humidity", { snap: snap({ dewPoint: 14 }) }),
     );
+    expect(copy.length).toBeGreaterThan(0);
   });
 
   it("mentions precip timing when series has rain", () => {
-    const copy = buildInterpretationCopy({
-      metricId: "precipitation",
-      snap: snap(),
-      series: {
-        id: "precipitation",
-        unit: "mm",
-        source: "forecast",
-        chartType: "bar",
-        points: [
-          { t: "2026-08-23T14:00:00+00:00", value: 2 },
-        ],
-      },
-      language: "en",
-      bft: 3,
-      gustBft: 5,
-      high: null,
-      low: null,
-    });
+    const copy = buildInterpretationCopy(
+      copyCtx("precipitation", {
+        series: {
+          id: "precipitation",
+          unit: "mm",
+          source: "forecast",
+          chartType: "bar",
+          points: [{ t: "2026-08-23T14:00:00+00:00", value: 2 }],
+        },
+      }),
+    );
     expect(copy.length).toBeGreaterThan(0);
+  });
+});
+
+describe("buildCurrentConditionsCopy", () => {
+  it("falls back when no hourly forecast is available", () => {
+    expect(buildCurrentConditionsCopy(snap(), [], "en")).toBe(
+      "Partly cloudy right now",
+    );
+  });
+
+  it("joins condition and outlook with a dash", () => {
+    const copy = buildCurrentConditionsCopy(
+      snap({ condition: "cloudy", conditionLabel: "Cloudy" }),
+      hourly([
+        { condition: "cloudy" },
+        { condition: "cloudy" },
+      ]),
+      "en",
+    );
+    expect(copy).toBe(
+      "Cloudy - No precipitation expected in the next 24 hours",
+    );
+  });
+
+  it("describes rain expected later", () => {
+    const copy = buildCurrentConditionsCopy(
+      snap({ condition: "cloudy", conditionLabel: "Cloudy" }),
+      hourly([
+        { datetime: "2026-08-23T10:00:00+00:00", condition: "cloudy" },
+        { datetime: "2026-08-23T15:00:00+00:00", condition: "rainy" },
+      ]),
+      "en",
+    );
+    expect(copy).toMatch(/^Cloudy - Rain expected around /);
+    expect(copy).not.toMatch(/\.$/);
+  });
+
+  it("describes snow when the wet hour is snowy", () => {
+    const copy = buildCurrentConditionsCopy(
+      snap(),
+      hourly([{ condition: "partlycloudy" }, { condition: "snowy" }]),
+      "en",
+    );
+    expect(copy).toContain("Snow expected around");
+  });
+
+  it("describes clearing when currently rainy", () => {
+    const copy = buildCurrentConditionsCopy(
+      snap({ condition: "rainy", conditionLabel: "Rainy" }),
+      hourly([
+        { datetime: "2026-08-23T10:00:00+00:00", condition: "rainy" },
+        { datetime: "2026-08-23T18:00:00+00:00", condition: "partlycloudy" },
+      ]),
+      "en",
+    );
+    expect(copy).toMatch(/^Rainy - Clearing around /);
+  });
+
+  it("describes continuing rain when it stays wet", () => {
+    const copy = buildCurrentConditionsCopy(
+      snap({ condition: "rainy", conditionLabel: "Rainy" }),
+      hourly([
+        { condition: "rainy" },
+        { condition: "rainy" },
+        { condition: "pouring" },
+      ]),
+      "en",
+    );
+    expect(copy).toBe(
+      "Rainy - Rain continuing through the next 24 hours",
+    );
+  });
+
+  it("uses peak probability when no wet hours are forecast", () => {
+    const copy = buildCurrentConditionsCopy(
+      snap(),
+      hourly([
+        { condition: "partlycloudy", precipitation_probability: 30 },
+        { condition: "cloudy", precipitation_probability: 65 },
+      ]),
+      "en",
+    );
+    expect(copy).toBe("Partly cloudy - Rain likely later - peak chance 65%");
+  });
+
+  it("delegates current metric copy through buildInterpretationCopy", () => {
+    const copy = buildInterpretationCopy(
+      copyCtx("current", {
+        snap: snap({ condition: "cloudy", conditionLabel: "Cloudy" }),
+        hourly: hourly([{ condition: "cloudy" }]),
+      }),
+    );
+    expect(copy).toContain("Cloudy -");
   });
 });

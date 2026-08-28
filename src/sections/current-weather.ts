@@ -34,6 +34,7 @@ export interface CurrentWeatherContext {
   showDetails: boolean;
   showNameInCurrent: boolean;
   feelsLikeText: string | null;
+  conditionText: string;
   bft: number;
   gustBft: number;
 }
@@ -93,7 +94,7 @@ export function renderCurrentWeatherSection(
                 </div>`
               : nothing}
           </div>
-          <div class="condition">${snap.conditionLabel}</div>
+          <div class="condition">${ctx.conditionText}</div>
         </div>
         <div class="main-icon" .innerHTML=${icon(ctx.iconName)}></div>
       </div>
