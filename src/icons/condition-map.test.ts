@@ -125,3 +125,35 @@ describe("conditionToMeteocon", () => {
     );
   });
 });
+
+describe("conditionToMeteocon escalate", () => {
+  it("maps cloudy to extreme variants by coverage", () => {
+    expect(conditionToMeteocon("cloudy", true, 100, true)).toBe("extreme");
+    expect(conditionToMeteocon("cloudy", true, 64, true)).toBe("extreme-day");
+    expect(conditionToMeteocon("cloudy", false, 64, true)).toBe("extreme-night");
+  });
+
+  it("maps lightning to extreme-thunderstorms-extreme variants", () => {
+    expect(conditionToMeteocon("lightning", true, 100, true)).toBe(
+      "extreme-thunderstorms-extreme",
+    );
+    expect(conditionToMeteocon("lightning", true, 64, true)).toBe(
+      "extreme-thunderstorms-extreme-day",
+    );
+    expect(conditionToMeteocon("lightning-rainy", false, 64, true)).toBe(
+      "extreme-thunderstorms-extreme-night-rain",
+    );
+  });
+
+  it("keeps wind unescalated", () => {
+    expect(conditionToMeteocon("windy", true, null, true)).toBe("wind");
+    expect(conditionToMeteocon("windy-variant", false, 100, true)).toBe("wind");
+  });
+
+  it("maps sunny and partlycloudy to extreme day/night", () => {
+    expect(conditionToMeteocon("sunny", true, null, true)).toBe("extreme-day");
+    expect(conditionToMeteocon("partlycloudy", false, null, true)).toBe(
+      "extreme-night",
+    );
+  });
+});

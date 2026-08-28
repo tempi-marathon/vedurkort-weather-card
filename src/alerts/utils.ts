@@ -1,4 +1,5 @@
-import type { AlertSeverity } from "./types";
+import { alertTimePhase } from "./format";
+import type { AlertSeverity, WeatherAlert } from "./types";
 import { localize, type LocalizeKey } from "../localize";
 
 export function str(v: unknown): string {
@@ -136,4 +137,30 @@ export function providerMdiIcon(value: unknown): string | undefined {
   const icon = str(value).toLowerCase();
   if (!icon.startsWith("mdi:")) return undefined;
   return icon;
+}
+
+/** MeteoAlarm red (level 4) or CAP `Extreme` severity. */
+export function isHighestCategoryAlert(alert: WeatherAlert): boolean {
+  if (alert.severity === "extreme") return true;
+  return alert.awarenessColor?.toLowerCase() === "red";
+}
+
+/** True when the alert window has started (or timestamps are unknown). */
+export function isAlertCurrentlyActive(
+  alert: WeatherAlert,
+  nowMs: number = Date.now(),
+): boolean {
+  const phase = alertTimePhase(alert, nowMs);
+  return phase === "active" || phase === "unknown";
+}
+
+/** Escalate card scene + main icon when any highest-category alert is active now. */
+export function shouldEscalateForAlerts(
+  alerts: WeatherAlert[],
+  nowMs: number = Date.now(),
+): boolean {
+  return alerts.some(
+    (alert) =>
+      isHighestCategoryAlert(alert) && isAlertCurrentlyActive(alert, nowMs),
+  );
 }

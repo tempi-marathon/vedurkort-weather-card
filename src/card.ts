@@ -3,6 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import type { Chart } from "chart.js";
 import { bindCardActions, effectiveTapAction } from "./actions";
 import { resolveAlerts } from "./alerts/resolve";
+import { shouldEscalateForAlerts } from "./alerts/utils";
 import type { WeatherAlert } from "./alerts/types";
 import { conditionToScene, renderBackground } from "./backgrounds/scenes";
 import { computeCardSize } from "./card-size";
@@ -475,6 +476,7 @@ export class VedurkortWeatherCard extends LitElement {
     const snap = getWeatherSnapshot(this.hass, this._config);
     if (!snap) return;
 
+    const escalate = this._shouldEscalateForAlerts();
     const model = buildDetailModel({
       metricId: this._detailMetric,
       snap,
@@ -482,6 +484,7 @@ export class VedurkortWeatherCard extends LitElement {
         snap.condition,
         snap.isDay,
         snap.cloudCoverage,
+        escalate,
       ),
       hourlyForecast: this._hourlyForecast,
       language: resolveLanguage(this.hass),
@@ -530,6 +533,11 @@ export class VedurkortWeatherCard extends LitElement {
     this._detailScrollUserAdjusted = true;
   }
 
+  private _shouldEscalateForAlerts(): boolean {
+    if (!this._config || !this.hass) return false;
+    return shouldEscalateForAlerts(resolveAlerts(this.hass, this._config));
+  }
+
   private _chartTextColor(): string {
     const el =
       (this.renderRoot.querySelector(".content") as HTMLElement | null) ??
@@ -555,9 +563,11 @@ export class VedurkortWeatherCard extends LitElement {
     }
 
     const snap = getWeatherSnapshot(this.hass, this._config);
+    const escalate = this._shouldEscalateForAlerts();
     const scene = conditionToScene(
       snap?.condition,
       snap?.isDay ?? true,
+      escalate,
     );
     const textColor = this._chartTextColor();
     const chrome = mod.chartChromeForScene(
@@ -698,6 +708,7 @@ export class VedurkortWeatherCard extends LitElement {
     const snap = getWeatherSnapshot(this.hass, this._config);
     if (!snap) return;
 
+    const escalate = this._shouldEscalateForAlerts();
     const model = buildDetailModel({
       metricId: this._detailMetric,
       snap,
@@ -705,6 +716,7 @@ export class VedurkortWeatherCard extends LitElement {
         snap.condition,
         snap.isDay,
         snap.cloudCoverage,
+        escalate,
       ),
       hourlyForecast: this._hourlyForecast,
       language: resolveLanguage(this.hass),
@@ -738,7 +750,7 @@ export class VedurkortWeatherCard extends LitElement {
       return;
     }
 
-    const scene = conditionToScene(snap.condition, snap.isDay);
+    const scene = conditionToScene(snap.condition, snap.isDay, escalate);
     const textColor = this._modalTextColor();
     const chrome = mod.chartChromeForScene(
       this._config.animated_background,
@@ -872,12 +884,15 @@ export class VedurkortWeatherCard extends LitElement {
       `;
     }
 
+    const alerts = resolveAlerts(this.hass, this._config);
+    const escalate = shouldEscalateForAlerts(alerts);
     const iconName = conditionToMeteocon(
       snap.condition,
       snap.isDay,
       snap.cloudCoverage,
+      escalate,
     );
-    const scene = conditionToScene(snap.condition, snap.isDay);
+    const scene = conditionToScene(snap.condition, snap.isDay, escalate);
 
     const bft = windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit);
     const gustBft = windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit);
@@ -888,7 +903,6 @@ export class VedurkortWeatherCard extends LitElement {
     const showNameHeader = showName && !showCurrent;
     const showDaily = this._config.daily.enabled;
     const showHourly = this._config.hourly.enabled;
-    const alerts = resolveAlerts(this.hass, this._config);
     const showAlertsStrip = alerts.length > 0;
     const showDetails =
       showCurrent &&

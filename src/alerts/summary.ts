@@ -193,7 +193,6 @@ export function severityAccentClass(alert: WeatherAlert): string {
   if (color === "yellow") return "sev-yellow";
   if (color === "orange") return "sev-orange";
   if (color === "red") return "sev-red";
-  if (color === "purple") return "sev-purple";
   switch (alert.severity) {
     case "minor":
       return "sev-green";

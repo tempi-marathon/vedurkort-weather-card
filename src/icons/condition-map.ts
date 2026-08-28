@@ -19,13 +19,62 @@ export function isOvercastCloudCover(
  * Map HA weather conditions → Meteocon names with day/night variants.
  * Cloudy / precip / storm icons use sunless names when cloud coverage is
  * missing or ≥ {@link OVERCAST_CLOUD_COVERAGE}; otherwise day/night peeks.
+ * When `escalate` is true (active highest-category alert), use Meteocons
+ * extreme variants for the current condition.
  */
 export function conditionToMeteocon(
   condition: HaWeatherCondition | undefined,
   isDay = true,
   cloudCoverage?: number | null,
+  escalate = false,
 ): MeteoconName {
   const overcast = isOvercastCloudCover(cloudCoverage);
+
+  if (escalate) {
+    switch (condition) {
+      case "clear-night":
+        return "extreme-night";
+      case "sunny":
+      case "partlycloudy":
+        return isDay ? "extreme-day" : "extreme-night";
+      case "cloudy":
+        if (overcast) return "extreme";
+        return isDay ? "extreme-day" : "extreme-night";
+      case "fog":
+        if (overcast) return "extreme-fog";
+        return isDay ? "extreme-day-fog" : "extreme-night-fog";
+      case "hail":
+        if (overcast) return "extreme-hail";
+        return isDay ? "extreme-day-hail" : "extreme-night-hail";
+      case "lightning":
+        if (overcast) return "extreme-thunderstorms-extreme";
+        return isDay
+          ? "extreme-thunderstorms-extreme-day"
+          : "extreme-thunderstorms-extreme-night";
+      case "lightning-rainy":
+        if (overcast) return "extreme-thunderstorms-extreme-rain";
+        return isDay
+          ? "extreme-thunderstorms-extreme-day-rain"
+          : "extreme-thunderstorms-extreme-night-rain";
+      case "pouring":
+      case "rainy":
+        if (overcast) return "extreme-rain";
+        return isDay ? "extreme-day-rain" : "extreme-night-rain";
+      case "snowy":
+        if (overcast) return "extreme-snow";
+        return isDay ? "extreme-day-snow" : "extreme-night-snow";
+      case "snowy-rainy":
+        if (overcast) return "extreme-sleet";
+        return isDay ? "extreme-day-sleet" : "extreme-night-sleet";
+      case "windy":
+      case "windy-variant":
+        return "wind";
+      case "exceptional":
+        return "weather-alert";
+      default:
+        return "not-available";
+    }
+  }
 
   switch (condition) {
     case "clear-night":
