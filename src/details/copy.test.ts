@@ -4,7 +4,7 @@ import {
   buildCurrentConditionsCopy,
   buildInterpretationCopy,
 } from "./copy";
-import type { WeatherSnapshot } from "../weather/adapter";
+import { formatTime, type WeatherSnapshot } from "../weather/adapter";
 
 function snap(partial: Partial<WeatherSnapshot> = {}): WeatherSnapshot {
   return {
@@ -80,6 +80,7 @@ describe("buildInterpretationCopy", () => {
   });
 
   it("mentions precip timing when series has rain", () => {
+    const at = "2026-08-23T14:00:00+00:00";
     const copy = buildInterpretationCopy(
       copyCtx("precipitation", {
         series: {
@@ -87,11 +88,13 @@ describe("buildInterpretationCopy", () => {
           unit: "mm",
           source: "forecast",
           chartType: "bar",
-          points: [{ t: "2026-08-23T14:00:00+00:00", value: 2 }],
+          points: [{ t: at, value: 2 }],
         },
       }),
     );
-    expect(copy.length).toBeGreaterThan(0);
+    expect(copy).toBe(
+      `Precipitation expected around ${formatTime(at, "en")}.`,
+    );
   });
 });
 
@@ -117,37 +120,45 @@ describe("buildCurrentConditionsCopy", () => {
   });
 
   it("describes rain expected later", () => {
+    const rainAt = "2026-08-23T15:00:00+00:00";
     const copy = buildCurrentConditionsCopy(
       snap({ condition: "cloudy", conditionLabel: "Cloudy" }),
       hourly([
         { datetime: "2026-08-23T10:00:00+00:00", condition: "cloudy" },
-        { datetime: "2026-08-23T15:00:00+00:00", condition: "rainy" },
+        { datetime: rainAt, condition: "rainy" },
       ]),
       "en",
     );
-    expect(copy).toMatch(/^Cloudy - Rain expected around /);
-    expect(copy).not.toMatch(/\.$/);
+    expect(copy).toBe(
+      `Cloudy - Rain expected around ${formatTime(rainAt, "en")}`,
+    );
   });
 
   it("describes snow when the wet hour is snowy", () => {
+    const snowAt = "2026-08-23T11:00:00+00:00";
     const copy = buildCurrentConditionsCopy(
       snap(),
       hourly([{ condition: "partlycloudy" }, { condition: "snowy" }]),
       "en",
     );
-    expect(copy).toContain("Snow expected around");
+    expect(copy).toBe(
+      `Partly cloudy - Snow expected around ${formatTime(snowAt, "en")}`,
+    );
   });
 
   it("describes clearing when currently rainy", () => {
+    const clearAt = "2026-08-23T18:00:00+00:00";
     const copy = buildCurrentConditionsCopy(
       snap({ condition: "rainy", conditionLabel: "Rainy" }),
       hourly([
         { datetime: "2026-08-23T10:00:00+00:00", condition: "rainy" },
-        { datetime: "2026-08-23T18:00:00+00:00", condition: "partlycloudy" },
+        { datetime: clearAt, condition: "partlycloudy" },
       ]),
       "en",
     );
-    expect(copy).toMatch(/^Rainy - Clearing around /);
+    expect(copy).toBe(
+      `Rainy - Clearing around ${formatTime(clearAt, "en")}`,
+    );
   });
 
   it("describes continuing rain when it stays wet", () => {

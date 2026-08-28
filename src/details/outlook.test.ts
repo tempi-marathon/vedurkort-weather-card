@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ForecastItem } from "../types";
+import { formatTime } from "../weather/adapter";
 import {
   buildOutlookPhrase,
   isWetHour,
@@ -43,5 +44,31 @@ describe("buildOutlookPhrase", () => {
     expect(buildOutlookPhrase(items, snap as never, "en")).toBe(
       "No precipitation expected in the next 24 hours",
     );
+  });
+
+  it("uses a full clock time when rain is expected", () => {
+    const rainAt = "2026-08-23T15:00:00+00:00";
+    const items: ForecastItem[] = [
+      { datetime: "2026-08-23T10:00:00+00:00", condition: "cloudy" },
+      { datetime: rainAt, condition: "rainy" },
+    ];
+    expect(buildOutlookPhrase(items, snap as never, "en")).toBe(
+      `Rain expected around ${formatTime(rainAt, "en")}`,
+    );
+  });
+
+  it("uses a full clock time when clearing", () => {
+    const clearAt = "2026-08-23T18:00:00+00:00";
+    const items: ForecastItem[] = [
+      { datetime: "2026-08-23T10:00:00+00:00", condition: "rainy" },
+      { datetime: clearAt, condition: "partlycloudy" },
+    ];
+    expect(
+      buildOutlookPhrase(
+        items,
+        { condition: "rainy", precipitation: 1 } as never,
+        "en",
+      ),
+    ).toBe(`Clearing around ${formatTime(clearAt, "en")}`);
   });
 });

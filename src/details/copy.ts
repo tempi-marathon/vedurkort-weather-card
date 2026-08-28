@@ -1,7 +1,7 @@
 import { bearingToLabel, windSpeedToBeaufort } from "../icons/condition-map";
 import { localize, type LocalizeKey } from "../localize";
 import type { ForecastItem } from "../types";
-import type { WeatherSnapshot } from "../weather/adapter";
+import { formatTime, type WeatherSnapshot } from "../weather/adapter";
 import type { DetailMetricId, MetricSeries } from "./types";
 import { buildOutlookPhrase } from "./outlook";
 import { uvCategory } from "./uv-bar-model";
@@ -139,16 +139,6 @@ function peakValue(series: MetricSeries | null): number | null {
   return Math.max(...values);
 }
 
-function formatHour(iso: string, language: string | undefined): string {
-  try {
-    return new Intl.DateTimeFormat(language, { hour: "numeric" }).format(
-      new Date(iso),
-    );
-  } catch {
-    return iso.slice(11, 16);
-  }
-}
-
 function daylightRemainingMs(snap: WeatherSnapshot): number | null {
   if (!snap.sunset) return null;
   const set = new Date(snap.sunset).getTime();
@@ -217,7 +207,7 @@ export function buildInterpretationCopy(ctx: CopyContext): string {
       const next = firstPrecipHour(series);
       if (next) {
         return loc("copy_precip_next", language, {
-          time: formatHour(next, language),
+          time: formatTime(next, language),
         });
       }
       return loc("copy_precip_none", language);

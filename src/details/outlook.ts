@@ -1,7 +1,7 @@
 import type { HaWeatherCondition } from "../types";
 import type { ForecastItem } from "../types";
 import { localize, type LocalizeKey } from "../localize";
-import type { WeatherSnapshot } from "../weather/adapter";
+import { formatTime, type WeatherSnapshot } from "../weather/adapter";
 
 const WET_CONDITIONS = new Set<HaWeatherCondition>([
   "rainy",
@@ -90,16 +90,6 @@ function isWetNow(snap: WeatherSnapshot): boolean {
   return precip != null && !Number.isNaN(precip) && precip > 0;
 }
 
-function formatHour(iso: string, language: string | undefined): string {
-  try {
-    return new Intl.DateTimeFormat(language, { hour: "numeric" }).format(
-      new Date(iso),
-    );
-  } catch {
-    return iso.slice(11, 16);
-  }
-}
-
 /** Outlook phrase only (no condition prefix). */
 export function buildOutlookPhrase(
   hourly: ForecastItem[],
@@ -119,7 +109,7 @@ export function buildOutlookPhrase(
     if (firstWet) {
       const type = precipTypeFromCondition(firstWet.condition);
       return localize(expectedKey(type), language, {
-        time: formatHour(firstWet.datetime, language),
+        time: formatTime(firstWet.datetime, language),
       });
     }
 
@@ -135,7 +125,7 @@ export function buildOutlookPhrase(
 
   if (firstDryAfterNow) {
     return localize("copy_outlook_clearing", language, {
-      time: formatHour(firstDryAfterNow.datetime, language),
+      time: formatTime(firstDryAfterNow.datetime, language),
     });
   }
 
