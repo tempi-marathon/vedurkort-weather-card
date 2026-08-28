@@ -29,11 +29,42 @@ export const SUN_ARC_HEIGHT = 110;
 export const SUN_ARC_HORIZON = 56;
 export const SUN_ARC_AMPLITUDE = 42;
 
-/** Stylized sun height for hour-of-day (0–24), SVG y (smaller = higher). */
-export function sunArcY(hour: number): number {
+function localHourOfDay(date: Date): number {
+  return date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
+}
+
+function localHourFromIso(iso: string): number | null {
+  const d = new Date(iso);
+  const t = d.getTime();
+  if (Number.isNaN(t)) return null;
+  return localHourOfDay(d);
+}
+
+/** Stylized sun height for hour-of-day (0–24), scaled to rise/set. SVG y (smaller = higher). */
+export function sunArcY(
+  hour: number,
+  riseHour: number,
+  setHour: number,
+): number {
+  if (setHour <= riseHour) {
+    return SUN_ARC_HORIZON;
+  }
+
+  if (hour >= riseHour && hour <= setHour) {
+    const daySpan = setHour - riseHour;
+    const phase = (hour - riseHour) / daySpan;
+    return (
+      SUN_ARC_HORIZON -
+      SUN_ARC_AMPLITUDE * Math.sin(Math.PI * phase)
+    );
+  }
+
+  const nightSpan = 24 - (setHour - riseHour);
+  const nightPhase =
+    hour >= setHour ? hour - setHour : 24 - setHour + hour;
   return (
-    SUN_ARC_HORIZON -
-    SUN_ARC_AMPLITUDE * Math.sin((2 * Math.PI * (hour - 6)) / 24)
+    SUN_ARC_HORIZON +
+    SUN_ARC_AMPLITUDE * Math.sin((Math.PI * nightPhase) / nightSpan)
   );
 }
 
@@ -43,6 +74,8 @@ export function sunArcX(hour: number): number {
 
 export function buildSunArcPaths(
   samples = 96,
+  riseHour: number,
+  setHour: number,
 ): { dayPath: string; nightPath: string } {
   const dayParts: string[] = [];
   const nightParts: string[] = [];
@@ -52,7 +85,7 @@ export function buildSunArcPaths(
   for (let i = 0; i <= samples; i++) {
     const hour = (i / samples) * 24;
     const x = sunArcX(hour);
-    const y = sunArcY(hour);
+    const y = sunArcY(hour, riseHour, setHour);
     const above = y <= SUN_ARC_HORIZON + 0.5;
 
     if (above) {
@@ -119,15 +152,18 @@ function isDaylightNow(
 export function buildSunArcModel(
   snap: WeatherSnapshot,
   language: string | undefined,
+  now: Date = new Date(),
 ): SunArcModel | null {
   if (!snap.todaySunrise || !snap.todaySunset) return null;
 
-  const { dayPath, nightPath } = buildSunArcPaths();
-  const now = new Date();
-  const hourOfDay =
-    now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+  const riseHour = localHourFromIso(snap.todaySunrise);
+  const setHour = localHourFromIso(snap.todaySunset);
+  if (riseHour == null || setHour == null || setHour <= riseHour) return null;
+
+  const { dayPath, nightPath } = buildSunArcPaths(96, riseHour, setHour);
+  const hourOfDay = localHourOfDay(now);
   const dotX = sunArcX(hourOfDay);
-  const dotY = sunArcY(hourOfDay);
+  const dotY = sunArcY(hourOfDay, riseHour, setHour);
 
   const heroIcon: MeteoconName = snap.isDay ? "sunset" : "sunrise";
   const heroLabel = localize(snap.isDay ? "sunset" : "sunrise", language);
@@ -153,7 +189,11 @@ export function buildSunArcModel(
     });
   }
 
-  const inDaylight = isDaylightNow(snap.todaySunrise, snap.todaySunset);
+  const inDaylight = isDaylightNow(
+    snap.todaySunrise,
+    snap.todaySunset,
+    now.getTime(),
+  );
   // Prefer clock-window daylight; fall back to sun.sun state if times are edge-case.
   const showDot = inDaylight || (snap.isDay && hourOfDay > 0 && hourOfDay < 24);
 
