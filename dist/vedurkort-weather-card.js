@@ -11651,7 +11651,6 @@ var j4, Pi = $((() => {
   M0(), j4 = {
     current: "temperature",
     humidity: "humidity",
-    dew_point: "humidity",
     wind_speed: "wind_speed",
     wind_gust: "wind_speed",
     wind_direction: "wind_speed",
@@ -12855,16 +12854,13 @@ function Mt(e) {
     case "precipitation":
     case "precipitation_probability":
       return "precipitation";
-    case "humidity":
-    case "dew_point":
-      return "humidity";
     default:
       return e;
   }
 }
 function Ro(e) {
   const t = Mt(e);
-  return t === "wind" ? "wind_speed" : t === "humidity" ? "humidity" : e;
+  return t === "wind" ? "wind_speed" : e;
 }
 function Vo(e) {
   return {
@@ -12872,6 +12868,7 @@ function Vo(e) {
     sun: "next_sun",
     wind: "wind",
     humidity: "humidity",
+    dew_point: "dew_point",
     precipitation: "precipitation",
     cloud_coverage: "cloud_coverage",
     uv_index: "uv_index",
@@ -13034,9 +13031,9 @@ function Fo(e) {
 function jo(e, t) {
   switch (e) {
     case "current":
+    case "dew_point":
       return t.temperatureUnit;
     case "humidity":
-    case "dew_point":
     case "cloud_coverage":
     case "precipitation_probability":
       return "%";
@@ -13065,7 +13062,10 @@ function Ko(e) {
       o("wind_gust", i.windGust != null ? `${Math.round(i.windGust)} ${i.windSpeedUnit}` : null), o("wind_direction", y0(i.windBearing ?? void 0)), o("beaufort", String(r));
       break;
     case "humidity":
-      t === "humidity" ? o("dew_point", F(i.dewPoint, i.temperatureUnit)) : o("humidity", F(i.humidity, "%", 0));
+      o("dew_point", F(i.dewPoint, i.temperatureUnit));
+      break;
+    case "dew_point":
+      o("humidity", F(i.humidity, "%", 0));
       break;
     case "precipitation":
       t === "precipitation" ? o("precipitation_probability", F(i.precipitationProbability, "%", 0)) : o("precipitation", qi(i.precipitation, i.precipitationUnit));

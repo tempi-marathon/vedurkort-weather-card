@@ -6,6 +6,7 @@ export type DetailMetricGroup =
   | "sun"
   | "wind"
   | "humidity"
+  | "dew_point"
   | "precipitation"
   | "cloud_coverage"
   | "uv_index"
@@ -21,9 +22,6 @@ export function metricGroup(metricId: DetailMetricId): DetailMetricGroup {
     case "precipitation":
     case "precipitation_probability":
       return "precipitation";
-    case "humidity":
-    case "dew_point":
-      return "humidity";
     default:
       return metricId;
   }
@@ -33,7 +31,6 @@ export function metricGroup(metricId: DetailMetricId): DetailMetricGroup {
 export function chartMetricId(tapped: DetailMetricId): DetailMetricId {
   const group = metricGroup(tapped);
   if (group === "wind") return "wind_speed";
-  if (group === "humidity") return "humidity";
   if (group === "precipitation") return tapped;
   return tapped;
 }
@@ -44,6 +41,7 @@ export function groupTitleKey(group: DetailMetricGroup): LocalizeKey {
     sun: "next_sun",
     wind: "wind",
     humidity: "humidity",
+    dew_point: "dew_point",
     precipitation: "precipitation",
     cloud_coverage: "cloud_coverage",
     uv_index: "uv_index",

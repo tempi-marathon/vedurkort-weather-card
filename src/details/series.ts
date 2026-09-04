@@ -14,7 +14,6 @@ export type ForecastField =
 const FIELD_BY_METRIC: Partial<Record<DetailMetricId, ForecastField>> = {
   current: "temperature",
   humidity: "humidity",
-  dew_point: "humidity",
   wind_speed: "wind_speed",
   wind_gust: "wind_speed",
   wind_direction: "wind_speed",

@@ -9,9 +9,11 @@ describe("metric groups", () => {
     expect(chartMetricId("wind_direction")).toBe("wind_speed");
   });
 
-  it("groups humidity chips", () => {
-    expect(metricGroup("dew_point")).toBe("humidity");
-    expect(chartMetricId("dew_point")).toBe("humidity");
+  it("keeps humidity and dew point as separate groups", () => {
+    expect(metricGroup("humidity")).toBe("humidity");
+    expect(metricGroup("dew_point")).toBe("dew_point");
+    expect(chartMetricId("dew_point")).toBe("dew_point");
+    expect(groupTitleKey("dew_point")).toBe("dew_point");
   });
 
   it("keeps precip chart on tapped chip", () => {
