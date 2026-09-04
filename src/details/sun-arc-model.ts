@@ -1,6 +1,10 @@
 import type { MeteoconName } from "../icons/allowlist";
 import { localize, type LocalizeKey } from "../localize";
-import { formatTime, type WeatherSnapshot } from "../weather/adapter";
+import {
+  formatTime,
+  nextSunEvent,
+  type WeatherSnapshot,
+} from "../weather/adapter";
 
 export interface SunArcDetailRow {
   label: string;
@@ -165,10 +169,11 @@ export function buildSunArcModel(
   const dotX = sunArcX(hourOfDay);
   const dotY = sunArcY(hourOfDay, riseHour, setHour);
 
-  const heroIcon: MeteoconName = snap.isDay ? "sunset" : "sunrise";
-  const heroLabel = localize(snap.isDay ? "sunset" : "sunrise", language);
-  const heroTime =
-    formatTime(snap.isDay ? snap.sunset : snap.sunrise, language) ?? "—";
+  const next = nextSunEvent(snap);
+  const heroKind = next?.kind ?? (snap.isDay ? "sunset" : "sunrise");
+  const heroIcon: MeteoconName = heroKind;
+  const heroLabel = localize(heroKind, language);
+  const heroTime = formatTime(next?.at ?? null, language) ?? "—";
 
   const details: SunArcDetailRow[] = [];
   const dawn = detailRow("sun_dawn", snap.dawn, language);
