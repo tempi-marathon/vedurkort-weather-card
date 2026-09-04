@@ -1,7 +1,11 @@
 import { bearingToLabel, windSpeedToBeaufort } from "../icons/condition-map";
 import { localize, type LocalizeKey } from "../localize";
 import type { ForecastItem } from "../types";
-import { formatTime, type WeatherSnapshot } from "../weather/adapter";
+import {
+  formatTime,
+  nextSunEvent,
+  type WeatherSnapshot,
+} from "../weather/adapter";
 import type { DetailMetricId, MetricSeries } from "./types";
 import { buildOutlookPhrase } from "./outlook";
 import { uvCategory } from "./uv-bar-model";
@@ -139,11 +143,26 @@ function peakValue(series: MetricSeries | null): number | null {
   return Math.max(...values);
 }
 
-function daylightRemainingMs(snap: WeatherSnapshot): number | null {
-  if (!snap.sunset) return null;
-  const set = new Date(snap.sunset).getTime();
+function daylightRemainingMs(
+  snap: WeatherSnapshot,
+  nowMs = Date.now(),
+): number | null {
+  const next = nextSunEvent(snap);
+  if (!next || next.kind !== "sunset") return null;
+  const set = new Date(next.at).getTime();
   if (Number.isNaN(set)) return null;
-  return Math.max(0, set - Date.now());
+  return Math.max(0, set - nowMs);
+}
+
+function sunriseRemainingMs(
+  snap: WeatherSnapshot,
+  nowMs = Date.now(),
+): number | null {
+  const next = nextSunEvent(snap);
+  if (!next || next.kind !== "sunrise") return null;
+  const rise = new Date(next.at).getTime();
+  if (Number.isNaN(rise)) return null;
+  return Math.max(0, rise - nowMs);
 }
 
 function formatDuration(ms: number, language: string | undefined): string {
@@ -233,7 +252,8 @@ export function buildInterpretationCopy(ctx: CopyContext): string {
         language,
       );
     case "sun": {
-      if (snap.isDay) {
+      const next = nextSunEvent(snap);
+      if (next?.kind === "sunset") {
         const rem = daylightRemainingMs(snap);
         if (rem != null && rem > 0) {
           return loc("copy_sun_daylight", language, {
@@ -242,7 +262,15 @@ export function buildInterpretationCopy(ctx: CopyContext): string {
         }
         return loc("copy_sun_set_soon", language);
       }
-      return loc("copy_sun_night", language);
+      if (next?.kind === "sunrise") {
+        const rem = sunriseRemainingMs(snap);
+        if (rem != null && rem > 0) {
+          return loc("copy_sun_night", language, {
+            duration: formatDuration(rem, language),
+          });
+        }
+      }
+      return loc("copy_sun_night_unknown", language);
     }
     default:
       return "";

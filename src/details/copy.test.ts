@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ForecastItem } from "../types";
 import {
   buildCurrentConditionsCopy,
@@ -67,6 +67,10 @@ function copyCtx(
 }
 
 describe("buildInterpretationCopy", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("describes UV category", () => {
     const copy = buildInterpretationCopy(copyCtx("uv_index"));
     expect(copy).toContain("High");
@@ -95,6 +99,66 @@ describe("buildInterpretationCopy", () => {
     expect(copy).toBe(
       `Precipitation expected around ${formatTime(at, "en")}.`,
     );
+  });
+
+  it("does not report ~23h daylight after sunset when isDay still true", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-04T20:35:00+02:00"));
+
+    const copy = buildInterpretationCopy(
+      copyCtx("sun", {
+        snap: snap({
+          isDay: true,
+          sunrise: "2026-09-05T06:30:00+02:00",
+          sunset: "2026-09-05T20:32:00+02:00",
+          todaySunrise: "2026-09-04T06:30:00+02:00",
+          todaySunset: "2026-09-04T20:34:00+02:00",
+        }),
+      }),
+    );
+
+    expect(copy).toContain("next sunrise in");
+    expect(copy).not.toContain("daylight remaining");
+    expect(copy).not.toMatch(/23 h/);
+  });
+
+  it("uses daylight remaining after sunrise when isDay still false", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-04T06:45:00+02:00"));
+
+    const copy = buildInterpretationCopy(
+      copyCtx("sun", {
+        snap: snap({
+          isDay: false,
+          sunrise: "2026-09-05T06:30:00+02:00",
+          sunset: "2026-09-04T20:34:00+02:00",
+          todaySunrise: "2026-09-04T06:30:00+02:00",
+          todaySunset: "2026-09-04T20:34:00+02:00",
+        }),
+      }),
+    );
+
+    expect(copy).toContain("daylight remaining");
+    expect(copy).not.toContain("Night");
+  });
+
+  it("includes sunrise countdown in night copy", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-04T21:00:00+02:00"));
+
+    const copy = buildInterpretationCopy(
+      copyCtx("sun", {
+        snap: snap({
+          isDay: false,
+          sunrise: "2026-09-05T06:33:00+02:00",
+          sunset: "2026-09-05T20:32:00+02:00",
+          todaySunrise: "2026-09-04T06:30:00+02:00",
+          todaySunset: "2026-09-04T20:34:00+02:00",
+        }),
+      }),
+    );
+
+    expect(copy).toBe("Night — next sunrise in 9 h 33 min.");
   });
 });
 

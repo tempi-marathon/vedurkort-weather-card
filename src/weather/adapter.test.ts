@@ -6,6 +6,7 @@ import {
   getWeatherSnapshot,
   isDaytimeAt,
   isSunUp,
+  nextSunEvent,
   subscribeForecast,
 } from "./adapter";
 
@@ -140,6 +141,46 @@ describe("weather adapter", () => {
     const noon = new Date();
     noon.setHours(12, 0, 0, 0);
     expect(isDaytimeAt(hass, noon.toISOString())).toBe(true);
+  });
+});
+
+describe("nextSunEvent", () => {
+  it("picks sunset when it is sooner than sunrise", () => {
+    expect(
+      nextSunEvent({
+        sunrise: "2026-09-05T06:30:00+02:00",
+        sunset: "2026-09-04T20:34:00+02:00",
+      }),
+    ).toEqual({ kind: "sunset", at: "2026-09-04T20:34:00+02:00" });
+  });
+
+  it("picks sunrise when it is sooner than sunset", () => {
+    expect(
+      nextSunEvent({
+        sunrise: "2026-09-05T06:30:00+02:00",
+        sunset: "2026-09-05T20:32:00+02:00",
+      }),
+    ).toEqual({ kind: "sunrise", at: "2026-09-05T06:30:00+02:00" });
+  });
+
+  it("picks sunrise after sunset even when isDay still true (HA lag)", () => {
+    // next_setting already tomorrow; above_horizon still true for a few minutes.
+    expect(
+      nextSunEvent({
+        sunrise: "2026-09-05T06:30:00+02:00",
+        sunset: "2026-09-05T20:32:00+02:00",
+      }),
+    ).toEqual({ kind: "sunrise", at: "2026-09-05T06:30:00+02:00" });
+  });
+
+  it("picks sunset after sunrise even when isDay still false (HA lag)", () => {
+    // next_rising already tomorrow; below_horizon still true for a few minutes.
+    expect(
+      nextSunEvent({
+        sunrise: "2026-09-05T06:30:00+02:00",
+        sunset: "2026-09-04T20:34:00+02:00",
+      }),
+    ).toEqual({ kind: "sunset", at: "2026-09-04T20:34:00+02:00" });
   });
 });
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { WeatherSnapshot } from "../weather/adapter";
+import { formatTime } from "../weather/adapter";
 import {
   buildSunArcModel,
   buildSunArcPaths,
@@ -107,5 +108,70 @@ describe("sun arc model", () => {
     expect(model).not.toBeNull();
     expect(model!.showDot).toBe(true);
     expect(model!.dotY).toBeLessThan(model!.horizonY);
+  });
+
+  it("shows sunrise hero when next_setting has rolled but isDay still true", () => {
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    const now = new Date(base);
+    now.setHours(20, 35, 0, 0);
+    const todayRise = new Date(base);
+    todayRise.setHours(6, 30, 0, 0);
+    const todaySet = new Date(base);
+    todaySet.setHours(20, 34, 0, 0);
+    const tomorrowRise = new Date(base);
+    tomorrowRise.setDate(tomorrowRise.getDate() + 1);
+    tomorrowRise.setHours(6, 30, 0, 0);
+    const tomorrowSet = new Date(base);
+    tomorrowSet.setDate(tomorrowSet.getDate() + 1);
+    tomorrowSet.setHours(20, 32, 0, 0);
+
+    const model = buildSunArcModel(
+      snap({
+        isDay: true,
+        sunrise: tomorrowRise.toISOString(),
+        sunset: tomorrowSet.toISOString(),
+        todaySunrise: todayRise.toISOString(),
+        todaySunset: todaySet.toISOString(),
+      }),
+      "en",
+      now,
+    );
+
+    expect(model).not.toBeNull();
+    expect(model!.heroLabel).toBe("Sunrise");
+    expect(model!.heroIcon).toBe("sunrise");
+    expect(model!.heroTime).toBe(formatTime(tomorrowRise.toISOString(), "en"));
+  });
+
+  it("shows sunset hero when next_rising has rolled but isDay still false", () => {
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    const now = new Date(base);
+    now.setHours(6, 45, 0, 0);
+    const todayRise = new Date(base);
+    todayRise.setHours(6, 30, 0, 0);
+    const todaySet = new Date(base);
+    todaySet.setHours(20, 34, 0, 0);
+    const tomorrowRise = new Date(base);
+    tomorrowRise.setDate(tomorrowRise.getDate() + 1);
+    tomorrowRise.setHours(6, 30, 0, 0);
+
+    const model = buildSunArcModel(
+      snap({
+        isDay: false,
+        sunrise: tomorrowRise.toISOString(),
+        sunset: todaySet.toISOString(),
+        todaySunrise: todayRise.toISOString(),
+        todaySunset: todaySet.toISOString(),
+      }),
+      "en",
+      now,
+    );
+
+    expect(model).not.toBeNull();
+    expect(model!.heroLabel).toBe("Sunset");
+    expect(model!.heroIcon).toBe("sunset");
+    expect(model!.heroTime).toBe(formatTime(todaySet.toISOString(), "en"));
   });
 });

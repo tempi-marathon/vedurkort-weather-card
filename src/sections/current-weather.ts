@@ -17,6 +17,7 @@ import {
   formatPrecip,
   formatTemp,
   formatTime,
+  nextSunEvent,
   type WeatherSnapshot,
 } from "../weather/adapter";
 import {
@@ -107,23 +108,22 @@ export function renderCurrentWeatherSection(
         ? html`
             <div class="details">
               ${config.show_sun
-                ? snap.isDay
-                  ? renderDetailButton(
+                ? (() => {
+                    const next = nextSunEvent(snap);
+                    const kind =
+                      next?.kind ?? (snap.isDay ? "sunset" : "sunrise");
+                    const at =
+                      next?.at ??
+                      (kind === "sunset" ? snap.sunset : snap.sunrise);
+                    return renderDetailButton(
                       icon,
-                      "sunset",
-                      formatTime(snap.sunset, language),
-                      localize("sunset", language),
+                      kind,
+                      formatTime(at, language),
+                      localize(kind, language),
                       "sun",
                       onOpenDetail,
-                    )
-                  : renderDetailButton(
-                      icon,
-                      "sunrise",
-                      formatTime(snap.sunrise, language),
-                      localize("sunrise", language),
-                      "sun",
-                      onOpenDetail,
-                    )
+                    );
+                  })()
                 : nothing}
               ${config.show_humidity
                 ? renderDetailButton(

@@ -91,6 +91,34 @@ export function resolveSunTimeToday(
   return null;
 }
 
+export type NextSunEvent = {
+  kind: "sunrise" | "sunset";
+  at: string;
+};
+
+/**
+ * Sooner of next_rising / next_setting. Prefer this over snap.isDay for
+ * sun chip/hero/copy — HA's above_horizon state can lag a few minutes after
+ * attributes roll to the next day.
+ */
+export function nextSunEvent(
+  snap: Pick<WeatherSnapshot, "sunrise" | "sunset">,
+): NextSunEvent | null {
+  const riseMs = snap.sunrise ? new Date(snap.sunrise).getTime() : NaN;
+  const setMs = snap.sunset ? new Date(snap.sunset).getTime() : NaN;
+  const riseOk = !Number.isNaN(riseMs);
+  const setOk = !Number.isNaN(setMs);
+
+  if (riseOk && setOk) {
+    return riseMs <= setMs
+      ? { kind: "sunrise", at: snap.sunrise! }
+      : { kind: "sunset", at: snap.sunset! };
+  }
+  if (riseOk) return { kind: "sunrise", at: snap.sunrise! };
+  if (setOk) return { kind: "sunset", at: snap.sunset! };
+  return null;
+}
+
 export function isSunUp(hass: HomeAssistant, sunEntity = "sun.sun"): boolean {
   const sun = hass.states[sunEntity];
   if (!sun) return true;
