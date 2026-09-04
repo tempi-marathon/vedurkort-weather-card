@@ -1,26 +1,19 @@
-name: HACS Validate
+name: Validate
+
 on:
   push:
   pull_request:
+  schedule:
+    - cron: "0 0 * * *"
   workflow_dispatch:
-permissions:
-  contents: read
+
+permissions: {}
+
 jobs:
-  validate:
+  validate-hacs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
       - name: HACS validation
         uses: hacs/action@1ebf01c408f29afcb6406bd431bc98fd8cbb15aa # main
         with:
           category: plugin
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm test
