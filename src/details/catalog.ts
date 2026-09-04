@@ -262,9 +262,13 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
     model.uvBar = buildUvBarModel(ctx.snap, ctx.language);
   }
 
-  if (group === "wind") {
-    model.windForecastItems = sliceHourlyForecast(ctx.hourlyForecast, 24);
-    model.showWindRow = model.windForecastItems.length > 0;
+  if (group === "current" || group === "wind") {
+    model.hourlyRowItems = hourlySlice;
+    if (group === "current") {
+      model.showConditionRow = model.hourlyRowItems.length > 0;
+    } else {
+      model.showWindRow = model.hourlyRowItems.length > 0;
+    }
   }
 
   return model;

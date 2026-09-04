@@ -34,13 +34,15 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
   } = ctx;
 
   const chartCols = model.series?.points.length ?? 0;
-  const showWindRow =
-    model.showWindRow &&
-    model.windForecastItems?.length &&
+  const showConditionRow = !!model.showConditionRow && !!model.hourlyRowItems?.length;
+  const showWindRow = !!model.showWindRow && !!model.hourlyRowItems?.length;
+  const showHourlyRow =
+    (showConditionRow || showWindRow) &&
     hass &&
     config &&
     entityId &&
-    windSpeedUnit;
+    windSpeedUnit &&
+    model.hourlyRowItems?.length;
 
   return html`
     ${model.sunArc
@@ -65,13 +67,13 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
               <div class="detail-chart-wrap chart-wrap">
                 <canvas class="detail-chart-canvas"></canvas>
               </div>
-              ${showWindRow
+              ${showHourlyRow
                 ? html`
                     <div class="forecast-row-slot">
-                      ${renderForecastRow(hass!, model.windForecastItems!, {
-                        showIcons: false,
+                      ${renderForecastRow(hass!, model.hourlyRowItems!, {
+                        showIcons: showConditionRow,
                         showWindSpeed: false,
-                        showWindDirection: true,
+                        showWindDirection: showWindRow,
                         iconStyle: config!.icon_style,
                         animated: config!.animated_icons,
                         windSpeedUnit: windSpeedUnit!,

@@ -61,7 +61,10 @@ export interface DetailModel {
   sunArc?: SunArcModel | null;
   /** UV sheet: gradient bar replaces the standard hero. */
   uvBar?: UvBarModel | null;
-  /** Wind sheet: hourly items for direction row under chart. */
-  windForecastItems?: ForecastItem[];
+  /** Hourly items for condition/wind rows under the chart. */
+  hourlyRowItems?: ForecastItem[];
+  /** Current-conditions sheet: hourly condition icons under chart. */
+  showConditionRow?: boolean;
+  /** Wind sheet: hourly wind direction under chart. */
   showWindRow?: boolean;
 }
