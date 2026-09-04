@@ -222,6 +222,11 @@ export const cardStyles = [
       margin: 0;
       padding: 0;
       border: none;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-focus-ring-color: transparent;
       width: min(520px, calc(100vw - 32px));
       max-height: min(85vh, 720px);
       overflow: hidden;
@@ -230,6 +235,10 @@ export const cardStyles = [
       color: var(--primary-text-color, #212121);
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
       box-sizing: border-box;
+    }
+    .vk-modal:focus,
+    .vk-modal:focus-visible {
+      outline: none;
     }
     .vk-modal::backdrop {
       background: rgba(0, 0, 0, 0.45);
