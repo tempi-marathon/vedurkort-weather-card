@@ -45,6 +45,7 @@ describe("seriesFromHourly", () => {
   it("returns null for metrics without forecast field", () => {
     expect(seriesFromHourly(hourly, "uv_index", "", 24)).toBeNull();
     expect(seriesFromHourly(hourly, "pressure", "hPa", 24)).toBeNull();
+    expect(seriesFromHourly(hourly, "dew_point", "°C", 24)).toBeNull();
   });
 
   it("uses bar chart for precipitation", () => {

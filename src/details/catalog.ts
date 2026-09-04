@@ -112,9 +112,9 @@ function heroForMetric(ctx: BuildDetailContext): {
 function unitForSeries(metricId: DetailMetricId, snap: WeatherSnapshot): string {
   switch (metricId) {
     case "current":
+    case "dew_point":
       return snap.temperatureUnit;
     case "humidity":
-    case "dew_point":
     case "cloud_coverage":
     case "precipitation_probability":
       return "%";
@@ -158,11 +158,10 @@ function relatedStats(ctx: BuildDetailContext): DetailModel["related"] {
       push("beaufort", String(bft));
       break;
     case "humidity":
-      if (metricId === "humidity") {
-        push("dew_point", formatNumber(snap.dewPoint, snap.temperatureUnit));
-      } else {
-        push("humidity", formatNumber(snap.humidity, "%", 0));
-      }
+      push("dew_point", formatNumber(snap.dewPoint, snap.temperatureUnit));
+      break;
+    case "dew_point":
+      push("humidity", formatNumber(snap.humidity, "%", 0));
       break;
     case "precipitation":
       if (metricId === "precipitation") {
