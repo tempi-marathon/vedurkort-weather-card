@@ -1,5 +1,6 @@
 import {
   bearingToLabel,
+  bearingToWindIcon,
   beaufortIcon,
   uvIndexIcon,
 } from "../icons/condition-map";
@@ -46,6 +47,12 @@ function heroForMetric(ctx: BuildDetailContext): {
   const group = metricGroup(metricId);
 
   if (group === "wind") {
+    if (metricId === "wind_direction") {
+      return {
+        value: bearingToLabel(snap.windBearing ?? undefined),
+        icon: bearingToWindIcon(snap.windBearing ?? undefined),
+      };
+    }
     return {
       value:
         snap.windSpeed != null
@@ -216,10 +223,8 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
 
   const { high, low } = highLowFromHourly(ctx.hourlyForecast);
   const hourlySlice = sliceHourlyForecast(ctx.hourlyForecast, 24);
-  const copyMetricId =
-    group === "wind" ? ("wind_speed" as DetailMetricId) : ctx.metricId;
   const copy = buildInterpretationCopy({
-    metricId: copyMetricId,
+    metricId: ctx.metricId,
     snap: ctx.snap,
     series,
     language: ctx.language,

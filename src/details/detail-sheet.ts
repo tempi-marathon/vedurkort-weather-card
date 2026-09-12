@@ -72,8 +72,10 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
                     <div class="forecast-row-slot">
                       ${renderForecastRow(hass!, model.hourlyRowItems!, {
                         showIcons: showConditionRow,
-                        showWindSpeed: false,
-                        showWindDirection: showWindRow,
+                        showWindSpeed:
+                          showWindRow && model.id !== "wind_direction",
+                        showWindDirection:
+                          showWindRow && model.id === "wind_direction",
                         iconStyle: config!.icon_style,
                         animated: config!.animated_icons,
                         windSpeedUnit: windSpeedUnit!,
