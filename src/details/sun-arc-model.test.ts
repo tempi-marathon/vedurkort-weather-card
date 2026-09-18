@@ -174,4 +174,29 @@ describe("sun arc model", () => {
     expect(model!.heroIcon).toBe("sunset");
     expect(model!.heroTime).toBe(formatTime(todaySet.toISOString(), "en"));
   });
+
+  it("emits localized hour labels at 0, 6, 12, 18", () => {
+    const model = buildSunArcModel(snap(), "en");
+    expect(model).not.toBeNull();
+
+    expect(model!.hourLabels.map((t) => t.hour)).toEqual([0, 6, 12, 18]);
+    expect(model!.hourLabels.map((t) => t.x)).toEqual([0, 90, 180, 270]);
+
+    const expectedEn = [0, 6, 12, 18].map((hour) => {
+      const d = new Date();
+      d.setHours(hour, 0, 0, 0);
+      return new Intl.DateTimeFormat("en", { hour: "numeric" }).format(d);
+    });
+    expect(model!.hourLabels.map((t) => t.text)).toEqual(expectedEn);
+
+    const nl = buildSunArcModel(snap(), "nl");
+    expect(nl).not.toBeNull();
+    const expectedNl = [0, 6, 12, 18].map((hour) => {
+      const d = new Date();
+      d.setHours(hour, 0, 0, 0);
+      return new Intl.DateTimeFormat("nl", { hour: "numeric" }).format(d);
+    });
+    expect(nl!.hourLabels.map((t) => t.text)).toEqual(expectedNl);
+    expect(nl!.hourLabels.map((t) => t.text)).not.toEqual(expectedEn);
+  });
 });

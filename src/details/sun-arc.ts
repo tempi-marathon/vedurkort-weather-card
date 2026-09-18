@@ -50,6 +50,18 @@ export function renderSunArcHero(
           : nothing}
       </div>
 
+      <div class="detail-sun-hours" aria-hidden="true">
+        ${arc.hourLabels.map(
+          (tick) => html`
+            <span
+              class="detail-sun-hour${tick.hour === 0 ? " is-start" : ""}"
+              style="left: ${(tick.x / arc.viewWidth) * 100}%"
+              >${tick.text}</span
+            >
+          `,
+        )}
+      </div>
+
       ${arc.details.length
         ? html`
             <dl class="detail-sun-details">
