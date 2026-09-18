@@ -820,7 +820,7 @@ export const cardStyles = [
       margin-top: 0;
     }
     .forecast-scroll {
-      --forecast-col-width: 42px;
+      --forecast-col-width: 54px;
       overflow-x: auto;
       overflow-y: hidden;
       overscroll-behavior-x: contain;

@@ -64,7 +64,7 @@ function ctx(
     language: "en",
     bft: 3,
     gustBft: 5,
-    hourlyPrecipType: "both",
+    hourlyPrecipType: "rainfall",
     ...partial,
   };
 }
