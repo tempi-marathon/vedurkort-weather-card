@@ -13,7 +13,9 @@ import {
   normalizeConfig,
   normalizeEditorConfig,
   CARD_LAYOUTS,
+  WIND_SPEED_DISPLAY_UNITS,
   type VedurkortEditorConfig,
+  type WindSpeedDisplayUnit,
 } from "./config";
 import { ICON_STYLES } from "./icons/allowlist";
 import {
@@ -28,9 +30,7 @@ import { fetchForecastOnce } from "./weather/adapter";
 type DetailToggleKey =
   | "show_sun"
   | "show_humidity"
-  | "show_wind_speed"
-  | "show_wind_direction"
-  | "show_wind_gust"
+  | "show_wind"
   | "show_uv_index"
   | "show_pressure"
   | "show_cloud_coverage"
@@ -225,9 +225,10 @@ export class VedurkortWeatherCardEditor extends LitElement {
     return [
       { key: "show_sun", attrs: ["next_rising"], sun: true },
       { key: "show_humidity", attrs: ["humidity"] },
-      { key: "show_wind_speed", attrs: ["wind_speed"] },
-      { key: "show_wind_direction", attrs: ["wind_bearing"] },
-      { key: "show_wind_gust", attrs: ["wind_gust"] },
+      {
+        key: "show_wind",
+        attrs: ["wind_speed", "wind_bearing", "wind_gust"],
+      },
       { key: "show_uv_index", attrs: ["uv_index"] },
       { key: "show_pressure", attrs: ["pressure"] },
       { key: "show_cloud_coverage", attrs: ["cloud_coverage"] },
@@ -242,15 +243,36 @@ export class VedurkortWeatherCardEditor extends LitElement {
     ];
   }
 
+  private _nativeWindUnitLabel(): string {
+    const entity = this._config?.entity
+      ? this.hass?.states[this._config.entity]
+      : undefined;
+    const fromEntity = entity?.attributes.wind_speed_unit as
+      | string
+      | undefined;
+    const fromHass = this.hass?.config?.unit_system?.wind_speed;
+    return fromEntity || fromHass || "km/h";
+  }
+
+  private _windUnitOptionLabel(unit: WindSpeedDisplayUnit): string {
+    if (unit === "native") {
+      return this._t("wind_unit_native", {
+        unit: this._nativeWindUnitLabel(),
+      });
+    }
+    if (unit === "beaufort") return this._t("wind_unit_beaufort");
+    if (unit === "km/h") return this._t("wind_unit_kmh");
+    if (unit === "m/s") return this._t("wind_unit_ms");
+    return this._t("wind_unit_mph");
+  }
+
   private _applyDetailPreset(preset: "available" | "full" | "clear"): void {
     if (!this._config) return;
     const next = structuredClone(this._config);
     const off: Record<DetailToggleKey, boolean> = {
       show_sun: false,
       show_humidity: false,
-      show_wind_speed: false,
-      show_wind_direction: false,
-      show_wind_gust: false,
+      show_wind: false,
       show_uv_index: false,
       show_pressure: false,
       show_cloud_coverage: false,
@@ -620,19 +642,33 @@ export class VedurkortWeatherCardEditor extends LitElement {
                 ${this._detailToggle("show_humidity", this._t("humidity"), [
                   "humidity",
                 ])}
-                ${this._detailToggle(
-                  "show_wind_speed",
-                  this._t("wind_speed"),
-                  ["wind_speed"],
-                )}
-                ${this._detailToggle(
-                  "show_wind_direction",
-                  this._t("wind_direction"),
-                  ["wind_bearing"],
-                )}
-                ${this._detailToggle("show_wind_gust", this._t("wind_gust"), [
+                ${this._detailToggle("show_wind", this._t("show_wind"), [
+                  "wind_speed",
+                  "wind_bearing",
                   "wind_gust",
                 ])}
+                ${c.show_wind
+                  ? html`
+                      <label>
+                        ${this._t("wind_speed_unit")}
+                        <select
+                          data-config="wind_speed_unit"
+                          @change=${this._value}
+                        >
+                          ${WIND_SPEED_DISPLAY_UNITS.map(
+                            (u) =>
+                              html`<option
+                                value=${u}
+                                ?selected=${(c.wind_speed_unit ?? "native") ===
+                                u}
+                              >
+                                ${this._windUnitOptionLabel(u)}
+                              </option>`,
+                          )}
+                        </select>
+                      </label>
+                    `
+                  : nothing}
                 ${this._detailToggle("show_uv_index", this._t("uv_index"), [
                   "uv_index",
                 ])}

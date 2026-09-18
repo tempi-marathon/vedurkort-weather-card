@@ -378,6 +378,86 @@ export const cardStyles = [
     .detail-related-row dd {
       margin: 0;
       font-weight: 650;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+      text-align: right;
+    }
+    .detail-related-sub {
+      font-size: 0.8em;
+      font-weight: 500;
+      opacity: 0.7;
+    }
+    .beaufort-legend {
+      margin-top: 12px;
+    }
+    .beaufort-legend-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 550;
+      padding: 4px 0;
+      cursor: pointer;
+      opacity: 0.85;
+    }
+    .beaufort-legend-toggle:hover,
+    .beaufort-legend-toggle:focus-visible {
+      opacity: 1;
+      outline: none;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .beaufort-legend-info {
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .beaufort-legend-panel {
+      margin-top: 8px;
+      display: grid;
+      gap: 0;
+      font-size: 0.8rem;
+    }
+    .beaufort-legend-head,
+    .beaufort-legend-row {
+      display: grid;
+      grid-template-columns: 14px 2rem minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    }
+    .beaufort-legend-head {
+      font-weight: 600;
+      opacity: 0.75;
+      border-top: none;
+      padding-top: 0;
+    }
+    .beaufort-legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .beaufort-legend-bft {
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+    }
+    .beaufort-legend-desc {
+      min-width: 0;
+      opacity: 0.9;
+    }
+    .beaufort-legend-range {
+      font-variant-numeric: tabular-nums;
+      opacity: 0.8;
+      white-space: nowrap;
+      text-align: right;
     }
     .detail-sun-arc {
       margin-bottom: 8px;
@@ -775,10 +855,31 @@ export const cardStyles = [
       width: 26px;
       height: 26px;
       display: inline-flex;
+      flex-shrink: 0;
+      align-self: flex-start;
     }
     .detail-icon svg {
       width: 100%;
       height: 100%;
+    }
+    .detail-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+      line-height: 1.25;
+    }
+    .detail-main {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .detail-sub {
+      font-size: 0.8em;
+      opacity: 0.75;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .tip {
       position: relative;

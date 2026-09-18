@@ -4,10 +4,8 @@ import type { VedurkortCardConfig } from "../config";
 import type { DetailMetricId } from "../details/types";
 import {
   bearingToLabel,
-  bearingToWindIcon,
   beaufortIcon,
   uvIndexIcon,
-  windSpeedToBeaufort,
 } from "../icons/condition-map";
 import type { MeteoconName } from "../icons/allowlist";
 import { localize } from "../localize";
@@ -20,6 +18,10 @@ import {
   nextSunEvent,
   type WeatherSnapshot,
 } from "../weather/adapter";
+import {
+  formatWindHeading,
+  formatWindSpeed,
+} from "../weather/wind-units";
 import {
   renderAlertsStrip,
   type IconRenderer,
@@ -135,73 +137,71 @@ export function renderCurrentWeatherSection(
                     onOpenDetail,
                   )
                 : nothing}
-              ${config.show_wind_speed && snap.windSpeed != null
-                ? tipWrap(
-                    localize("wind_tip", language, {
-                      speed: `${Math.round(snap.windSpeed)} ${snap.windSpeedUnit}`,
+              ${config.show_wind &&
+              (snap.windSpeed != null ||
+                snap.windBearing != null ||
+                snap.windGust != null)
+                ? (() => {
+                    const dir = bearingToLabel(snap.windBearing ?? undefined);
+                    const heading = formatWindHeading(
+                      snap.windSpeed,
+                      dir,
+                      snap.windSpeedUnit,
+                      config.wind_speed_unit,
+                    );
+                    const gustFmt = formatWindSpeed(
+                      snap.windGust,
+                      snap.windSpeedUnit,
+                      config.wind_speed_unit,
+                    );
+                    const tipSpeed =
+                      formatWindSpeed(
+                        snap.windSpeed,
+                        snap.windSpeedUnit,
+                        config.wind_speed_unit,
+                      )?.text ?? heading;
+                    const tip = localize("wind_tip", language, {
+                      speed: tipSpeed,
                       bft: String(ctx.bft),
-                    }),
-                    html`
-                      <button
-                        type="button"
-                        class="detail"
-                        aria-label=${localize("wind_speed", language)}
-                        @click=${(ev: Event) => {
-                          ev.stopPropagation();
-                          onOpenDetail("wind_speed");
-                        }}
-                      >
-                        <span
-                          class="detail-icon"
-                          .innerHTML=${icon(beaufortIcon(ctx.bft))}
-                        ></span>
-                        <span
-                          >${Math.round(snap.windSpeed)}
-                          ${snap.windSpeedUnit}</span
+                    });
+                    const aria =
+                      heading ||
+                      localize("wind", language);
+                    return tipWrap(
+                      tip,
+                      html`
+                        <button
+                          type="button"
+                          class="detail detail-wind"
+                          aria-label=${aria}
+                          @click=${(ev: Event) => {
+                            ev.stopPropagation();
+                            onOpenDetail("wind_speed");
+                          }}
                         >
-                      </button>
-                    `,
-                    "detail",
-                  )
-                : nothing}
-              ${config.show_wind_gust && snap.windGust != null
-                ? tipWrap(
-                    localize("wind_tip", language, {
-                      speed: `${Math.round(snap.windGust)} ${snap.windSpeedUnit}`,
-                      bft: String(ctx.gustBft),
-                    }),
-                    html`
-                      <button
-                        type="button"
-                        class="detail"
-                        aria-label=${localize("wind_gust", language)}
-                        @click=${(ev: Event) => {
-                          ev.stopPropagation();
-                          onOpenDetail("wind_gust");
-                        }}
-                      >
-                        <span
-                          class="detail-icon"
-                          .innerHTML=${icon(beaufortIcon(ctx.gustBft))}
-                        ></span>
-                        <span
-                          >${Math.round(snap.windGust)}
-                          ${snap.windSpeedUnit}</span
-                        >
-                      </button>
-                    `,
-                    "detail",
-                  )
-                : nothing}
-              ${config.show_wind_direction
-                ? renderDetailButton(
-                    icon,
-                    bearingToWindIcon(snap.windBearing ?? undefined),
-                    bearingToLabel(snap.windBearing ?? undefined),
-                    localize("wind_direction", language),
-                    "wind_direction",
-                    onOpenDetail,
-                  )
+                          <span
+                            class="detail-icon"
+                            .innerHTML=${icon(beaufortIcon(ctx.bft))}
+                          ></span>
+                          <span class="detail-text">
+                            ${heading
+                              ? html`<span class="detail-main"
+                                  >${heading}</span
+                                >`
+                              : nothing}
+                            ${gustFmt
+                              ? html`<span class="detail-sub"
+                                  >${localize("wind_gust_line", language, {
+                                    speed: gustFmt.text,
+                                  })}</span
+                                >`
+                              : nothing}
+                          </span>
+                        </button>
+                      `,
+                      "detail",
+                    );
+                  })()
                 : nothing}
               ${config.show_uv_index
                 ? renderDetailButton(

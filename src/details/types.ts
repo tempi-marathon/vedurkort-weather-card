@@ -42,11 +42,15 @@ export interface MetricSeries {
   precipUnit?: string;
   /** Current-conditions chart: feels-like line when hourly data includes it. */
   feelsLike?: (number | null)[];
+  /** Wind chart: hourly gust line when forecast includes wind_gust. */
+  gust?: (number | null)[];
 }
 
 export interface DetailRelatedStat {
   label: string;
   value: string;
+  /** Quieter secondary line under the value (e.g. alternate wind units). */
+  subline?: string;
 }
 
 export interface DetailModel {

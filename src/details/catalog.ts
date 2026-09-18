@@ -1,11 +1,10 @@
 import {
   bearingToLabel,
-  bearingToWindIcon,
   beaufortIcon,
   uvIndexIcon,
 } from "../icons/condition-map";
 import type { MeteoconName } from "../icons/allowlist";
-import type { PrecipType } from "../config";
+import type { PrecipType, WindSpeedDisplayUnit } from "../config";
 import { localize, type LocalizeKey } from "../localize";
 import { sliceHourlyForecast } from "../charts/hourly-window";
 import type { ForecastItem } from "../types";
@@ -13,9 +12,15 @@ import {
   formatNumber,
   formatPrecip,
   formatTemp,
-  formatTime,
   type WeatherSnapshot,
 } from "../weather/adapter";
+import {
+  formatWindHeading,
+  formatWindSpeed,
+  normalizeWindUnit,
+  resolveWindDisplayUnit,
+  windUnitLabel,
+} from "../weather/wind-units";
 import { buildInterpretationCopy } from "./copy";
 import {
   chartMetricId,
@@ -26,7 +31,7 @@ import {
 import { seriesFromHourly, currentConditionsSeries } from "./series";
 import { buildSunArcModel } from "./sun-arc-model";
 import { buildUvBarModel } from "./uv-bar-model";
-import type { DetailMetricId, DetailModel } from "./types";
+import type { DetailMetricId, DetailModel, MetricSeries } from "./types";
 
 export interface BuildDetailContext {
   metricId: DetailMetricId;
@@ -37,27 +42,27 @@ export interface BuildDetailContext {
   bft: number;
   gustBft: number;
   hourlyPrecipType: PrecipType;
+  /** Display preference for wind chip/sheet/chart. */
+  windSpeedUnit?: WindSpeedDisplayUnit;
 }
 
 function heroForMetric(ctx: BuildDetailContext): {
   value: string;
   icon: MeteoconName;
 } {
-  const { metricId, snap, iconName, language, bft } = ctx;
+  const { metricId, snap, iconName, bft, windSpeedUnit } = ctx;
   const group = metricGroup(metricId);
 
   if (group === "wind") {
-    if (metricId === "wind_direction") {
-      return {
-        value: bearingToLabel(snap.windBearing ?? undefined),
-        icon: bearingToWindIcon(snap.windBearing ?? undefined),
-      };
-    }
+    const dir = bearingToLabel(snap.windBearing ?? undefined);
+    const heading = formatWindHeading(
+      snap.windSpeed,
+      dir,
+      snap.windSpeedUnit,
+      windSpeedUnit,
+    );
     return {
-      value:
-        snap.windSpeed != null
-          ? `${Math.round(snap.windSpeed)} ${snap.windSpeedUnit}`
-          : "—",
+      value: heading || "—",
       icon: beaufortIcon(bft),
     };
   }
@@ -116,7 +121,11 @@ function heroForMetric(ctx: BuildDetailContext): {
   }
 }
 
-function unitForSeries(metricId: DetailMetricId, snap: WeatherSnapshot): string {
+function unitForSeries(
+  metricId: DetailMetricId,
+  snap: WeatherSnapshot,
+  windDisplay?: WindSpeedDisplayUnit,
+): string {
   switch (metricId) {
     case "current":
     case "dew_point":
@@ -128,7 +137,7 @@ function unitForSeries(metricId: DetailMetricId, snap: WeatherSnapshot): string 
     case "wind_speed":
     case "wind_gust":
     case "wind_direction":
-      return snap.windSpeedUnit;
+      return windUnitLabel(windDisplay, snap.windSpeedUnit);
     case "precipitation":
       return snap.precipitationUnit;
     default:
@@ -136,14 +145,71 @@ function unitForSeries(metricId: DetailMetricId, snap: WeatherSnapshot): string 
   }
 }
 
+function convertWindSeries(
+  series: MetricSeries,
+  fromUnit: string,
+  display: WindSpeedDisplayUnit | undefined,
+): MetricSeries {
+  const convertPoint = (value: number | null): number | null => {
+    if (value == null) return null;
+    return formatWindSpeed(value, fromUnit, display)?.number ?? null;
+  };
+
+  return {
+    ...series,
+    unit: windUnitLabel(display, fromUnit),
+    points: series.points.map((p) => ({
+      t: p.t,
+      value: convertPoint(p.value),
+    })),
+    gust: series.gust?.map((v) => convertPoint(v)),
+  };
+}
+
+/** Extra unit rows for the wind related table. */
+function windExtraUnits(
+  display: WindSpeedDisplayUnit | undefined,
+  nativeUnit: string,
+): WindSpeedDisplayUnit[] {
+  const effective = normalizeWindUnit(
+    resolveWindDisplayUnit(display, nativeUnit),
+  );
+  const native = normalizeWindUnit(nativeUnit);
+
+  if (effective === "beaufort") {
+    if (native === "km/h") return ["km/h", "m/s"];
+    if (native === "mph") return ["mph"];
+    if (native === "m/s") return ["m/s"];
+    return [];
+  }
+
+  if (
+    effective === "km/h" ||
+    effective === "mph" ||
+    effective === "m/s"
+  ) {
+    return ["beaufort"];
+  }
+
+  return [];
+}
+
 function relatedStats(ctx: BuildDetailContext): DetailModel["related"] {
-  const { metricId, snap, language, bft, gustBft } = ctx;
+  const { metricId, snap, language, windSpeedUnit } = ctx;
   const group = metricGroup(metricId);
   const out: DetailModel["related"] = [];
 
-  const push = (labelKey: LocalizeKey, value: string | null) => {
+  const push = (
+    labelKey: LocalizeKey,
+    value: string | null,
+    subline?: string | null,
+  ) => {
     if (!value || value === "—") return;
-    out.push({ label: localize(labelKey, language), value });
+    out.push({
+      label: localize(labelKey, language),
+      value,
+      ...(subline ? { subline } : {}),
+    });
   };
 
   switch (group) {
@@ -154,16 +220,35 @@ function relatedStats(ctx: BuildDetailContext): DetailModel["related"] {
       );
       push("humidity", formatNumber(snap.humidity, "%", 0));
       break;
-    case "wind":
-      push(
-        "wind_gust",
-        snap.windGust != null
-          ? `${Math.round(snap.windGust)} ${snap.windSpeedUnit}`
-          : null,
+    case "wind": {
+      const extras = windExtraUnits(windSpeedUnit, snap.windSpeedUnit);
+      const speedSub = formatWindExtraSubline(
+        snap.windSpeed,
+        snap.windSpeedUnit,
+        extras,
       );
+      const speedFmt = formatWindSpeed(
+        snap.windSpeed,
+        snap.windSpeedUnit,
+        windSpeedUnit,
+      );
+      push("wind_speed", speedFmt?.text ?? null, speedSub);
+
+      const gustSub = formatWindExtraSubline(
+        snap.windGust,
+        snap.windSpeedUnit,
+        extras,
+      );
+      const gustFmt = formatWindSpeed(
+        snap.windGust,
+        snap.windSpeedUnit,
+        windSpeedUnit,
+      );
+      push("wind_gust", gustFmt?.text ?? null, gustSub);
+
       push("wind_direction", bearingToLabel(snap.windBearing ?? undefined));
-      push("beaufort", String(bft));
       break;
+    }
     case "humidity":
       push("dew_point", formatNumber(snap.dewPoint, snap.temperatureUnit));
       break;
@@ -192,7 +277,22 @@ function relatedStats(ctx: BuildDetailContext): DetailModel["related"] {
       break;
   }
 
-  return out.slice(0, 4);
+  return group === "wind" ? out : out.slice(0, 4);
+}
+
+/** Join alternate-unit readings for a related-stat subline. */
+function formatWindExtraSubline(
+  value: number | null | undefined,
+  fromUnit: string,
+  extras: WindSpeedDisplayUnit[],
+): string | null {
+  if (!extras.length || value == null) return null;
+  const parts: string[] = [];
+  for (const extra of extras) {
+    const fmt = formatWindSpeed(value, fromUnit, extra);
+    if (fmt) parts.push(fmt.text);
+  }
+  return parts.length ? parts.join(" · ") : null;
 }
 
 function highLowFromHourly(
@@ -209,8 +309,11 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
   const group = metricGroup(ctx.metricId);
   const hero = heroForMetric(ctx);
   const seriesMetric = chartMetricId(ctx.metricId);
-  const unit = unitForSeries(seriesMetric, ctx.snap);
-  const series =
+  const unit =
+    group === "wind"
+      ? ctx.snap.windSpeedUnit
+      : unitForSeries(seriesMetric, ctx.snap, ctx.windSpeedUnit);
+  let series =
     group === "current"
       ? currentConditionsSeries(
           ctx.hourlyForecast,
@@ -220,6 +323,14 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
           24,
         )
       : seriesFromHourly(ctx.hourlyForecast, seriesMetric, unit, 24);
+
+  if (group === "wind" && series) {
+    series = convertWindSeries(
+      series,
+      ctx.snap.windSpeedUnit,
+      ctx.windSpeedUnit,
+    );
+  }
 
   const { high, low } = highLowFromHourly(ctx.hourlyForecast);
   const hourlySlice = sliceHourlyForecast(ctx.hourlyForecast, 24);
@@ -233,6 +344,7 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
     high,
     low,
     hourly: hourlySlice,
+    windSpeedUnit: ctx.windSpeedUnit,
   });
 
   const model: DetailModel = {
@@ -283,9 +395,7 @@ export function metricIdFromChip(
   config: {
     show_sun?: boolean;
     show_humidity?: boolean;
-    show_wind_speed?: boolean;
-    show_wind_gust?: boolean;
-    show_wind_direction?: boolean;
+    show_wind?: boolean;
     show_uv_index?: boolean;
     show_pressure?: boolean;
     show_cloud_coverage?: boolean;
@@ -301,9 +411,9 @@ export function metricIdFromChip(
     sun: config.show_sun,
     humidity: config.show_humidity,
     dew_point: config.show_dew_point,
-    wind_speed: config.show_wind_speed,
-    wind_gust: config.show_wind_gust,
-    wind_direction: config.show_wind_direction,
+    wind_speed: config.show_wind,
+    wind_gust: config.show_wind,
+    wind_direction: config.show_wind,
     uv_index: config.show_uv_index,
     pressure: config.show_pressure,
     cloud_coverage: config.show_cloud_coverage,

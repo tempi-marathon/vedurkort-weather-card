@@ -72,13 +72,29 @@ export function seriesFromHourly(
       ? "bar"
       : "line";
 
-  return {
+  const series: MetricSeries = {
     id: metricId,
     unit,
     points,
     source: "forecast",
     chartType,
   };
+
+  if (
+    metricId === "wind_speed" ||
+    metricId === "wind_gust" ||
+    metricId === "wind_direction"
+  ) {
+    const gust = slice.map((item) => {
+      const value = item.wind_gust;
+      return value != null && !Number.isNaN(value) ? value : null;
+    });
+    if (gust.some((v) => v != null)) {
+      series.gust = gust;
+    }
+  }
+
+  return series;
 }
 
 /** Current-conditions detail chart: temp line, optional feels-like, precip bars. */

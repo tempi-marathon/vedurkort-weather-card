@@ -71,9 +71,55 @@ describe("config normalization", () => {
     expect(cfg.layout).toBe("default");
   });
 
-  it("defaults show_wind_gust to false", () => {
+  it("defaults show_wind to false", () => {
     const cfg = normalizeConfig({ entity: "weather.home" });
-    expect(cfg.show_wind_gust).toBe(false);
+    expect(cfg.show_wind).toBe(false);
+  });
+
+  it("defaults wind_speed_unit to native", () => {
+    const cfg = normalizeConfig({ entity: "weather.home" });
+    expect(cfg.wind_speed_unit).toBe("native");
+  });
+
+  it("migrates legacy current wind flags to show_wind", () => {
+    const cfg = normalizeEditorConfig({
+      entity: "weather.home",
+      show_wind_speed: true,
+      show_wind_direction: false,
+      show_wind_gust: false,
+    } as never);
+    expect(cfg.show_wind).toBe(true);
+    expect(
+      (cfg as Record<string, unknown>).show_wind_speed,
+    ).toBeUndefined();
+    expect(
+      (cfg as Record<string, unknown>).show_wind_gust,
+    ).toBeUndefined();
+  });
+
+  it("prefers explicit show_wind over legacy flags", () => {
+    const cfg = normalizeEditorConfig({
+      entity: "weather.home",
+      show_wind: false,
+      show_wind_speed: true,
+    } as never);
+    expect(cfg.show_wind).toBe(false);
+  });
+
+  it("preserves wind_speed_unit", () => {
+    const cfg = normalizeEditorConfig({
+      entity: "weather.home",
+      wind_speed_unit: "beaufort",
+    });
+    expect(cfg.wind_speed_unit).toBe("beaufort");
+  });
+
+  it("falls back invalid wind_speed_unit to native", () => {
+    const cfg = normalizeEditorConfig({
+      entity: "weather.home",
+      wind_speed_unit: "knots" as "native",
+    });
+    expect(cfg.wind_speed_unit).toBe("native");
   });
 
   it("clamps hourly hours", () => {

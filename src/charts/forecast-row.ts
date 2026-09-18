@@ -12,6 +12,10 @@ import { localize } from "../localize";
 import type { ForecastItem, HomeAssistant } from "../types";
 import { tipWrap } from "../ui/tooltip";
 import { formatConditionLabel, isDaytimeAt, isSunUp } from "../weather/adapter";
+import {
+  formatWindSpeed,
+  type WindSpeedDisplayUnit,
+} from "../weather/wind-units";
 
 export function renderForecastRow(
   hass: HomeAssistant,
@@ -22,7 +26,10 @@ export function renderForecastRow(
     showWindDirection: boolean;
     iconStyle: IconStyle;
     animated: boolean;
+    /** Native HA wind speed unit of the forecast values. */
     windSpeedUnit: string;
+    /** Optional display preference (modal under-chart row). */
+    windDisplayUnit?: WindSpeedDisplayUnit;
     mode: "daily" | "hourly";
     language?: string;
     sunEntity?: string;
@@ -69,10 +76,24 @@ export function renderForecastRow(
           opts.iconStyle,
           opts.animated,
         );
-        const speedText =
-          item.wind_speed != null
-            ? `${Math.round(item.wind_speed)} ${opts.windSpeedUnit}`
-            : "—";
+        const display = opts.windDisplayUnit ?? "native";
+        const speedFmt = formatWindSpeed(
+          item.wind_speed,
+          opts.windSpeedUnit,
+          display,
+        );
+        const speedText = speedFmt?.text ?? "—";
+        // Card forecast rows stay native rounded numbers; modal converts.
+        const speedDisplay =
+          display !== "native"
+            ? speedFmt != null
+              ? display === "m/s"
+                ? String(speedFmt.number)
+                : String(Math.round(speedFmt.number))
+              : "—"
+            : item.wind_speed != null
+              ? String(Math.round(item.wind_speed))
+              : "—";
         const speedTip = localize("wind_tip", opts.language, {
           speed: speedText,
           bft: String(bft),
@@ -101,11 +122,7 @@ export function renderForecastRow(
                                 class="wind-icon"
                                 .innerHTML=${bftSvg}
                               ></span>
-                              <span class="wind-meta"
-                                >${item.wind_speed != null
-                                  ? Math.round(item.wind_speed)
-                                  : "—"}</span
-                              >
+                              <span class="wind-meta">${speedDisplay}</span>
                             </div>
                           `,
                         )

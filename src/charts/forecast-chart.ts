@@ -15,8 +15,10 @@ import {
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import type { ForecastBlockConfig, PrecipType } from "../config";
+import { beaufortColor } from "../details/beaufort-scale";
 import type { MetricSeries } from "../details/types";
 import { metricSeriesFingerprint } from "../details/series";
+import { windSpeedToBeaufort } from "../icons/condition-map";
 import { sliceHourlyForecast } from "./hourly-window";
 import { localize } from "../localize";
 import type { ForecastItem } from "../types";
@@ -659,7 +661,44 @@ function detailValueLabel(
       : `°${series.unit.trim()}`;
     return `${Math.round(value)}${u}`;
   }
+  if (
+    series.id === "wind_speed" ||
+    series.id === "wind_gust" ||
+    series.id === "wind_direction"
+  ) {
+    const u = series.unit.trim();
+    if (u === "Bft" || u.toLowerCase().includes("beaufort")) {
+      return `${Math.round(value)} ${u || "Bft"}`;
+    }
+    if (u === "m/s") {
+      return `${Math.round(value * 10) / 10} ${u}`;
+    }
+    return `${Math.round(value)}${u ? ` ${u}` : ""}`;
+  }
   return `${Math.round(value)}`;
+}
+
+function isWindSeries(series: MetricSeries): boolean {
+  return (
+    series.id === "wind_speed" ||
+    series.id === "wind_gust" ||
+    series.id === "wind_direction"
+  );
+}
+
+function colorForWindValue(
+  value: number | null | undefined,
+  unit: string,
+): string {
+  if (value == null || Number.isNaN(value)) return "rgba(255, 152, 0, 1)";
+  return beaufortColor(windSpeedToBeaufort(value, unit));
+}
+
+function windValueColors(
+  values: (number | null)[],
+  unit: string,
+): string[] {
+  return values.map((v) => colorForWindValue(v, unit));
 }
 
 function buildDetailDatasets(
@@ -701,25 +740,45 @@ function buildDetailDatasets(
           ? localize("humidity", language)
           : localize("cloud_coverage", language);
 
-  return [
+  const wind = isWindSeries(series);
+  const speedColors = wind ? windValueColors(values, series.unit) : null;
+
+  const datasets: ChartConfiguration["data"]["datasets"] = [
     {
       type: "line",
       label: lineLabel,
       data: values,
-      borderColor: "rgba(255, 152, 0, 1)",
+      borderColor: wind ? speedColors![0]! : "rgba(255, 152, 0, 1)",
       backgroundColor: "rgba(255, 152, 0, 0.15)",
       tension: 0.35,
       yAxisID: "yTemp",
       pointRadius: 3,
       spanGaps: true,
       order: 0,
+      ...(speedColors
+        ? {
+            pointBackgroundColor: speedColors,
+            pointBorderColor: speedColors,
+            segment: {
+              borderColor: (ctx: {
+                p1?: { parsed?: { y: number | null } };
+              }) => colorForWindValue(ctx.p1?.parsed?.y, series.unit),
+            },
+          }
+        : {}),
       datalabels: {
         display: showValueLabel,
         align: "center",
         anchor: "center",
-        color: "rgba(255, 152, 0, 1)",
+        color: speedColors
+          ? (ctx: { dataIndex: number }) =>
+              speedColors[ctx.dataIndex] ?? "rgba(255, 152, 0, 1)"
+          : "rgba(255, 152, 0, 1)",
         backgroundColor: "rgba(255,255,255,0.92)",
-        borderColor: "rgba(255, 152, 0, 0.85)",
+        borderColor: speedColors
+          ? (ctx: { dataIndex: number }) =>
+              speedColors[ctx.dataIndex] ?? "rgba(255, 152, 0, 0.85)"
+          : "rgba(255, 152, 0, 0.85)",
         borderWidth: 1,
         borderRadius: 4,
         padding: { top: 1, bottom: 1, left: 3, right: 3 },
@@ -727,6 +786,35 @@ function buildDetailDatasets(
       },
     },
   ];
+
+  if (wind && series.gust?.some((v) => v != null)) {
+    const gustColors = windValueColors(series.gust, series.unit);
+    datasets.push({
+      type: "line",
+      label: localize("wind_gust", language),
+      data: series.gust,
+      borderColor: gustColors[0]!,
+      backgroundColor: "rgba(180, 90, 40, 0.08)",
+      borderDash: [5, 4],
+      tension: 0.35,
+      yAxisID: "yTemp",
+      pointRadius: 2,
+      spanGaps: true,
+      order: 0,
+      pointBackgroundColor: gustColors,
+      pointBorderColor: gustColors,
+      segment: {
+        borderColor: (ctx: {
+          p1?: { parsed?: { y: number | null } };
+        }) => colorForWindValue(ctx.p1?.parsed?.y, series.unit),
+      },
+      datalabels: {
+        display: false,
+      },
+    });
+  }
+
+  return datasets;
 }
 
 function detailTooltipCallbacks(series: MetricSeries) {
@@ -806,7 +894,17 @@ function detailChartOptions(
         },
         border: { display: false },
         ticks: { display: false },
-        afterDataLimits: yTempAfterDataLimits,
+        ...(series.id === "wind_speed" ||
+        series.id === "wind_gust" ||
+        series.id === "wind_direction"
+          ? series.unit === "Bft"
+            ? {
+                min: 0,
+                max: 12,
+                afterDataLimits: undefined,
+              }
+            : { afterDataLimits: yTempAfterDataLimits }
+          : { afterDataLimits: yTempAfterDataLimits }),
       },
       yPrecip: {
         type: "linear",

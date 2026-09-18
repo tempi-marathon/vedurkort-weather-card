@@ -71,6 +71,7 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _alertsOpen = false;
   @state() private _expandedAlertIds: string[] = [];
   @state() private _detailMetric: DetailMetricId | null = null;
+  @state() private _beaufortLegendOpen = false;
 
   private _dailyChart: Chart | null = null;
   private _hourlyChart: Chart | null = null;
@@ -492,6 +493,7 @@ export class VedurkortWeatherCard extends LitElement {
       bft: windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit),
       gustBft: windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit),
       hourlyPrecipType: this._config.hourly.precip_type,
+      windSpeedUnit: this._config.wind_speed_unit,
     });
     const datetimes = model.series?.points.map((p) => p.t) ?? [];
     if (!datetimes.length) return;
@@ -724,6 +726,7 @@ export class VedurkortWeatherCard extends LitElement {
       bft: windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit),
       gustBft: windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit),
       hourlyPrecipType: this._config.hourly.precip_type,
+      windSpeedUnit: this._config.wind_speed_unit,
     });
 
     if (!model.series) {
@@ -801,6 +804,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._detailTrigger = document.activeElement as HTMLElement | null;
     this._alertsOpen = false;
     this._detailMetric = metricId;
+    this._beaufortLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
   }
@@ -808,9 +812,14 @@ export class VedurkortWeatherCard extends LitElement {
   private _closeDetail(): void {
     this._closeDialogElements();
     this._detailMetric = null;
+    this._beaufortLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
     this._destroyMetricChart();
+  }
+
+  private _toggleBeaufortLegend(): void {
+    this._beaufortLegendOpen = !this._beaufortLegendOpen;
   }
 
   private _openAlerts(alerts: WeatherAlert[], preferredId?: string): void {
@@ -909,9 +918,7 @@ export class VedurkortWeatherCard extends LitElement {
       showCurrent &&
       (this._config.show_sun ||
         this._config.show_humidity ||
-        this._config.show_wind_speed ||
-        this._config.show_wind_direction ||
-        this._config.show_wind_gust ||
+        this._config.show_wind ||
         this._config.show_uv_index ||
         this._config.show_pressure ||
         this._config.show_cloud_coverage ||
@@ -952,6 +959,7 @@ export class VedurkortWeatherCard extends LitElement {
             bft,
             gustBft,
             hourlyPrecipType: this._config.hourly.precip_type,
+            windSpeedUnit: this._config.wind_speed_unit,
           })
         : null;
     const dialogShell = {
@@ -1066,6 +1074,8 @@ export class VedurkortWeatherCard extends LitElement {
               language,
               windSpeedUnit: snap.windSpeedUnit,
               onChartScroll: () => this._onDetailScroll(),
+              beaufortLegendOpen: this._beaufortLegendOpen,
+              onToggleBeaufortLegend: () => this._toggleBeaufortLegend(),
             }),
           })
         : nothing}
