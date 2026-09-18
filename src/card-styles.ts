@@ -511,6 +511,23 @@ export const cardStyles = [
       );
       box-shadow: 0 0 14px 4px rgba(255, 213, 79, 0.65);
     }
+    .detail-sun-hours {
+      position: relative;
+      height: 1.1em;
+      margin: -4px 0 4px;
+      font-size: 0.75rem;
+      opacity: 0.65;
+      pointer-events: none;
+    }
+    .detail-sun-hour {
+      position: absolute;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      line-height: 1.1;
+    }
+    .detail-sun-hour.is-start {
+      transform: translateX(0);
+    }
     .detail-sun-details {
       margin: 12px 0 0;
       display: grid;

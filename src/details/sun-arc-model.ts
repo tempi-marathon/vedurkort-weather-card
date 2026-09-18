@@ -13,6 +13,12 @@ export interface SunArcDetailRow {
   summary?: boolean;
 }
 
+export interface SunArcHourLabel {
+  hour: number;
+  x: number;
+  text: string;
+}
+
 export interface SunArcModel {
   heroIcon: MeteoconName;
   heroLabel: string;
@@ -25,8 +31,11 @@ export interface SunArcModel {
   dotX: number;
   dotY: number;
   showDot: boolean;
+  hourLabels: SunArcHourLabel[];
   details: SunArcDetailRow[];
 }
+
+const HOUR_TICKS = [0, 6, 12, 18] as const;
 
 export const SUN_ARC_WIDTH = 360;
 export const SUN_ARC_HEIGHT = 110;
@@ -107,6 +116,24 @@ export function buildSunArcPaths(
     dayPath: dayParts.join(" "),
     nightPath: nightParts.join(" "),
   };
+}
+
+function formatHourLabel(hour: number, language: string | undefined): string {
+  const d = new Date();
+  d.setHours(hour, 0, 0, 0);
+  try {
+    return new Intl.DateTimeFormat(language, { hour: "numeric" }).format(d);
+  } catch {
+    return String(hour);
+  }
+}
+
+function buildHourLabels(language: string | undefined): SunArcHourLabel[] {
+  return HOUR_TICKS.map((hour) => ({
+    hour,
+    x: sunArcX(hour),
+    text: formatHourLabel(hour, language),
+  }));
 }
 
 function formatDurationMs(ms: number, language: string | undefined): string {
@@ -214,6 +241,7 @@ export function buildSunArcModel(
     dotX,
     dotY,
     showDot,
+    hourLabels: buildHourLabels(language),
     details,
   };
 }
