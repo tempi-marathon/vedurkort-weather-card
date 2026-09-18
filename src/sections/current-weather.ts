@@ -22,6 +22,9 @@ import {
   formatWindHeading,
   formatWindSpeed,
 } from "../weather/wind-units";
+import { pollenLevelClass } from "../pollen/colors";
+import { pollenIcon } from "../pollen/icons";
+import type { PollenSnapshot } from "../pollen/types";
 import {
   renderAlertsStrip,
   type IconRenderer,
@@ -40,6 +43,7 @@ export interface CurrentWeatherContext {
   conditionText: string;
   bft: number;
   gustBft: number;
+  pollen: PollenSnapshot | null;
 }
 
 function renderDetailButton(
@@ -49,6 +53,7 @@ function renderDetailButton(
   label: string,
   metricId: DetailMetricId,
   onOpenDetail: (id: DetailMetricId) => void,
+  textClass?: string,
 ): TemplateResult | typeof nothing {
   if (!text) return nothing;
   const tip = `${label}: ${text}`;
@@ -65,7 +70,7 @@ function renderDetailButton(
         }}
       >
         <span class="detail-icon" .innerHTML=${icon(iconName)}></span>
-        <span>${text}</span>
+        <span class=${textClass ?? ""}>${text}</span>
       </button>
     `,
     "detail",
@@ -278,6 +283,34 @@ export function renderCurrentWeatherSection(
                     localize("precipitation_probability", language),
                     "precipitation_probability",
                     onOpenDetail,
+                  )
+                : nothing}
+              ${config.show_pollen && ctx.pollen
+                ? renderDetailButton(
+                    icon,
+                    pollenIcon(
+                      ctx.pollen.overallLevelLabel,
+                      ctx.pollen.dominantSpecies ?? "overall",
+                    ),
+                    (() => {
+                      const level = ctx.pollen!.overallLevelLabel
+                        ? localize(
+                            `pollen_level_${ctx.pollen!.overallLevelLabel}`,
+                            language,
+                          )
+                        : null;
+                      if (!level) return null;
+                      if (!ctx.pollen!.dominantSpecies) return level;
+                      const species = localize(
+                        `pollen_species_${ctx.pollen!.dominantSpecies}`,
+                        language,
+                      );
+                      return `${level} · ${species}`;
+                    })(),
+                    localize("pollen", language),
+                    "pollen",
+                    onOpenDetail,
+                    pollenLevelClass(ctx.pollen.overallLevelLabel),
                   )
                 : nothing}
             </div>

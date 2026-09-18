@@ -60,6 +60,9 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
             icon: model.heroIcon,
             value: model.heroValue,
             copy: model.copy || undefined,
+          }, {
+            valueClass: model.heroValueClass,
+            valueTone: model.id === "pollen" ? "text" : "numeric",
           })}
     ${model.series
       ? html`
@@ -111,7 +114,8 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
                   <dd>
                     <span class="detail-related-value">${r.value}</span>
                     ${r.subline
-                      ? html`<span class="detail-related-sub"
+                      ? html`<span
+                          class="detail-related-sub ${r.sublineClass ?? ""}"
                           >${r.subline}</span
                         >`
                       : nothing}

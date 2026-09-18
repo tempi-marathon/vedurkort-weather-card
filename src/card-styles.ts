@@ -389,6 +389,14 @@ export const cardStyles = [
       font-weight: 500;
       opacity: 0.7;
     }
+    .pollen-level--low {
+      color: #eab308;
+      opacity: 1;
+    }
+    .pollen-level--high {
+      color: #f97316;
+      opacity: 1;
+    }
     .beaufort-legend {
       margin-top: 12px;
     }

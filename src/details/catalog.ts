@@ -32,6 +32,9 @@ import { seriesFromHourly, currentConditionsSeries } from "./series";
 import { buildSunArcModel } from "./sun-arc-model";
 import { buildUvBarModel } from "./uv-bar-model";
 import type { DetailMetricId, DetailModel, MetricSeries } from "./types";
+import { pollenLevelClass } from "../pollen/colors";
+import { pollenIcon } from "../pollen/icons";
+import type { PollenSnapshot } from "../pollen/types";
 
 export interface BuildDetailContext {
   metricId: DetailMetricId;
@@ -44,6 +47,8 @@ export interface BuildDetailContext {
   hourlyPrecipType: PrecipType;
   /** Display preference for wind chip/sheet/chart. */
   windSpeedUnit?: WindSpeedDisplayUnit;
+  /** ha-pollen snapshot when opening the pollen detail sheet. */
+  pollen?: PollenSnapshot | null;
 }
 
 function heroForMetric(ctx: BuildDetailContext): {
@@ -116,6 +121,28 @@ function heroForMetric(ctx: BuildDetailContext): {
         value: formatNumber(snap.precipitationProbability, "%", 0) ?? "—",
         icon: "rain",
       };
+    case "pollen": {
+      const pollen = ctx.pollen;
+      const label = pollen?.overallLevelLabel
+        ? localize(
+            `pollen_level_${pollen.overallLevelLabel}` as LocalizeKey,
+            ctx.language,
+          )
+        : "—";
+      const dominant = pollen?.dominantSpecies
+        ? localize(
+            `pollen_species_${pollen.dominantSpecies}` as LocalizeKey,
+            ctx.language,
+          )
+        : null;
+      return {
+        value: dominant ? `${label} · ${dominant}` : label,
+        icon: pollenIcon(
+          pollen?.overallLevelLabel,
+          pollen?.dominantSpecies ?? "overall",
+        ),
+      };
+    }
     default:
       return { value: "—", icon: "not-available" };
   }
@@ -306,6 +333,10 @@ function highLowFromHourly(
 }
 
 export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
+  if (ctx.metricId === "pollen") {
+    return buildPollenDetailModel(ctx);
+  }
+
   const group = metricGroup(ctx.metricId);
   const hero = heroForMetric(ctx);
   const seriesMetric = chartMetricId(ctx.metricId);
@@ -391,6 +422,80 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
   return model;
 }
 
+function buildPollenDetailModel(ctx: BuildDetailContext): DetailModel {
+  const pollen = ctx.pollen;
+  const hero = heroForMetric(ctx);
+  const series = pollenSeries(pollen);
+  const related: DetailModel["related"] = [];
+  if (pollen) {
+    for (const s of pollen.species) {
+      const name = localize(
+        `pollen_species_${s.species}` as LocalizeKey,
+        ctx.language,
+      );
+      const grains =
+        s.current != null ? `${s.current} grains/m³` : "—";
+      const subline =
+        s.levelLabel && s.levelLabel !== "none"
+          ? localize(
+              `pollen_level_${s.levelLabel}` as LocalizeKey,
+              ctx.language,
+            )
+          : undefined;
+      const tone = pollenLevelClass(s.levelLabel);
+      related.push({
+        label: name,
+        value: grains,
+        ...(subline ? { subline, ...(tone ? { sublineClass: tone } : {}) } : {}),
+      });
+    }
+    if (pollen.attribution) {
+      related.push({
+        label: localize("pollen_attribution", ctx.language),
+        value: pollen.attribution,
+      });
+    }
+  }
+
+  const copy = pollen
+    ? localize(
+        pollen.overallLevelLabel === "high"
+          ? "pollen_copy_high"
+          : pollen.overallLevelLabel === "low"
+            ? "pollen_copy_low"
+            : "pollen_copy_none",
+        ctx.language,
+      )
+    : localize("pollen_copy_unavailable", ctx.language);
+
+  return {
+    id: "pollen",
+    title: localize("pollen", ctx.language),
+    heroValue: hero.value,
+    heroIcon: hero.icon,
+    heroValueClass: pollenLevelClass(pollen?.overallLevelLabel),
+    copy,
+    series,
+    related: related.slice(0, 8),
+  };
+}
+
+function pollenSeries(pollen: PollenSnapshot | null | undefined): MetricSeries | null {
+  if (!pollen?.forecastHourly.length) return null;
+  const points = pollen.forecastHourly.map((p) => ({
+    t: p.t,
+    value: p.value,
+  }));
+  if (!points.some((p) => p.value != null)) return null;
+  return {
+    id: "pollen",
+    unit: "grains/m³",
+    points,
+    source: "forecast",
+    chartType: "line",
+  };
+}
+
 export function metricIdFromChip(
   config: {
     show_sun?: boolean;
@@ -403,6 +508,7 @@ export function metricIdFromChip(
     show_visibility?: boolean;
     show_precipitation?: boolean;
     show_precipitation_probability?: boolean;
+    show_pollen?: boolean;
   },
   chip: DetailMetricId,
 ): DetailMetricId | null {
@@ -420,6 +526,7 @@ export function metricIdFromChip(
     visibility: config.show_visibility,
     precipitation: config.show_precipitation,
     precipitation_probability: config.show_precipitation_probability,
+    pollen: config.show_pollen,
   };
   return map[chip] ? chip : null;
 }

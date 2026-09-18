@@ -686,6 +686,45 @@ function isWindSeries(series: MetricSeries): boolean {
   );
 }
 
+/** Chart.js dataset label for a detail-sheet line series. */
+function detailLineLabel(
+  seriesId: MetricSeries["id"],
+  language?: string,
+): string {
+  switch (seriesId) {
+    case "current":
+      return localize("chart_temp", language);
+    case "wind_speed":
+    case "wind_gust":
+    case "wind_direction":
+      return localize("wind_speed", language);
+    case "humidity":
+      return localize("humidity", language);
+    case "cloud_coverage":
+      return localize("cloud_coverage", language);
+    case "dew_point":
+      return localize("dew_point", language);
+    case "uv_index":
+      return localize("uv_index", language);
+    case "pressure":
+      return localize("pressure", language);
+    case "visibility":
+      return localize("visibility", language);
+    case "pollen":
+      return localize("pollen", language);
+    case "sun":
+      return localize("next_sun", language);
+    case "precipitation":
+      return localize("chart_precip", language);
+    case "precipitation_probability":
+      return localize("chart_precip_pct", language);
+    default: {
+      const _exhaustive: never = seriesId;
+      return _exhaustive;
+    }
+  }
+}
+
 function colorForWindValue(
   value: number | null | undefined,
   unit: string,
@@ -731,14 +770,7 @@ function buildDetailDatasets(
     ];
   }
 
-  const lineLabel =
-    series.id === "current"
-      ? localize("chart_temp", language)
-      : series.id === "wind_speed"
-        ? localize("wind_speed", language)
-        : series.id === "humidity"
-          ? localize("humidity", language)
-          : localize("cloud_coverage", language);
+  const lineLabel = detailLineLabel(series.id, language);
 
   const wind = isWindSeries(series);
   const speedColors = wind ? windValueColors(values, series.unit) : null;

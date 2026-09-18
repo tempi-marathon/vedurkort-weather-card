@@ -5,6 +5,7 @@ import { bindCardActions, effectiveTapAction } from "./actions";
 import { resolveAlerts } from "./alerts/resolve";
 import { shouldEscalateForAlerts } from "./alerts/utils";
 import type { WeatherAlert } from "./alerts/types";
+import { resolvePollen } from "./pollen/resolve";
 import { conditionToScene, renderBackground } from "./backgrounds/scenes";
 import { computeCardSize } from "./card-size";
 import { cardStyles } from "./card-styles";
@@ -494,6 +495,7 @@ export class VedurkortWeatherCard extends LitElement {
       gustBft: windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit),
       hourlyPrecipType: this._config.hourly.precip_type,
       windSpeedUnit: this._config.wind_speed_unit,
+      pollen: resolvePollen(this.hass, this._config),
     });
     const datetimes = model.series?.points.map((p) => p.t) ?? [];
     if (!datetimes.length) return;
@@ -727,6 +729,7 @@ export class VedurkortWeatherCard extends LitElement {
       gustBft: windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit),
       hourlyPrecipType: this._config.hourly.precip_type,
       windSpeedUnit: this._config.wind_speed_unit,
+      pollen: resolvePollen(this.hass, this._config),
     });
 
     if (!model.series) {
@@ -895,6 +898,7 @@ export class VedurkortWeatherCard extends LitElement {
     }
 
     const alerts = resolveAlerts(this.hass, this._config);
+    const pollen = resolvePollen(this.hass, this._config);
     const escalate = shouldEscalateForAlerts(alerts);
     const iconName = conditionToMeteocon(
       snap.condition,
@@ -925,7 +929,8 @@ export class VedurkortWeatherCard extends LitElement {
         this._config.show_dew_point ||
         this._config.show_visibility ||
         this._config.show_precipitation ||
-        this._config.show_precipitation_probability);
+        this._config.show_precipitation_probability ||
+        (this._config.show_pollen && pollen != null));
     const feelsLikeText = this._config.show_feels_like
       ? formatNumber(snap.feelsLike, snap.temperatureUnit)
       : null;
@@ -960,6 +965,7 @@ export class VedurkortWeatherCard extends LitElement {
             gustBft,
             hourlyPrecipType: this._config.hourly.precip_type,
             windSpeedUnit: this._config.wind_speed_unit,
+            pollen,
           })
         : null;
     const dialogShell = {
@@ -997,6 +1003,7 @@ export class VedurkortWeatherCard extends LitElement {
                   conditionText,
                   bft,
                   gustBft,
+                  pollen,
                 },
                 this._icon,
                 onOpenAlerts,

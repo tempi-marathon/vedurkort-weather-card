@@ -7,6 +7,11 @@ import {
   isCapAlertsEntity,
   isMeteoAlarmEntity,
 } from "./alerts/discovery";
+import {
+  anchorEntityForPollenDevice,
+  findPollenDevices,
+  resolvePollenDeviceId,
+} from "./pollen/discovery";
 import { forecastHasPrecipProbability } from "./charts/forecast-chart";
 import {
   DEFAULT_CONFIG,
@@ -216,6 +221,57 @@ export class VedurkortWeatherCardEditor extends LitElement {
   private _alertEntityFilter = (state: HassEntity): boolean =>
     isMeteoAlarmEntity(this.hass, state.entity_id) ||
     isCapAlertsEntity(this.hass, state.entity_id);
+
+  private _pollenEntityFilter = (state: HassEntity): boolean => {
+    const reg = this.hass.entities?.[state.entity_id];
+    if (reg?.platform === "pollen") return true;
+    return state.attributes?.provider === "open_meteo";
+  };
+
+  private _pollenAnchorEntityChanged(ev: CustomEvent): void {
+    if (!this._config) return;
+    const entityId = (ev.detail as { value?: string })?.value ?? "";
+    const next = structuredClone(this._config);
+    if (!entityId) {
+      next.pollen_device = undefined;
+    } else {
+      const deviceId = deviceIdFromEntity(this.hass, entityId);
+      if (!deviceId) return;
+      next.pollen_device = deviceId;
+    }
+    this._fire(
+      next.entity ? normalizeConfig(next) : normalizeEditorConfig(next),
+    );
+  }
+
+  private _renderPollenDeviceField() {
+    const devices = this.hass ? findPollenDevices(this.hass) : [];
+    const deviceId =
+      this._config.pollen_device ??
+      resolvePollenDeviceId(this.hass, undefined);
+    const displayEntity =
+      deviceId && this.hass
+        ? (anchorEntityForPollenDevice(this.hass, deviceId) ?? "")
+        : "";
+
+    return html`
+      <p class="hint">
+        ${this._t("pollen_choose_hint")}
+        ${devices.length === 1 ? ` ${this._t("pollen_device_auto")}` : nothing}
+      </p>
+      <div class="field">
+        <span class="label">${this._t("pollen_device")}</span>
+        <ha-entity-picker
+          .hass=${this.hass}
+          .value=${displayEntity}
+          .includeDomains=${["sensor"]}
+          .entityFilter=${this._pollenEntityFilter}
+          .allowCustomEntity=${false}
+          @value-changed=${this._pollenAnchorEntityChanged}
+        ></ha-entity-picker>
+      </div>
+    `;
+  }
 
   private _detailFields(): Array<{
     key: DetailToggleKey;
@@ -916,6 +972,20 @@ export class VedurkortWeatherCardEditor extends LitElement {
                   : this._renderAlertEntitiesField()}
               `
             : nothing}
+        </fieldset>
+
+        <fieldset>
+          <legend>${this._t("legend_pollen")}</legend>
+          <label class="row enable">
+            <input
+              type="checkbox"
+              .checked=${c.show_pollen}
+              data-config="show_pollen"
+              @change=${this._value}
+            />
+            ${this._t("show_pollen")}
+          </label>
+          ${c.show_pollen ? this._renderPollenDeviceField() : nothing}
         </fieldset>
 
         <fieldset>
