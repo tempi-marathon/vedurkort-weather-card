@@ -192,6 +192,52 @@ function formatPrecipLabel(
   return `${rounded} ${precipUnit}`.trim();
 }
 
+/** Shared layout padding — room for top ticks and precip labels below bars. */
+const CHART_LAYOUT_PADDING = { left: 2, right: 2, top: 12, bottom: 26 };
+
+/**
+ * Extra headroom above the temp range (vs below) so the line sits lower /
+ * more centered in the plot instead of hugging the top ticks.
+ */
+function yTempAfterDataLimits(scale: { min: number; max: number }): void {
+  const span = Math.max(scale.max - scale.min, 1);
+  scale.max += span * 0.7;
+  scale.min -= span * 0.2;
+}
+
+function precipDatalabels(
+  precipType: PrecipType,
+  precipUnit: string,
+  display?: (ctx: {
+    dataset: { data: unknown[] };
+    dataIndex: number;
+  }) => boolean,
+) {
+  return {
+    display:
+      display ??
+      ((ctx: { dataset: { data: unknown[] }; dataIndex: number }) => {
+        const v = ctx.dataset.data[ctx.dataIndex];
+        return typeof v === "number" && !Number.isNaN(v);
+      }),
+    // Sit below the bar, in layout bottom padding
+    anchor: "start" as const,
+    align: "bottom" as const,
+    offset: 4,
+    clamp: false,
+    clip: false,
+    color: "rgba(30, 90, 130, 1)",
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderColor: "rgba(100, 180, 230, 1)",
+    borderWidth: 1,
+    borderRadius: 4,
+    padding: { top: 2, bottom: 2, left: 4, right: 4 },
+    font: { size: 10, weight: "bold" as const },
+    formatter: (v: number | null) =>
+      formatPrecipLabel(v, precipType, precipUnit),
+  };
+}
+
 function buildDatasets(
   series: ChartSeries,
   mode: "daily" | "hourly",
@@ -216,8 +262,8 @@ function buildDatasets(
       pointRadius: 3,
       order: 0,
       datalabels: {
-        align: "top",
-        anchor: "end",
+        align: "center",
+        anchor: "center",
         color: "rgba(255, 152, 0, 1)",
         backgroundColor: "rgba(255,255,255,0.92)",
         borderColor: "rgba(255, 152, 0, 0.85)",
@@ -241,8 +287,8 @@ function buildDatasets(
       pointRadius: 3,
       order: 0,
       datalabels: {
-        align: "bottom",
-        anchor: "start",
+        align: "center",
+        anchor: "center",
         color: "rgba(68, 115, 158, 1)",
         backgroundColor: "rgba(255,255,255,0.92)",
         borderColor: "rgba(68, 115, 158, 0.85)",
@@ -265,27 +311,7 @@ function buildDatasets(
     borderRadius: 3,
     yAxisID: "yPrecip",
     order: 1,
-    datalabels: {
-      display: (ctx) => {
-        const v = ctx.dataset.data[ctx.dataIndex];
-        return typeof v === "number" && !Number.isNaN(v);
-      },
-      // Sit near the base of the bar, inside the plot (not clipped below)
-      anchor: "start",
-      align: "end",
-      offset: 4,
-      clamp: false,
-      clip: false,
-      color: "rgba(30, 90, 130, 1)",
-      backgroundColor: "rgba(255,255,255,0.95)",
-      borderColor: "rgba(100, 180, 230, 1)",
-      borderWidth: 1,
-      borderRadius: 4,
-      padding: { top: 2, bottom: 2, left: 4, right: 4 },
-      font: { size: 10, weight: "bold" },
-      formatter: (v: number | null) =>
-        formatPrecipLabel(v, precipType, precipUnit),
-    },
+    datalabels: precipDatalabels(precipType, precipUnit),
   });
 
   // silence unused chrome in datasets (used by scales)
@@ -367,7 +393,7 @@ export function createForecastChart(
       maintainAspectRatio: false,
       animation: false,
       layout: {
-        padding: { left: 2, right: 2, top: 6, bottom: 14 },
+        padding: CHART_LAYOUT_PADDING,
       },
       interaction: { mode: "index", intersect: false },
       plugins: {
@@ -414,7 +440,7 @@ export function createForecastChart(
           ticks: {
             display: false,
           },
-          grace: "15%",
+          afterDataLimits: yTempAfterDataLimits,
         },
         yPrecip: {
           type: "linear",
@@ -426,7 +452,6 @@ export function createForecastChart(
           ticks: {
             display: false,
           },
-          // Extra headroom so bar labels near the base stay readable
           suggestedMax: undefined,
           grace: "25%",
         },
@@ -557,8 +582,8 @@ function buildCurrentDetailDatasets(
       order: 0,
       datalabels: {
         display: detailShowValueLabel,
-        align: "top",
-        anchor: "end",
+        align: "center",
+        anchor: "center",
         color: "rgba(255, 152, 0, 1)",
         backgroundColor: "rgba(255,255,255,0.92)",
         borderColor: "rgba(255, 152, 0, 0.85)",
@@ -602,23 +627,11 @@ function buildCurrentDetailDatasets(
       borderRadius: 3,
       yAxisID: "yPrecip",
       order: 1,
-      datalabels: {
-        display: detailShowValueLabel,
-        anchor: "start",
-        align: "end",
-        offset: 4,
-        clamp: false,
-        clip: false,
-        color: "rgba(30, 90, 130, 1)",
-        backgroundColor: "rgba(255, 255, 255, 0.95)",
-        borderColor: "rgba(100, 180, 230, 1)",
-        borderWidth: 1,
-        borderRadius: 4,
-        padding: { top: 2, bottom: 2, left: 4, right: 4 },
-        font: { size: 10, weight: "bold" },
-        formatter: (v: number | null) =>
-          formatPrecipLabel(v, precipType, precipUnit),
-      },
+      datalabels: precipDatalabels(
+        precipType,
+        precipUnit,
+        detailShowValueLabel,
+      ),
     });
   }
 
@@ -674,23 +687,7 @@ function buildDetailDatasets(
         borderRadius: 3,
         yAxisID: "yPrecip",
         order: 1,
-        datalabels: {
-          display: showValueLabel,
-          anchor: "start",
-          align: "end",
-          offset: 4,
-          clamp: false,
-          clip: false,
-          color: "rgba(30, 90, 130, 1)",
-          backgroundColor: "rgba(255,255,255,0.95)",
-          borderColor: "rgba(100, 180, 230, 1)",
-          borderWidth: 1,
-          borderRadius: 4,
-          padding: { top: 2, bottom: 2, left: 4, right: 4 },
-          font: { size: 10, weight: "bold" },
-          formatter: (v: number | null) =>
-            formatPrecipLabel(v, precipType, series.unit),
-        },
+        datalabels: precipDatalabels(precipType, series.unit, showValueLabel),
       },
     ];
   }
@@ -718,8 +715,8 @@ function buildDetailDatasets(
       order: 0,
       datalabels: {
         display: showValueLabel,
-        align: "top",
-        anchor: "end",
+        align: "center",
+        anchor: "center",
         color: "rgba(255, 152, 0, 1)",
         backgroundColor: "rgba(255,255,255,0.92)",
         borderColor: "rgba(255, 152, 0, 0.85)",
@@ -768,7 +765,7 @@ function detailChartOptions(
     maintainAspectRatio: false,
     animation: false,
     layout: {
-      padding: { left: 2, right: 2, top: 6, bottom: 14 },
+      padding: CHART_LAYOUT_PADDING,
     },
     interaction: { mode: "index", intersect: false },
     plugins: {
@@ -809,7 +806,7 @@ function detailChartOptions(
         },
         border: { display: false },
         ticks: { display: false },
-        grace: "15%",
+        afterDataLimits: yTempAfterDataLimits,
       },
       yPrecip: {
         type: "linear",
