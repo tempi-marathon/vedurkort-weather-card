@@ -106,6 +106,8 @@ export interface ForecastItem {
   precipitation_probability?: number;
   wind_speed?: number;
   wind_bearing?: number | string;
+  /** Peak gust for the forecast period, when the integration provides it. */
+  wind_gust?: number;
   humidity?: number;
   is_daytime?: boolean;
   cloud_coverage?: number;

@@ -6,9 +6,15 @@ import {
   nextSunEvent,
   type WeatherSnapshot,
 } from "../weather/adapter";
+import {
+  formatWindHeading,
+  formatWindSpeed,
+  type WindSpeedDisplayUnit,
+} from "../weather/wind-units";
 import type { DetailMetricId, MetricSeries } from "./types";
 import { buildOutlookPhrase } from "./outlook";
 import { uvCategory } from "./uv-bar-model";
+import { metricGroup } from "./groups";
 
 function loc(
   key: LocalizeKey,
@@ -28,6 +34,7 @@ export interface CopyContext {
   high: number | null;
   low: number | null;
   hourly: ForecastItem[];
+  windSpeedUnit?: WindSpeedDisplayUnit;
 }
 
 function humidityComfort(dewPoint: number | null): string {
@@ -177,6 +184,101 @@ function formatDuration(ms: number, language: string | undefined): string {
   return loc("duration_mins", language, { mins: String(mins) });
 }
 
+/** Smallest angle between two bearings (0–180). */
+export function bearingDelta(
+  a: number | string | null | undefined,
+  b: number | string | null | undefined,
+): number | null {
+  const toNum = (v: number | string | null | undefined): number | null => {
+    if (v == null) return null;
+    const n = typeof v === "string" ? Number.parseFloat(v) : v;
+    return Number.isNaN(n) ? null : n;
+  };
+  const aa = toNum(a);
+  const bb = toNum(b);
+  if (aa == null || bb == null) return null;
+  const d = Math.abs((((aa - bb) % 360) + 360) % 360);
+  return Math.min(d, 360 - d);
+}
+
+function windOutlookKey(
+  currentBft: number,
+  hourly: ForecastItem[],
+  unit: string,
+): LocalizeKey {
+  const speeds = hourly
+    .map((h) => h.wind_speed)
+    .filter((v): v is number => v != null && !Number.isNaN(v));
+  if (!speeds.length) return "copy_wind_outlook_steady";
+  const avg =
+    speeds.reduce((sum, v) => sum + v, 0) / speeds.length;
+  const avgBft = windSpeedToBeaufort(avg, unit);
+  if (avgBft >= currentBft + 1) return "copy_wind_outlook_picking_up";
+  if (avgBft <= currentBft - 1) return "copy_wind_outlook_easing";
+  return "copy_wind_outlook_steady";
+}
+
+function windShiftDirection(
+  currentBearing: number | string | null | undefined,
+  hourly: ForecastItem[],
+): string | null {
+  const current =
+    typeof currentBearing === "string"
+      ? Number.parseFloat(currentBearing)
+      : currentBearing;
+  if (current == null || Number.isNaN(current)) return null;
+  let bestDelta = 0;
+  let bestBearing: number | string | null = null;
+  for (const h of hourly) {
+    const delta = bearingDelta(current, h.wind_bearing);
+    if (delta != null && delta > bestDelta) {
+      bestDelta = delta;
+      bestBearing = h.wind_bearing ?? null;
+    }
+  }
+  if (bestDelta < 90 || bestBearing == null) return null;
+  const label = bearingToLabel(bestBearing);
+  return label === "—" ? null : label;
+}
+
+function buildWindCopy(ctx: CopyContext): string {
+  const { snap, language, bft, gustBft, hourly, windSpeedUnit } = ctx;
+  const parts: string[] = [];
+
+  if (!hourly.length) {
+    const heading = formatWindHeading(
+      snap.windSpeed,
+      bearingToLabel(snap.windBearing ?? undefined),
+      snap.windSpeedUnit,
+      windSpeedUnit,
+    );
+    if (!heading) return loc("copy_wind_outlook_steady", language);
+    return loc("copy_wind_simple", language, { heading });
+  }
+
+  parts.push(loc(windOutlookKey(bft, hourly, snap.windSpeedUnit), language));
+
+  if (gustBft >= bft + 1) {
+    const gustFmt = formatWindSpeed(
+      snap.windGust,
+      snap.windSpeedUnit,
+      windSpeedUnit,
+    );
+    if (gustFmt) {
+      parts.push(
+        loc("copy_wind_gust_extra", language, { gust: gustFmt.text }),
+      );
+    }
+  }
+
+  const shiftDir = windShiftDirection(snap.windBearing, hourly);
+  if (shiftDir) {
+    parts.push(loc("copy_wind_shift", language, { dir: shiftDir }));
+  }
+
+  return parts.join(" ");
+}
+
 export function buildCurrentConditionsCopy(
   snap: WeatherSnapshot,
   hourly: ForecastItem[],
@@ -198,7 +300,11 @@ export function buildCurrentConditionsCopy(
 }
 
 export function buildInterpretationCopy(ctx: CopyContext): string {
-  const { metricId, snap, series, language, bft, gustBft, hourly } = ctx;
+  const { metricId, snap, series, language, hourly } = ctx;
+
+  if (metricGroup(metricId) === "wind") {
+    return buildWindCopy(ctx);
+  }
 
   switch (metricId) {
     case "current":
@@ -206,22 +312,6 @@ export function buildInterpretationCopy(ctx: CopyContext): string {
     case "humidity":
     case "dew_point":
       return loc(humidityCopyKey(snap.dewPoint), language);
-    case "wind_speed":
-      return loc("copy_wind_speed", language, {
-        bft: String(bft),
-        dir: bearingToLabel(snap.windBearing ?? undefined),
-      });
-    case "wind_gust":
-      return loc("copy_wind_gust", language, {
-        bft: String(gustBft),
-      });
-    case "wind_direction":
-      return loc("copy_wind_direction", language, {
-        dir: bearingToLabel(snap.windBearing ?? undefined),
-        bft: String(
-          windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit),
-        ),
-      });
     case "precipitation": {
       const next = firstPrecipHour(series);
       if (next) {

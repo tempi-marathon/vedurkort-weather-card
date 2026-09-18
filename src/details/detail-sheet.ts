@@ -3,6 +3,8 @@ import { renderForecastRow } from "../charts/forecast-row";
 import type { VedurkortCardConfig } from "../config";
 import type { HomeAssistant } from "../types";
 import type { IconRenderer } from "../sections/alerts-section";
+import { renderBeaufortLegend } from "./beaufort-legend";
+import { metricGroup } from "./groups";
 import { renderDetailHero } from "./hero";
 import { renderSunArcHero } from "./sun-arc";
 import { renderUvBarHero } from "./uv-bar";
@@ -18,6 +20,8 @@ export interface DetailSheetContext {
   language?: string;
   windSpeedUnit?: string;
   onChartScroll?: () => void;
+  beaufortLegendOpen?: boolean;
+  onToggleBeaufortLegend?: () => void;
 }
 
 export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
@@ -31,6 +35,8 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
     language,
     windSpeedUnit,
     onChartScroll,
+    beaufortLegendOpen,
+    onToggleBeaufortLegend,
   } = ctx;
 
   const chartCols = model.series?.points.length ?? 0;
@@ -43,6 +49,7 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
     entityId &&
     windSpeedUnit &&
     model.hourlyRowItems?.length;
+  const isWind = metricGroup(model.id) === "wind";
 
   return html`
     ${model.sunArc
@@ -72,13 +79,14 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
                     <div class="forecast-row-slot">
                       ${renderForecastRow(hass!, model.hourlyRowItems!, {
                         showIcons: showConditionRow,
-                        showWindSpeed:
-                          showWindRow && model.id !== "wind_direction",
-                        showWindDirection:
-                          showWindRow && model.id === "wind_direction",
+                        showWindSpeed: false,
+                        showWindDirection: showWindRow,
                         iconStyle: config!.icon_style,
                         animated: config!.animated_icons,
                         windSpeedUnit: windSpeedUnit!,
+                        windDisplayUnit: showWindRow
+                          ? config!.wind_speed_unit
+                          : undefined,
                         mode: "hourly",
                         language,
                         sunEntity: config!.sun_entity,
@@ -100,12 +108,28 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
               (r) => html`
                 <div class="detail-related-row">
                   <dt>${r.label}</dt>
-                  <dd>${r.value}</dd>
+                  <dd>
+                    <span class="detail-related-value">${r.value}</span>
+                    ${r.subline
+                      ? html`<span class="detail-related-sub"
+                          >${r.subline}</span
+                        >`
+                      : nothing}
+                  </dd>
                 </div>
               `,
             )}
           </dl>
         `
+      : nothing}
+    ${isWind && config && onToggleBeaufortLegend
+      ? renderBeaufortLegend({
+          language,
+          display: config.wind_speed_unit,
+          nativeUnit: windSpeedUnit ?? "km/h",
+          open: !!beaufortLegendOpen,
+          onToggle: onToggleBeaufortLegend,
+        })
       : nothing}
   `;
 }

@@ -160,6 +160,48 @@ describe("buildInterpretationCopy", () => {
 
     expect(copy).toBe("Night — next sunrise in 9 h 33 min.");
   });
+
+  it("builds wind outlook with gust and direction shift", () => {
+    const copy = buildInterpretationCopy(
+      copyCtx("wind_speed", {
+        bft: 3,
+        gustBft: 5,
+        snap: snap({ windSpeed: 15, windGust: 30, windBearing: 180 }),
+        hourly: hourly([
+          { wind_speed: 12, wind_bearing: 180 },
+          { wind_speed: 10, wind_bearing: 280 },
+        ]),
+      }),
+    );
+    expect(copy).toContain("Winds easing");
+    expect(copy).toContain("Gusts up to 30 km/h");
+    expect(copy).toContain("Shifting toward");
+  });
+
+  it("omits gust and shift extras when calm", () => {
+    const copy = buildInterpretationCopy(
+      copyCtx("wind_speed", {
+        bft: 3,
+        gustBft: 3,
+        snap: snap({ windSpeed: 15, windGust: 16, windBearing: 180 }),
+        hourly: hourly([
+          { wind_speed: 15, wind_bearing: 190 },
+          { wind_speed: 14, wind_bearing: 200 },
+        ]),
+      }),
+    );
+    expect(copy).toBe("Winds steady.");
+  });
+
+  it("falls back to simple wind copy without hourly", () => {
+    const copy = buildInterpretationCopy(
+      copyCtx("wind_speed", {
+        hourly: [],
+        snap: snap({ windSpeed: 15, windBearing: 180 }),
+      }),
+    );
+    expect(copy).toBe("Wind 15 km/h · S.");
+  });
 });
 
 describe("buildCurrentConditionsCopy", () => {

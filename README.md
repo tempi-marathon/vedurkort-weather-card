@@ -89,9 +89,8 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `show_current` | boolean | `true` | Show the current weather section (condition, temperature, icon). Detail chips only appear when this is on. |
 | `show_sun` | boolean | `false` | Show the next sunrise or sunset (sunset while the sun is up, sunrise while down). |
 | `show_humidity` | boolean | `false` | Show humidity. |
-| `show_wind_speed` | boolean | `false` | Show wind speed with Beaufort icon; value stays in system/entity unit. |
-| `show_wind_direction` | boolean | `false` | Show wind direction (compass label + Meteocons wind-direction icon). |
-| `show_wind_gust` | boolean | `false` | Show wind gust with Beaufort icon. |
+| `show_wind` | boolean | `false` | Show a single current-wind chip (speed + direction, optional gust) with Beaufort icon. |
+| `wind_speed_unit` | string | `native` | Display unit for the current wind chip and wind detail sheet/chart: `native` (Home Assistant), `km/h`, `beaufort`, `m/s`, or `mph`. |
 | `show_uv_index` | boolean | `false` | Show UV index. |
 | `show_pressure` | boolean | `false` | Show pressure. |
 | `show_cloud_coverage` | boolean | `false` | Show cloud coverage (%). |
@@ -266,8 +265,8 @@ animated_icons: true
 animated_background: true
 show_sun: true
 show_humidity: true
-show_wind_speed: true
-show_wind_direction: true
+show_wind: true
+wind_speed_unit: km/h
 show_uv_index: true
 show_pressure: true
 show_cloud_coverage: true

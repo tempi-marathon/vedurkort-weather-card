@@ -1,9 +1,15 @@
 import { ICON_STYLES, type IconStyle } from "./icons/allowlist";
 import type { ActionConfig } from "./types";
+import {
+  WIND_SPEED_DISPLAY_UNITS,
+  type WindSpeedDisplayUnit,
+} from "./weather/wind-units";
 
 export type PrecipType = "rainfall" | "probability";
 export type CardLayout = "default" | "compact" | "minimal";
 export const CARD_LAYOUTS: CardLayout[] = ["default", "compact", "minimal"];
+export type { WindSpeedDisplayUnit };
+export { WIND_SPEED_DISPLAY_UNITS };
 
 export interface ForecastBlockConfig {
   enabled: boolean;
@@ -35,9 +41,10 @@ export interface VedurkortCardConfig {
   /** Current conditions (condition, temp, icon, detail chips). */
   show_current: boolean;
   show_sun: boolean;
-  show_wind_speed: boolean;
-  show_wind_direction: boolean;
-  show_wind_gust: boolean;
+  /** Combined current-weather wind chip (speed, direction, gust). */
+  show_wind: boolean;
+  /** Display unit for current wind chip + wind detail sheet/chart. */
+  wind_speed_unit: WindSpeedDisplayUnit;
   show_humidity: boolean;
   show_uv_index: boolean;
   show_pressure: boolean;
@@ -95,9 +102,8 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   layout: "default",
   show_current: true,
   show_sun: false,
-  show_wind_speed: false,
-  show_wind_direction: false,
-  show_wind_gust: false,
+  show_wind: false,
+  wind_speed_unit: "native",
   show_humidity: false,
   show_uv_index: false,
   show_pressure: false,
@@ -125,7 +131,12 @@ export type VedurkortEditorConfig = Omit<VedurkortCardConfig, "entity"> & {
 };
 
 function mergeConfigFields(
-  input: Partial<VedurkortCardConfig> & { entity?: string },
+  input: Partial<VedurkortCardConfig> & {
+    entity?: string;
+    show_wind_speed?: boolean;
+    show_wind_direction?: boolean;
+    show_wind_gust?: boolean;
+  },
 ): VedurkortEditorConfig {
   const daily = {
     ...DEFAULT_CONFIG.daily,
@@ -142,15 +153,25 @@ function mergeConfigFields(
   hourly.enabled = Boolean(hourly.enabled);
 
   const alertsEntities = normalizeAlertEntities(input);
+  const showWind = migrateShowWind(input);
+
+  const {
+    show_wind_speed: _legacySpeed,
+    show_wind_direction: _legacyDir,
+    show_wind_gust: _legacyGust,
+    ...rest
+  } = input;
 
   return {
     ...DEFAULT_CONFIG,
-    ...input,
+    ...rest,
     entity: input.entity ?? "",
     show_name: Boolean(input.show_name ?? DEFAULT_CONFIG.show_name),
     show_current: Boolean(
       input.show_current ?? DEFAULT_CONFIG.show_current,
     ),
+    show_wind: showWind,
+    wind_speed_unit: normalizeWindSpeedUnit(input.wind_speed_unit),
     show_alerts: Boolean(input.show_alerts ?? DEFAULT_CONFIG.show_alerts),
     alerts_device: emptyToUndef(input.alerts_device),
     alerts_entities: alertsEntities.length ? alertsEntities : undefined,
@@ -165,6 +186,27 @@ function mergeConfigFields(
     hold_action: input.hold_action,
     double_tap_action: input.double_tap_action,
   };
+}
+
+/** Prefer `show_wind`; else OR legacy current-wind flags. */
+function migrateShowWind(input: {
+  show_wind?: boolean;
+  show_wind_speed?: boolean;
+  show_wind_direction?: boolean;
+  show_wind_gust?: boolean;
+}): boolean {
+  if (typeof input.show_wind === "boolean") return input.show_wind;
+  return Boolean(
+    input.show_wind_speed ||
+      input.show_wind_direction ||
+      input.show_wind_gust,
+  );
+}
+
+function normalizeWindSpeedUnit(value: unknown): WindSpeedDisplayUnit {
+  return WIND_SPEED_DISPLAY_UNITS.includes(value as WindSpeedDisplayUnit)
+    ? (value as WindSpeedDisplayUnit)
+    : DEFAULT_CONFIG.wind_speed_unit;
 }
 
 export function normalizeEditorConfig(

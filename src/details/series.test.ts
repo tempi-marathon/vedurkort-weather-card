@@ -76,6 +76,22 @@ describe("seriesFromHourly", () => {
     expect(s?.feelsLike?.some((v) => v != null)).toBe(true);
   });
 
+  it("attaches wind gust series when forecast has wind_gust", () => {
+    const withGust: ForecastItem[] = hourly.map((item, i) => ({
+      ...item,
+      wind_gust: item.wind_speed != null ? item.wind_speed + 8 : undefined,
+    }));
+    const s = seriesFromHourly(
+      withGust,
+      "wind_speed",
+      "km/h",
+      24,
+      Date.parse("2026-08-23T10:30:00+00:00"),
+    );
+    expect(s?.gust?.some((v) => v != null)).toBe(true);
+    expect(s?.gust?.[0]).toBe(20);
+  });
+
   it("returns null when all values missing", () => {
     const empty = [{ datetime: "2026-08-23T10:00:00+00:00" }];
     expect(seriesFromHourly(empty, "humidity", "%", 24)).toBeNull();
