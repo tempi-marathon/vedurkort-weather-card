@@ -29,6 +29,7 @@ import {
   type DetailMetricGroup,
 } from "./groups";
 import { seriesFromHourly, currentConditionsSeries } from "./series";
+import { insertSunEvents } from "./sun-events";
 import { buildSunArcModel } from "./sun-arc-model";
 import { buildUvBarModel } from "./uv-bar-model";
 import type { DetailMetricId, DetailModel, MetricSeries } from "./types";
@@ -414,6 +415,16 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
   if (group === "current" || group === "wind") {
     model.hourlyRowItems = hourlySlice;
     if (group === "current") {
+      if (model.series) {
+        const withSun = insertSunEvents(
+          model.series,
+          model.hourlyRowItems,
+          ctx.snap.sunrise,
+          ctx.snap.sunset,
+        );
+        model.series = withSun.series;
+        model.hourlyRowItems = withSun.hourlyRowItems;
+      }
       model.showConditionRow = model.hourlyRowItems.length > 0;
     } else {
       model.showWindRow = model.hourlyRowItems.length > 0;

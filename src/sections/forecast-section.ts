@@ -2,6 +2,7 @@ import { html, nothing, type TemplateResult } from "lit";
 import { sliceHourlyForecast } from "../charts/hourly-window";
 import { renderForecastRow } from "../charts/forecast-row";
 import type { VedurkortCardConfig } from "../config";
+import { insertSunEventsIntoHourly, type HourlySlotItem } from "../details/sun-events";
 import { localize } from "../localize";
 import type { ForecastItem, HomeAssistant } from "../types";
 import type { WeatherSnapshot } from "../weather/adapter";
@@ -39,10 +40,18 @@ export function renderForecastSection(
   const items =
     mode === "daily" ? state.dailyForecast : state.hourlyForecast;
   const error = mode === "daily" ? state.dailyError : state.hourlyError;
-  const slice =
+  const slice: HourlySlotItem[] | ForecastItem[] =
     mode === "daily"
       ? items.slice(0, config.daily.days)
-      : sliceHourlyForecast(items, config.hourly.hours);
+      : insertSunEventsIntoHourly(
+          sliceHourlyForecast(items, config.hourly.hours),
+          snap.sunrise,
+          snap.sunset,
+        );
+  const sunEvents =
+    mode === "hourly"
+      ? (slice as HourlySlotItem[]).map((item) => item.sunEvent ?? null)
+      : undefined;
   const plotLeft =
     mode === "daily" ? state.dailyPlotLeft : state.hourlyPlotLeft;
   const plotWidth =
@@ -93,6 +102,7 @@ export function renderForecastSection(
                   language,
                   sunEntity: config.sun_entity,
                   weatherEntityId: config.entity,
+                  sunEvents,
                 })}
               </div>
             </div>

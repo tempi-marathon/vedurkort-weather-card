@@ -28,6 +28,8 @@ export type MetricSeriesSource = "forecast" | "history" | "merged";
 export interface MetricPoint {
   t: string;
   value: number | null;
+  /** Sunrise/sunset marker inserted between hourly points (current sheet). */
+  sunEvent?: "sunrise" | "sunset";
 }
 
 export interface MetricSeries {

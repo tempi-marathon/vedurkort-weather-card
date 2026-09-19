@@ -9,6 +9,7 @@ import { renderDetailHero } from "./hero";
 import { renderPollenLegend } from "./pollen-legend";
 import { renderSunArcHero } from "./sun-arc";
 import { renderUvBarHero } from "./uv-bar";
+import { renderUvLegend } from "./uv-legend";
 import type { DetailModel } from "./types";
 
 export interface DetailSheetContext {
@@ -25,6 +26,8 @@ export interface DetailSheetContext {
   onToggleBeaufortLegend?: () => void;
   pollenLegendOpen?: boolean;
   onTogglePollenLegend?: () => void;
+  uvLegendOpen?: boolean;
+  onToggleUvLegend?: () => void;
 }
 
 export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
@@ -42,6 +45,8 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
     onToggleBeaufortLegend,
     pollenLegendOpen,
     onTogglePollenLegend,
+    uvLegendOpen,
+    onToggleUvLegend,
   } = ctx;
 
   const chartCols = model.series?.points.length ?? 0;
@@ -56,6 +61,7 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
     model.hourlyRowItems?.length;
   const isWind = metricGroup(model.id) === "wind";
   const isPollen = model.id === "pollen";
+  const isUv = metricGroup(model.id) === "uv_index";
 
   return html`
     ${model.sunArc
@@ -100,6 +106,9 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
                         language,
                         sunEntity: config!.sun_entity,
                         weatherEntityId: entityId!,
+                        sunEvents: showConditionRow
+                          ? model.series?.points.map((p) => p.sunEvent ?? null)
+                          : undefined,
                       })}
                     </div>
                   `
@@ -139,6 +148,13 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
           nativeUnit: windSpeedUnit ?? "km/h",
           open: !!beaufortLegendOpen,
           onToggle: onToggleBeaufortLegend,
+        })
+      : nothing}
+    ${isUv && onToggleUvLegend
+      ? renderUvLegend({
+          language,
+          open: !!uvLegendOpen,
+          onToggle: onToggleUvLegend,
         })
       : nothing}
     ${isPollen && onTogglePollenLegend

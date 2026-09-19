@@ -38,7 +38,7 @@ export function chartMetricId(tapped: DetailMetricId): DetailMetricId {
 
 export function groupTitleKey(group: DetailMetricGroup): LocalizeKey {
   const keys: Record<DetailMetricGroup, LocalizeKey> = {
-    current: "current_conditions",
+    current: "forecast",
     sun: "next_sun",
     wind: "wind",
     humidity: "humidity",

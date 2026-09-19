@@ -15,8 +15,9 @@ import {
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import type { ForecastBlockConfig, PrecipType } from "../config";
-import { beaufortColor } from "../details/beaufort-scale";
+import { beaufortColor, beaufortLabelColor } from "../details/beaufort-scale";
 import type { MetricSeries } from "../details/types";
+import { insertSunEventsIntoHourly, type HourlySlotItem } from "../details/sun-events";
 import { metricSeriesFingerprint } from "../details/series";
 import { windSpeedToBeaufort } from "../icons/condition-map";
 import { sliceHourlyForecast } from "./hourly-window";
@@ -42,6 +43,10 @@ export interface ChartSeries {
   high: (number | null)[];
   low: (number | null)[];
   precip: (number | null)[];
+  /** Aligned sunrise/sunset markers (hourly only). */
+  sunEvents?: (("sunrise" | "sunset") | null)[];
+  /** Column datetimes for scroll/now positioning (hourly). */
+  datetimes?: string[];
 }
 
 export interface ChartChrome {
@@ -159,26 +164,36 @@ export function buildHourlySeries(
   precipType: PrecipType,
   language?: string,
   nowMs?: number,
+  sun?: { sunrise: string | null; sunset: string | null },
 ): ChartSeries {
   const slice = sliceHourlyForecast(items, hours, nowMs);
-  const labels = slice.map((i) => {
+  const slots: HourlySlotItem[] = sun
+    ? insertSunEventsIntoHourly(slice, sun.sunrise, sun.sunset)
+    : slice.map((i) => ({ ...i }));
+  const labels = slots.map((i) => {
     try {
-      return new Intl.DateTimeFormat(language, {
-        hour: "numeric",
-      }).format(new Date(i.datetime));
+      const opts: Intl.DateTimeFormatOptions = i.sunEvent
+        ? { hour: "numeric", minute: "2-digit" }
+        : { hour: "numeric" };
+      return new Intl.DateTimeFormat(language, opts).format(
+        new Date(i.datetime),
+      );
     } catch {
-      return i.datetime.slice(11, 16);
+      return i.sunEvent ? i.datetime.slice(11, 16) : i.datetime.slice(11, 13);
     }
   });
   return {
     labels,
-    high: slice.map((i) => i.temperature ?? null),
-    low: slice.map((i) => i.templow ?? null),
-    precip: slice.map((i) =>
-      precipType === "probability"
+    high: slots.map((i) => i.temperature ?? null),
+    low: slots.map((i) => i.templow ?? null),
+    precip: slots.map((i) => {
+      if (i.sunEvent) return null;
+      return precipType === "probability"
         ? (i.precipitation_probability ?? null)
-        : (i.precipitation ?? null),
-    ),
+        : (i.precipitation ?? null);
+    }),
+    sunEvents: slots.map((i) => i.sunEvent ?? null),
+    datetimes: slots.map((i) => i.datetime),
   };
 }
 
@@ -249,6 +264,14 @@ function buildDatasets(
   language?: string,
 ): ChartConfiguration["data"]["datasets"] {
   const hasLow = series.low.some((v) => v != null);
+  const showTempLabel = (ctx: {
+    dataIndex: number;
+    dataset: { data: unknown[] };
+  }) => {
+    if (series.sunEvents?.[ctx.dataIndex]) return false;
+    const v = ctx.dataset.data[ctx.dataIndex];
+    return typeof v === "number" && !Number.isNaN(v);
+  };
   const datasets: ChartConfiguration["data"]["datasets"] = [
     {
       type: "line",
@@ -264,6 +287,7 @@ function buildDatasets(
       pointRadius: 3,
       order: 0,
       datalabels: {
+        display: showTempLabel,
         align: "center",
         anchor: "center",
         color: "rgba(255, 152, 0, 1)",
@@ -289,6 +313,7 @@ function buildDatasets(
       pointRadius: 3,
       order: 0,
       datalabels: {
+        display: showTempLabel,
         align: "center",
         anchor: "center",
         color: "rgba(68, 115, 158, 1)",
@@ -533,11 +558,12 @@ function detailHourLabels(
 ): string[] {
   return points.map((p) => {
     try {
-      return new Intl.DateTimeFormat(language, { hour: "numeric" }).format(
-        new Date(p.t),
-      );
+      const opts: Intl.DateTimeFormatOptions = p.sunEvent
+        ? { hour: "numeric", minute: "2-digit" }
+        : { hour: "numeric" };
+      return new Intl.DateTimeFormat(language, opts).format(new Date(p.t));
     } catch {
-      return p.t.slice(11, 16);
+      return p.sunEvent ? p.t.slice(11, 16) : p.t.slice(11, 13);
     }
   });
 }
@@ -557,6 +583,15 @@ function detailShowValueLabel(ctx: {
 }): boolean {
   const v = ctx.dataset.data[ctx.dataIndex];
   return typeof v === "number" && !Number.isNaN(v);
+}
+
+function detailShowTempLabel(
+  series: MetricSeries,
+): (ctx: { dataIndex: number; dataset: { data: unknown[] } }) => boolean {
+  return (ctx) => {
+    if (series.points[ctx.dataIndex]?.sunEvent) return false;
+    return detailShowValueLabel(ctx);
+  };
 }
 
 function buildCurrentDetailDatasets(
@@ -583,7 +618,7 @@ function buildCurrentDetailDatasets(
       spanGaps: true,
       order: 0,
       datalabels: {
-        display: detailShowValueLabel,
+        display: detailShowTempLabel(series),
         align: "center",
         anchor: "center",
         color: "rgba(255, 152, 0, 1)",
@@ -746,11 +781,26 @@ function colorForWindValue(
   return beaufortColor(windSpeedToBeaufort(value, unit));
 }
 
+function labelColorForWindValue(
+  value: number | null | undefined,
+  unit: string,
+): string {
+  if (value == null || Number.isNaN(value)) return "rgba(255, 152, 0, 1)";
+  return beaufortLabelColor(windSpeedToBeaufort(value, unit));
+}
+
 function windValueColors(
   values: (number | null)[],
   unit: string,
 ): string[] {
   return values.map((v) => colorForWindValue(v, unit));
+}
+
+function windLabelColors(
+  values: (number | null)[],
+  unit: string,
+): string[] {
+  return values.map((v) => labelColorForWindValue(v, unit));
 }
 
 function buildDetailDatasets(
@@ -787,6 +837,7 @@ function buildDetailDatasets(
 
   const wind = isWindSeries(series);
   const speedColors = wind ? windValueColors(values, series.unit) : null;
+  const labelColors = wind ? windLabelColors(values, series.unit) : null;
 
   const datasets: ChartConfiguration["data"]["datasets"] = [
     {
@@ -815,9 +866,9 @@ function buildDetailDatasets(
         display: showValueLabel,
         align: "center",
         anchor: "center",
-        color: speedColors
+        color: labelColors
           ? (ctx: { dataIndex: number }) =>
-              speedColors[ctx.dataIndex] ?? "rgba(255, 152, 0, 1)"
+              labelColors[ctx.dataIndex] ?? "rgba(255, 152, 0, 1)"
           : "rgba(255, 152, 0, 1)",
         backgroundColor: "rgba(255,255,255,0.92)",
         borderColor: speedColors

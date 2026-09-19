@@ -55,6 +55,46 @@ function adviceKey(category: UvCategory): LocalizeKey {
   return map[category];
 }
 
+/** WHO UV category colors (match `.detail-uv-category-*` / bar gradient). */
+export const UV_CATEGORY_COLORS: Readonly<
+  Record<Exclude<UvCategory, "unknown">, string>
+> = {
+  low: "#22c55e",
+  moderate: "#eab308",
+  high: "#f97316",
+  very_high: "#ef4444",
+  extreme: "#a855f7",
+};
+
+export interface UvLegendRow {
+  category: Exclude<UvCategory, "unknown">;
+  color: string;
+  range: string;
+  label: string;
+}
+
+const UV_LEGEND_BANDS: ReadonlyArray<{
+  category: Exclude<UvCategory, "unknown">;
+  range: string;
+}> = [
+  { category: "low", range: "0–2" },
+  { category: "moderate", range: "3–5" },
+  { category: "high", range: "6–7" },
+  { category: "very_high", range: "8–10" },
+  { category: "extreme", range: "11+" },
+];
+
+export function buildUvLegendRows(
+  language: string | undefined,
+): UvLegendRow[] {
+  return UV_LEGEND_BANDS.map(({ category, range }) => ({
+    category,
+    color: UV_CATEGORY_COLORS[category],
+    range,
+    label: localize(categoryLabelKey(category), language),
+  }));
+}
+
 /** Map UV index 0–11+ to horizontal bar position (percent). */
 export function uvBarPosition(uv: number): number {
   const clamped = Math.max(0, Math.min(uv, 11));
