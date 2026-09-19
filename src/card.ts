@@ -19,6 +19,7 @@ import {
 import { buildDetailModel } from "./details/catalog";
 import { buildCurrentConditionsCopy } from "./details/copy";
 import { renderDetailSheetBody } from "./details/detail-sheet";
+import { insertSunEventsIntoHourly } from "./details/sun-events";
 import type { DetailMetricId } from "./details/types";
 import { metricSeriesFingerprint } from "./details/series";
 import {
@@ -74,6 +75,7 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _detailMetric: DetailMetricId | null = null;
   @state() private _beaufortLegendOpen = false;
   @state() private _pollenLegendOpen = false;
+  @state() private _uvLegendOpen = false;
 
   private _dailyChart: Chart | null = null;
   private _hourlyChart: Chart | null = null;
@@ -420,12 +422,20 @@ export class VedurkortWeatherCard extends LitElement {
 
   private _hourlyWindowKey(): string {
     if (!this._config?.hourly.enabled) return "";
+    const snap = this.hass
+      ? getWeatherSnapshot(this.hass, this._config)
+      : null;
     const slice = sliceHourlyForecast(
       this._hourlyForecast,
       this._config.hourly.hours,
     );
-    if (!slice.length) return "";
-    return `${this._config.hourly.hours}:${slice.map((i) => i.datetime).join(",")}`;
+    const slots = insertSunEventsIntoHourly(
+      slice,
+      snap?.sunrise ?? null,
+      snap?.sunset ?? null,
+    );
+    if (!slots.length) return "";
+    return `${this._config.hourly.hours}:${slots.map((i) => i.datetime).join(",")}`;
   }
 
   private _maybeScrollHourlyToNow(): void {
@@ -456,7 +466,13 @@ export class VedurkortWeatherCard extends LitElement {
       this._hourlyForecast,
       this._config.hourly.hours,
     );
-    const pos = findHourlyNowPosition(slice.map((i) => i.datetime));
+    const snap = getWeatherSnapshot(this.hass, this._config);
+    const slots = insertSunEventsIntoHourly(
+      slice,
+      snap?.sunrise ?? null,
+      snap?.sunset ?? null,
+    );
+    const pos = findHourlyNowPosition(slots.map((i) => i.datetime));
     if (pos < 0) return;
 
     const colWidth =
@@ -606,6 +622,10 @@ export class VedurkortWeatherCard extends LitElement {
             this._config.hourly.hours,
             precipType,
             language,
+            undefined,
+            snap
+              ? { sunrise: snap.sunrise, sunset: snap.sunset }
+              : undefined,
           );
 
     if (!series.labels.length) {
@@ -613,7 +633,7 @@ export class VedurkortWeatherCard extends LitElement {
       return;
     }
 
-    const modeKey = `${mode}:${precipType}:${precipUnit}:${temperatureUnit}:${textColor}:${this._config.animated_background}:${scene}`;
+    const modeKey = `${mode}:${precipType}:${precipUnit}:${temperatureUnit}:${textColor}:${this._config.animated_background}:${scene}:${mode === "hourly" ? `${snap?.sunrise ?? ""}|${snap?.sunset ?? ""}` : ""}`;
     const fingerprint = mod.seriesFingerprint(series);
     const existing = mode === "daily" ? this._dailyChart : this._hourlyChart;
     const existingKey =
@@ -810,6 +830,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._detailMetric = metricId;
     this._beaufortLegendOpen = false;
     this._pollenLegendOpen = false;
+    this._uvLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
   }
@@ -819,6 +840,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._detailMetric = null;
     this._beaufortLegendOpen = false;
     this._pollenLegendOpen = false;
+    this._uvLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
     this._destroyMetricChart();
@@ -830,6 +852,10 @@ export class VedurkortWeatherCard extends LitElement {
 
   private _togglePollenLegend(): void {
     this._pollenLegendOpen = !this._pollenLegendOpen;
+  }
+
+  private _toggleUvLegend(): void {
+    this._uvLegendOpen = !this._uvLegendOpen;
   }
 
   private _openAlerts(alerts: WeatherAlert[], preferredId?: string): void {
@@ -1092,6 +1118,8 @@ export class VedurkortWeatherCard extends LitElement {
               onToggleBeaufortLegend: () => this._toggleBeaufortLegend(),
               pollenLegendOpen: this._pollenLegendOpen,
               onTogglePollenLegend: () => this._togglePollenLegend(),
+              uvLegendOpen: this._uvLegendOpen,
+              onToggleUvLegend: () => this._toggleUvLegend(),
             }),
           })
         : nothing}

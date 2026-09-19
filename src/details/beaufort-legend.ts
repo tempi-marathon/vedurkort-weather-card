@@ -29,7 +29,9 @@ export function renderBeaufortLegend(opts: {
         }}
       >
         <span class="beaufort-legend-info" aria-hidden="true">ⓘ</span>
-        <span>${localize("beaufort_scale", language)}</span>
+        <span class="beaufort-legend-label"
+          >${localize("beaufort_scale", language)}</span
+        >
       </button>
       ${open
         ? html`

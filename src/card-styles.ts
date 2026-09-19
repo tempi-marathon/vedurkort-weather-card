@@ -476,6 +476,9 @@ export const cardStyles = [
     .beaufort-legend-toggle:focus-visible {
       opacity: 1;
       outline: none;
+    }
+    .beaufort-legend-toggle:hover .beaufort-legend-label,
+    .beaufort-legend-toggle:focus-visible .beaufort-legend-label {
       text-decoration: underline;
       text-underline-offset: 2px;
     }
@@ -523,6 +526,73 @@ export const cardStyles = [
       opacity: 0.8;
       white-space: nowrap;
       text-align: right;
+    }
+    .uv-legend {
+      margin-top: 12px;
+    }
+    .uv-legend-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 550;
+      padding: 4px 0;
+      cursor: pointer;
+      opacity: 0.85;
+    }
+    .uv-legend-toggle:hover,
+    .uv-legend-toggle:focus-visible {
+      opacity: 1;
+      outline: none;
+    }
+    .uv-legend-toggle:hover .uv-legend-label,
+    .uv-legend-toggle:focus-visible .uv-legend-label {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .uv-legend-info {
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .uv-legend-panel {
+      margin-top: 8px;
+      display: grid;
+      gap: 0;
+      font-size: 0.8rem;
+    }
+    .uv-legend-head,
+    .uv-legend-row {
+      display: grid;
+      grid-template-columns: 14px 3.5rem minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    }
+    .uv-legend-head {
+      font-weight: 600;
+      opacity: 0.75;
+      border-top: none;
+      padding-top: 0;
+    }
+    .uv-legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .uv-legend-range {
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+    }
+    .uv-legend-cat {
+      min-width: 0;
+      opacity: 0.9;
     }
     .detail-sun-arc {
       margin-bottom: 8px;
@@ -994,10 +1064,6 @@ export const cardStyles = [
     .tip:focus-within::after {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
-    }
-    ha-card.has-bg .tip::after {
-      background: rgba(255, 255, 255, 0.95);
-      color: #111;
     }
     .forecast {
       margin-top: 0;

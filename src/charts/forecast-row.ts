@@ -34,9 +34,16 @@ export function renderForecastRow(
     language?: string;
     sunEntity?: string;
     weatherEntityId: string;
+    /** Aligned sunrise/sunset markers (current detail sheet). */
+    sunEvents?: (("sunrise" | "sunset") | null)[];
   },
 ): TemplateResult | typeof nothing {
-  if (!opts.showIcons && !opts.showWindSpeed && !opts.showWindDirection) {
+  if (
+    !opts.showIcons &&
+    !opts.showWindSpeed &&
+    !opts.showWindDirection &&
+    !opts.sunEvents?.some(Boolean)
+  ) {
     return nothing;
   }
 
@@ -45,7 +52,25 @@ export function renderForecastRow(
 
   return html`
     <div class="forecast-row" style="--cols: ${items.length}">
-      ${items.map((item) => {
+      ${items.map((item, index) => {
+        const sunEvent = opts.sunEvents?.[index] ?? null;
+        if (sunEvent) {
+          const iconName = sunEvent === "sunrise" ? "sunrise" : "sunset";
+          const svg = getMeteoconSvg(iconName, opts.iconStyle, opts.animated);
+          const tip = localize(
+            sunEvent === "sunrise" ? "sunrise" : "sunset",
+            opts.language,
+          );
+          return html`
+            <div class="forecast-col forecast-col-sun">
+              ${tipWrap(
+                tip,
+                html`<div class="forecast-icon" .innerHTML=${svg}></div>`,
+              )}
+            </div>
+          `;
+        }
+
         // Prefer sun rising/setting for hourly so icons match real dusk/dawn.
         // Fall back to forecast is_daytime, then sun.sun for daily.
         const isDay =

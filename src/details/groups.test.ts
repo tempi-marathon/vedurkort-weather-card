@@ -26,5 +26,6 @@ describe("metric groups", () => {
   it("uses shared group titles", () => {
     expect(groupTitleKey("wind")).toBe("wind");
     expect(groupTitleKey("precipitation")).toBe("precipitation");
+    expect(groupTitleKey("current")).toBe("forecast");
   });
 });

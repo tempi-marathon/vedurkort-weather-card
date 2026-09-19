@@ -35,6 +35,24 @@ describe("forecast-chart", () => {
     expect(series.low).toEqual([6, 8, null]);
   });
 
+  it("buildHourlySeries inserts sunrise/sunset slots", () => {
+    const items: ForecastItem[] = [
+      { datetime: "2026-09-19T18:00:00+02:00", temperature: 20 },
+      { datetime: "2026-09-19T19:00:00+02:00", temperature: 19 },
+      { datetime: "2026-09-19T20:00:00+02:00", temperature: 18 },
+      { datetime: "2026-09-19T21:00:00+02:00", temperature: 17 },
+    ];
+    const now = Date.parse("2026-09-19T18:10:00+02:00");
+    const series = buildHourlySeries(items, 4, "rainfall", "en", now, {
+      sunrise: null,
+      sunset: "2026-09-19T19:48:00+02:00",
+    });
+    expect(series.labels).toHaveLength(5);
+    expect(series.sunEvents?.[2]).toBe("sunset");
+    expect(series.precip?.[2]).toBeNull();
+    expect(series.high[2]).toBeCloseTo(19 + (18 - 19) * 0.8, 5);
+  });
+
   it("buildHourlySeries anchors at the current hour", () => {
     const items: ForecastItem[] = [
       { datetime: "2026-08-22T14:00:00", temperature: 10 },

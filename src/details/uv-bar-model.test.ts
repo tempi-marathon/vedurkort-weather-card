@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildUvBarModel, uvBarPosition, uvCategory } from "./uv-bar-model";
+import {
+  buildUvBarModel,
+  buildUvLegendRows,
+  UV_CATEGORY_COLORS,
+  uvBarPosition,
+  uvCategory,
+} from "./uv-bar-model";
 import type { WeatherSnapshot } from "../weather/adapter";
 
 function snap(uvIndex: number | null): WeatherSnapshot {
@@ -57,5 +63,20 @@ describe("uv bar model", () => {
     expect(model?.categoryLabel).toBe("Matig");
     expect(model?.barPosition).toBeCloseTo(27.27, 1);
     expect(model?.advice).toContain("schaduw");
+  });
+});
+
+describe("UV legend rows", () => {
+  it("builds WHO bands with colors", () => {
+    const rows = buildUvLegendRows("en");
+    expect(rows).toHaveLength(5);
+    expect(rows[0]).toMatchObject({
+      category: "low",
+      range: "0–2",
+      color: UV_CATEGORY_COLORS.low,
+      label: "Low",
+    });
+    expect(rows[4]?.range).toBe("11+");
+    expect(rows[4]?.label).toBe("Extreme");
   });
 });
