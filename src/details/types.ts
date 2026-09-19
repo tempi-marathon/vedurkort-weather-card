@@ -20,7 +20,8 @@ export type DetailMetricId =
   | "cloud_coverage"
   | "visibility"
   | "precipitation"
-  | "precipitation_probability";
+  | "precipitation_probability"
+  | "pollen";
 
 export type MetricSeriesSource = "forecast" | "history" | "merged";
 
@@ -51,6 +52,8 @@ export interface DetailRelatedStat {
   value: string;
   /** Quieter secondary line under the value (e.g. alternate wind units). */
   subline?: string;
+  /** Optional class on the subline (e.g. pollen level tone). */
+  sublineClass?: string;
 }
 
 export interface DetailModel {
@@ -58,6 +61,8 @@ export interface DetailModel {
   title: string;
   heroValue: string;
   heroIcon: MeteoconName;
+  /** Optional class on the hero value (e.g. pollen level tone). */
+  heroValueClass?: string;
   copy: string;
   series: MetricSeries | null;
   related: DetailRelatedStat[];

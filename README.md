@@ -35,6 +35,7 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - Optional sensor overrides with entity pickers in the UI editor
 - Separate `daily` and `hourly` config blocks
 - Optional **weather alerts** — summary strip below current weather (via [CAP Alerts](https://github.com/seevee/cap_alerts) or core MeteoAlarm); tap to open a detail dialog
+- Optional **pollen** chip — current level + detail sheet with species and hourly forecast (via companion [Pollen](https://github.com/tempi-marathon/ha-pollen) integration; Europe / CAMS)
 
 ## Localization
 
@@ -104,6 +105,8 @@ Copy `dist/vedurkort-weather-card.js` to your HA `www/` folder and add a Lovelac
 | `show_alerts` | boolean | `false` | Show a weather-alert summary when an alert source is configured and at least one **active** warning exists. Hidden when idle. Requires `show_current: true` for strip placement on the current-weather section. |
 | `alerts_device` | string | none | [CAP Alerts](https://github.com/seevee/cap_alerts) **device id** — discovers all per-alert sensors under that device. Recommended for CAP Alerts usage. Auto-detected when you have exactly one CAP device. |
 | `alerts_entities` | list | none | One or more alert entities (e.g. `binary_sensor.meteoalarm`). Active warnings from all entities are merged. |
+| `show_pollen` | boolean | `false` | Show a pollen chip when a [Pollen](https://github.com/tempi-marathon/ha-pollen) device is available. Tap opens a detail sheet with species and the full hourly forecast. Europe (CAMS) only. |
+| `pollen_device` | string | none | [Pollen](https://github.com/tempi-marathon/ha-pollen) **device id**. Auto-detected when exactly one Pollen device exists. |
 | `tap_action` | object | detail | Lovelace action on tap of the current-weather block. Default opens the current-conditions detail sheet. Use `{ action: more-info }` for Home Assistant’s entity dialog. |
 | `hold_action` | object | none | Lovelace action on hold. |
 | `double_tap_action` | object | none | Lovelace action on double-tap. |
@@ -200,6 +203,25 @@ When a **red / extreme** warning is **currently active**, the card switches to t
 CAP Alerts creates one Home Assistant sensor per active alert under a device. Point Veðurkort at that **device** (`alerts_device`) so all current warnings are picked up automatically.
 
 The card never calls alert APIs directly — only Home Assistant entity state (and the device registry for CAP discovery).
+
+## Pollen
+
+Veðurkort can show a pollen chip next to the other detail chips. Like alerts, the card **does not fetch pollen itself** — it reads entities from the companion [Pollen](https://github.com/tempi-marathon/ha-pollen) integration (Open-Meteo / CAMS Europe, no API key).
+
+1. Install **Pollen** via HACS (custom repository, category Integration) and add it for your location.
+2. Enable **Show pollen** in the card editor (or set `show_pollen: true`).
+3. Pick the Pollen device (`pollen_device`), or leave blank if you have exactly one — the card auto-detects it.
+4. Tap the chip for species levels and the full hourly forecast chart (~4 days).
+
+```yaml
+type: custom:vedurkort-weather-card
+entity: weather.home
+show_current: true
+show_pollen: true
+pollen_device: REPLACE_WITH_POLLEN_DEVICE_ID
+```
+
+Coverage is **Europe only** (CAMS). Outside that domain the Pollen integration will not set up, and the chip stays hidden.
 
 ## Weather alerts setup
 

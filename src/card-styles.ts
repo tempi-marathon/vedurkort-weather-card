@@ -389,6 +389,71 @@ export const cardStyles = [
       font-weight: 500;
       opacity: 0.7;
     }
+    .pollen-level--low {
+      color: #eab308;
+      opacity: 1;
+    }
+    .pollen-level--medium {
+      color: #f97316;
+      opacity: 1;
+    }
+    .pollen-level--high {
+      color: #ef4444;
+      opacity: 1;
+    }
+    .pollen-legend {
+      margin-top: 12px;
+    }
+    .pollen-legend-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 550;
+      padding: 4px 0;
+      cursor: pointer;
+      opacity: 0.85;
+    }
+    .pollen-legend-toggle:hover,
+    .pollen-legend-toggle:focus-visible {
+      opacity: 1;
+      outline: none;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .pollen-legend-info {
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .pollen-legend-panel {
+      margin-top: 8px;
+      display: grid;
+      gap: 6px;
+      font-size: 0.8rem;
+    }
+    .pollen-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pollen-legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .pollen-legend-swatch.is-none {
+      background: transparent;
+      border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+    }
+    .pollen-legend-none {
+      opacity: 0.75;
+    }
     .beaufort-legend {
       margin-top: 12px;
     }

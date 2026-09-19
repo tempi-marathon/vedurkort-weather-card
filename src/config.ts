@@ -63,6 +63,13 @@ export interface VedurkortCardConfig {
   alerts_device?: string;
   /** MeteoAlarm / CAP alert entities to read (one or more). */
   alerts_entities?: string[];
+  /**
+   * Show pollen chip when a ha-pollen device is configured / discoverable.
+   * Default false — existing cards unchanged.
+   */
+  show_pollen: boolean;
+  /** ha-pollen device id — discovers species + overall sensors. */
+  pollen_device?: string;
   /** Optional override for current condition (scene, icon, label). Forecast unchanged. */
   condition_entity?: string;
   temperature_entity?: string;
@@ -114,6 +121,7 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   show_precipitation: false,
   show_precipitation_probability: false,
   show_alerts: false,
+  show_pollen: false,
   sun_entity: "sun.sun",
   daily: {
     ...DEFAULT_FORECAST_BLOCK,
@@ -175,6 +183,8 @@ function mergeConfigFields(
     show_alerts: Boolean(input.show_alerts ?? DEFAULT_CONFIG.show_alerts),
     alerts_device: emptyToUndef(input.alerts_device),
     alerts_entities: alertsEntities.length ? alertsEntities : undefined,
+    show_pollen: Boolean(input.show_pollen ?? DEFAULT_CONFIG.show_pollen),
+    pollen_device: emptyToUndef(input.pollen_device),
     daily,
     hourly,
     icon_style: normalizeIconStyle(input.icon_style),

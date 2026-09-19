@@ -9,6 +9,12 @@ describe("alerts config compatibility", () => {
     expect(cfg.alerts_entities).toBeUndefined();
   });
 
+  it("defaults show_pollen to false for legacy configs", () => {
+    const cfg = normalizeConfig({ entity: "weather.home" });
+    expect(cfg.show_pollen).toBe(false);
+    expect(cfg.pollen_device).toBeUndefined();
+  });
+
   it("defaults show_name to true for legacy configs", () => {
     const cfg = normalizeConfig({ entity: "weather.home" });
     expect(cfg.show_name).toBe(true);

@@ -334,6 +334,8 @@ export function buildInterpretationCopy(ctx: CopyContext): string {
       return loc(cloudCopyKey(snap.cloudCoverage), language);
     case "uv_index":
       return loc(uvCopyKey(snap.uvIndex), language);
+    case "pollen":
+      return "";
     case "pressure":
       return loc(pressureCopyKey(snap.pressure, snap.pressureUnit), language);
     case "visibility":

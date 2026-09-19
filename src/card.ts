@@ -5,6 +5,7 @@ import { bindCardActions, effectiveTapAction } from "./actions";
 import { resolveAlerts } from "./alerts/resolve";
 import { shouldEscalateForAlerts } from "./alerts/utils";
 import type { WeatherAlert } from "./alerts/types";
+import { resolvePollen } from "./pollen/resolve";
 import { conditionToScene, renderBackground } from "./backgrounds/scenes";
 import { computeCardSize } from "./card-size";
 import { cardStyles } from "./card-styles";
@@ -72,6 +73,7 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _expandedAlertIds: string[] = [];
   @state() private _detailMetric: DetailMetricId | null = null;
   @state() private _beaufortLegendOpen = false;
+  @state() private _pollenLegendOpen = false;
 
   private _dailyChart: Chart | null = null;
   private _hourlyChart: Chart | null = null;
@@ -494,6 +496,7 @@ export class VedurkortWeatherCard extends LitElement {
       gustBft: windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit),
       hourlyPrecipType: this._config.hourly.precip_type,
       windSpeedUnit: this._config.wind_speed_unit,
+      pollen: resolvePollen(this.hass, this._config),
     });
     const datetimes = model.series?.points.map((p) => p.t) ?? [];
     if (!datetimes.length) return;
@@ -727,6 +730,7 @@ export class VedurkortWeatherCard extends LitElement {
       gustBft: windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit),
       hourlyPrecipType: this._config.hourly.precip_type,
       windSpeedUnit: this._config.wind_speed_unit,
+      pollen: resolvePollen(this.hass, this._config),
     });
 
     if (!model.series) {
@@ -805,6 +809,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._alertsOpen = false;
     this._detailMetric = metricId;
     this._beaufortLegendOpen = false;
+    this._pollenLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
   }
@@ -813,6 +818,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._closeDialogElements();
     this._detailMetric = null;
     this._beaufortLegendOpen = false;
+    this._pollenLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
     this._destroyMetricChart();
@@ -820,6 +826,10 @@ export class VedurkortWeatherCard extends LitElement {
 
   private _toggleBeaufortLegend(): void {
     this._beaufortLegendOpen = !this._beaufortLegendOpen;
+  }
+
+  private _togglePollenLegend(): void {
+    this._pollenLegendOpen = !this._pollenLegendOpen;
   }
 
   private _openAlerts(alerts: WeatherAlert[], preferredId?: string): void {
@@ -895,6 +905,7 @@ export class VedurkortWeatherCard extends LitElement {
     }
 
     const alerts = resolveAlerts(this.hass, this._config);
+    const pollen = resolvePollen(this.hass, this._config);
     const escalate = shouldEscalateForAlerts(alerts);
     const iconName = conditionToMeteocon(
       snap.condition,
@@ -925,7 +936,8 @@ export class VedurkortWeatherCard extends LitElement {
         this._config.show_dew_point ||
         this._config.show_visibility ||
         this._config.show_precipitation ||
-        this._config.show_precipitation_probability);
+        this._config.show_precipitation_probability ||
+        (this._config.show_pollen && pollen != null));
     const feelsLikeText = this._config.show_feels_like
       ? formatNumber(snap.feelsLike, snap.temperatureUnit)
       : null;
@@ -960,6 +972,7 @@ export class VedurkortWeatherCard extends LitElement {
             gustBft,
             hourlyPrecipType: this._config.hourly.precip_type,
             windSpeedUnit: this._config.wind_speed_unit,
+            pollen,
           })
         : null;
     const dialogShell = {
@@ -997,6 +1010,7 @@ export class VedurkortWeatherCard extends LitElement {
                   conditionText,
                   bft,
                   gustBft,
+                  pollen,
                 },
                 this._icon,
                 onOpenAlerts,
@@ -1076,6 +1090,8 @@ export class VedurkortWeatherCard extends LitElement {
               onChartScroll: () => this._onDetailScroll(),
               beaufortLegendOpen: this._beaufortLegendOpen,
               onToggleBeaufortLegend: () => this._toggleBeaufortLegend(),
+              pollenLegendOpen: this._pollenLegendOpen,
+              onTogglePollenLegend: () => this._togglePollenLegend(),
             }),
           })
         : nothing}

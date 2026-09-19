@@ -57,6 +57,7 @@ const baseConfig: VedurkortCardConfig = {
   show_precipitation: false,
   show_precipitation_probability: false,
   show_alerts: false,
+  show_pollen: false,
   daily: {
     enabled: false,
     days: 5,

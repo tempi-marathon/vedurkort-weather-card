@@ -11,7 +11,8 @@ export type DetailMetricGroup =
   | "cloud_coverage"
   | "uv_index"
   | "pressure"
-  | "visibility";
+  | "visibility"
+  | "pollen";
 
 export function metricGroup(metricId: DetailMetricId): DetailMetricGroup {
   switch (metricId) {
@@ -47,6 +48,7 @@ export function groupTitleKey(group: DetailMetricGroup): LocalizeKey {
     uv_index: "uv_index",
     pressure: "pressure",
     visibility: "visibility",
+    pollen: "pollen",
   };
   return keys[group];
 }
