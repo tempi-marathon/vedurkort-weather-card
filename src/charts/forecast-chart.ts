@@ -643,8 +643,21 @@ function buildCurrentDetailDatasets(
 function detailValueLabel(
   value: number | null,
   series: MetricSeries,
+  language?: string,
 ): string {
   if (value == null || Number.isNaN(value)) return "";
+  if (series.id === "pollen") {
+    const rounded = Math.round(value);
+    const key =
+      rounded >= 3
+        ? "pollen_level_high"
+        : rounded >= 2
+          ? "pollen_level_medium"
+          : rounded >= 1
+            ? "pollen_level_low"
+            : "pollen_level_none";
+    return localize(key, language);
+  }
   if (series.id === "precipitation") {
     return formatPrecipLabel(value, "rainfall", series.unit);
   }
@@ -814,7 +827,7 @@ function buildDetailDatasets(
         borderWidth: 1,
         borderRadius: 4,
         padding: { top: 1, bottom: 1, left: 3, right: 3 },
-        formatter: (v: number | null) => detailValueLabel(v, series),
+        formatter: (v: number | null) => detailValueLabel(v, series, language),
       },
     },
   ];
@@ -849,7 +862,7 @@ function buildDetailDatasets(
   return datasets;
 }
 
-function detailTooltipCallbacks(series: MetricSeries) {
+function detailTooltipCallbacks(series: MetricSeries, language?: string) {
   return {
     label(ctx: {
       parsed: { y: number | null };
@@ -858,7 +871,7 @@ function detailTooltipCallbacks(series: MetricSeries) {
       const value = ctx.parsed.y;
       if (value == null || Number.isNaN(value)) return "";
       const name = ctx.dataset.label ?? "";
-      return `${name}: ${detailValueLabel(value, series)}`;
+      return `${name}: ${detailValueLabel(value, series, language)}`;
     },
   };
 }
@@ -878,7 +891,7 @@ function detailChartOptions(
     ? tooltipCallbacks(precipType, precipUnit, temperatureUnit)
     : series.chartType === "bar"
       ? tooltipCallbacks(precipType, precipUnit, temperatureUnit)
-      : detailTooltipCallbacks(series);
+      : detailTooltipCallbacks(series, language);
 
   return {
     responsive: true,
@@ -926,17 +939,23 @@ function detailChartOptions(
         },
         border: { display: false },
         ticks: { display: false },
-        ...(series.id === "wind_speed" ||
-        series.id === "wind_gust" ||
-        series.id === "wind_direction"
-          ? series.unit === "Bft"
-            ? {
-                min: 0,
-                max: 12,
-                afterDataLimits: undefined,
-              }
-            : { afterDataLimits: yTempAfterDataLimits }
-          : { afterDataLimits: yTempAfterDataLimits }),
+        ...(series.id === "pollen"
+          ? {
+              min: 0,
+              max: 3,
+              afterDataLimits: undefined,
+            }
+          : series.id === "wind_speed" ||
+              series.id === "wind_gust" ||
+              series.id === "wind_direction"
+            ? series.unit === "Bft"
+              ? {
+                  min: 0,
+                  max: 12,
+                  afterDataLimits: undefined,
+                }
+              : { afterDataLimits: yTempAfterDataLimits }
+            : { afterDataLimits: yTempAfterDataLimits }),
       },
       yPrecip: {
         type: "linear",

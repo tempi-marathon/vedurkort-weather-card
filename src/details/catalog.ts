@@ -34,6 +34,7 @@ import { buildUvBarModel } from "./uv-bar-model";
 import type { DetailMetricId, DetailModel, MetricSeries } from "./types";
 import { pollenLevelClass } from "../pollen/colors";
 import { pollenIcon } from "../pollen/icons";
+import { levelForGrains } from "../pollen/levels";
 import type { PollenSnapshot } from "../pollen/types";
 
 export interface BuildDetailContext {
@@ -486,18 +487,38 @@ function pollenSeries(
   pollen: PollenSnapshot | null | undefined,
   nowMs: number = Date.now(),
 ): MetricSeries | null {
-  if (!pollen?.forecastHourly.length) return null;
-  const asItems = pollen.forecastHourly.map((p) => ({ datetime: p.t }));
+  if (!pollen) return null;
+
+  // Prefer per-species forecasts so overall level = max species level (same as ha-pollen).
+  const speciesWithHourly = pollen.species.filter((s) => s.forecastHourly.length);
+  const sourceHourly =
+    speciesWithHourly[0]?.forecastHourly ?? pollen.forecastHourly;
+  if (!sourceHourly.length) return null;
+
+  const asItems = sourceHourly.map((p) => ({ datetime: p.t }));
   const start = hourlyForecastStartIndex(asItems, nowMs);
-  const window = pollen.forecastHourly.slice(start, start + 24);
-  const points = window.map((p) => ({
-    t: p.t,
-    value: p.value,
-  }));
+
+  const points = sourceHourly.slice(start, start + 24).map((p, offset) => {
+    const i = start + offset;
+    let maxLevel: number | null = null;
+    if (speciesWithHourly.length) {
+      for (const s of speciesWithHourly) {
+        const grains = s.forecastHourly[i]?.value ?? null;
+        const lvl = levelForGrains(s.species, grains);
+        if (lvl == null) continue;
+        if (maxLevel == null || lvl > maxLevel) maxLevel = lvl;
+      }
+    } else {
+      // Fallback: cannot recover per-species level from overall grains alone.
+      maxLevel = p.value != null && p.value > 0 ? 1 : 0;
+    }
+    return { t: p.t, value: maxLevel };
+  });
+
   if (!points.some((p) => p.value != null)) return null;
   return {
     id: "pollen",
-    unit: "grains/m³",
+    unit: "level",
     points,
     source: "forecast",
     chartType: "line",
