@@ -34,6 +34,7 @@ export function pollenIcon(
     return "pollen";
   }
   const severity = level === "high" ? "high" : "low";
+  // medium (and low) share the -low Meteocon; high uses -high
   if (type === "grass") {
     return severity === "high" ? "pollen-grass-high" : "pollen-grass-low";
   }

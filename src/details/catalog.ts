@@ -6,7 +6,7 @@ import {
 import type { MeteoconName } from "../icons/allowlist";
 import type { PrecipType, WindSpeedDisplayUnit } from "../config";
 import { localize, type LocalizeKey } from "../localize";
-import { sliceHourlyForecast } from "../charts/hourly-window";
+import { sliceHourlyForecast, hourlyForecastStartIndex } from "../charts/hourly-window";
 import type { ForecastItem } from "../types";
 import {
   formatNumber,
@@ -461,9 +461,11 @@ function buildPollenDetailModel(ctx: BuildDetailContext): DetailModel {
     ? localize(
         pollen.overallLevelLabel === "high"
           ? "pollen_copy_high"
-          : pollen.overallLevelLabel === "low"
-            ? "pollen_copy_low"
-            : "pollen_copy_none",
+          : pollen.overallLevelLabel === "medium"
+            ? "pollen_copy_medium"
+            : pollen.overallLevelLabel === "low"
+              ? "pollen_copy_low"
+              : "pollen_copy_none",
         ctx.language,
       )
     : localize("pollen_copy_unavailable", ctx.language);
@@ -480,9 +482,15 @@ function buildPollenDetailModel(ctx: BuildDetailContext): DetailModel {
   };
 }
 
-function pollenSeries(pollen: PollenSnapshot | null | undefined): MetricSeries | null {
+function pollenSeries(
+  pollen: PollenSnapshot | null | undefined,
+  nowMs: number = Date.now(),
+): MetricSeries | null {
   if (!pollen?.forecastHourly.length) return null;
-  const points = pollen.forecastHourly.map((p) => ({
+  const asItems = pollen.forecastHourly.map((p) => ({ datetime: p.t }));
+  const start = hourlyForecastStartIndex(asItems, nowMs);
+  const window = pollen.forecastHourly.slice(start, start + 24);
+  const points = window.map((p) => ({
     t: p.t,
     value: p.value,
   }));

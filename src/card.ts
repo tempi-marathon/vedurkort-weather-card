@@ -73,6 +73,7 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _expandedAlertIds: string[] = [];
   @state() private _detailMetric: DetailMetricId | null = null;
   @state() private _beaufortLegendOpen = false;
+  @state() private _pollenLegendOpen = false;
 
   private _dailyChart: Chart | null = null;
   private _hourlyChart: Chart | null = null;
@@ -808,6 +809,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._alertsOpen = false;
     this._detailMetric = metricId;
     this._beaufortLegendOpen = false;
+    this._pollenLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
   }
@@ -816,6 +818,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._closeDialogElements();
     this._detailMetric = null;
     this._beaufortLegendOpen = false;
+    this._pollenLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
     this._destroyMetricChart();
@@ -823,6 +826,10 @@ export class VedurkortWeatherCard extends LitElement {
 
   private _toggleBeaufortLegend(): void {
     this._beaufortLegendOpen = !this._beaufortLegendOpen;
+  }
+
+  private _togglePollenLegend(): void {
+    this._pollenLegendOpen = !this._pollenLegendOpen;
   }
 
   private _openAlerts(alerts: WeatherAlert[], preferredId?: string): void {
@@ -1083,6 +1090,8 @@ export class VedurkortWeatherCard extends LitElement {
               onChartScroll: () => this._onDetailScroll(),
               beaufortLegendOpen: this._beaufortLegendOpen,
               onToggleBeaufortLegend: () => this._toggleBeaufortLegend(),
+              pollenLegendOpen: this._pollenLegendOpen,
+              onTogglePollenLegend: () => this._togglePollenLegend(),
             }),
           })
         : nothing}

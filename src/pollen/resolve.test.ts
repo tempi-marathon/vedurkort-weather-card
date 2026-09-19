@@ -13,7 +13,7 @@ function hassFixture(): HomeAssistant {
           provider: "open_meteo",
           species: "overall",
           unit: "level",
-          level: 2,
+          level: 3,
           level_label: "high",
           dominant_species: "grass",
           forecast_hourly: [
@@ -31,7 +31,7 @@ function hassFixture(): HomeAssistant {
           provider: "open_meteo",
           species: "grass",
           unit: "grains_m3",
-          level: 2,
+          level: 3,
           level_label: "high",
           forecast_hourly: [
             { t: "2026-06-19T00:00", value: 40 },

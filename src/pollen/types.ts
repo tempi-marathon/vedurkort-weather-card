@@ -1,6 +1,6 @@
 /** Pollen types for the Veðurkort card (reads ha-pollen entities). */
 
-export type PollenLevelLabel = "none" | "low" | "high";
+export type PollenLevelLabel = "none" | "low" | "medium" | "high";
 
 export type PollenSpeciesKey =
   | "alder"

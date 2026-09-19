@@ -6,6 +6,7 @@ import type { IconRenderer } from "../sections/alerts-section";
 import { renderBeaufortLegend } from "./beaufort-legend";
 import { metricGroup } from "./groups";
 import { renderDetailHero } from "./hero";
+import { renderPollenLegend } from "./pollen-legend";
 import { renderSunArcHero } from "./sun-arc";
 import { renderUvBarHero } from "./uv-bar";
 import type { DetailModel } from "./types";
@@ -22,6 +23,8 @@ export interface DetailSheetContext {
   onChartScroll?: () => void;
   beaufortLegendOpen?: boolean;
   onToggleBeaufortLegend?: () => void;
+  pollenLegendOpen?: boolean;
+  onTogglePollenLegend?: () => void;
 }
 
 export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
@@ -37,6 +40,8 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
     onChartScroll,
     beaufortLegendOpen,
     onToggleBeaufortLegend,
+    pollenLegendOpen,
+    onTogglePollenLegend,
   } = ctx;
 
   const chartCols = model.series?.points.length ?? 0;
@@ -50,6 +55,7 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
     windSpeedUnit &&
     model.hourlyRowItems?.length;
   const isWind = metricGroup(model.id) === "wind";
+  const isPollen = model.id === "pollen";
 
   return html`
     ${model.sunArc
@@ -133,6 +139,13 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
           nativeUnit: windSpeedUnit ?? "km/h",
           open: !!beaufortLegendOpen,
           onToggle: onToggleBeaufortLegend,
+        })
+      : nothing}
+    ${isPollen && onTogglePollenLegend
+      ? renderPollenLegend({
+          language,
+          open: !!pollenLegendOpen,
+          onToggle: onTogglePollenLegend,
         })
       : nothing}
   `;

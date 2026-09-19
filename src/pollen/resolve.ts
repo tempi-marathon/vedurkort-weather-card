@@ -153,18 +153,27 @@ function stateNumber(entity: HassEntity): number | null {
 }
 
 function parseLevelLabel(value: unknown): PollenLevelLabel | null {
-  if (value === "none" || value === "low" || value === "high") return value;
+  if (
+    value === "none" ||
+    value === "low" ||
+    value === "medium" ||
+    value === "high"
+  ) {
+    return value;
+  }
   return null;
 }
 
 function levelFromLabel(label: PollenLevelLabel): number {
-  if (label === "high") return 2;
+  if (label === "high") return 3;
+  if (label === "medium") return 2;
   if (label === "low") return 1;
   return 0;
 }
 
 function labelFromLevel(level: number): PollenLevelLabel {
-  if (level >= 2) return "high";
+  if (level >= 3) return "high";
+  if (level >= 2) return "medium";
   if (level >= 1) return "low";
   return "none";
 }
