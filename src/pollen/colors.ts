@@ -1,10 +1,8 @@
 import type { PollenLevelLabel } from "./types";
 
-/** CSS hex colors for pollen level tones (legend swatches + inline styles). */
-export const POLLEN_LEVEL_COLORS: Record<
-  Exclude<PollenLevelLabel, "none">,
-  string
-> = {
+/** CSS hex colors for pollen level tones (legend swatches + chart). */
+export const POLLEN_LEVEL_COLORS: Record<PollenLevelLabel, string> = {
+  none: "#94a3b8",
   low: "#eab308",
   medium: "#f97316",
   high: "#ef4444",
@@ -23,7 +21,12 @@ export function pollenLevelClass(
 export function pollenLevelColor(
   level: PollenLevelLabel | null | undefined,
 ): string | undefined {
-  if (level === "low" || level === "medium" || level === "high") {
+  if (
+    level === "none" ||
+    level === "low" ||
+    level === "medium" ||
+    level === "high"
+  ) {
     return POLLEN_LEVEL_COLORS[level];
   }
   return undefined;

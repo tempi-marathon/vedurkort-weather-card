@@ -15,11 +15,13 @@ import {
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import type { ForecastBlockConfig, PrecipType } from "../config";
-import { beaufortColor, beaufortLabelColor } from "../details/beaufort-scale";
+import { beaufortColor } from "../details/beaufort-scale";
 import type { MetricSeries } from "../details/types";
 import { insertSunEventsIntoHourly, type HourlySlotItem } from "../details/sun-events";
 import { metricSeriesFingerprint } from "../details/series";
 import { windSpeedToBeaufort } from "../icons/condition-map";
+import { pollenLevelColor } from "../pollen/colors";
+import { labelFromLevel } from "../pollen/levels";
 import { sliceHourlyForecast } from "./hourly-window";
 import { localize } from "../localize";
 import type { ForecastItem } from "../types";
@@ -773,20 +775,20 @@ function detailLineLabel(
   }
 }
 
+const DETAIL_LINE_FALLBACK = "rgba(255, 152, 0, 1)";
+const DETAIL_LINE_FALLBACK_BORDER = "rgba(255, 152, 0, 0.85)";
+
 function colorForWindValue(
   value: number | null | undefined,
   unit: string,
 ): string {
-  if (value == null || Number.isNaN(value)) return "rgba(255, 152, 0, 1)";
+  if (value == null || Number.isNaN(value)) return DETAIL_LINE_FALLBACK;
   return beaufortColor(windSpeedToBeaufort(value, unit));
 }
 
-function labelColorForWindValue(
-  value: number | null | undefined,
-  unit: string,
-): string {
-  if (value == null || Number.isNaN(value)) return "rgba(255, 152, 0, 1)";
-  return beaufortLabelColor(windSpeedToBeaufort(value, unit));
+function colorForPollenValue(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return DETAIL_LINE_FALLBACK;
+  return pollenLevelColor(labelFromLevel(value)) ?? DETAIL_LINE_FALLBACK;
 }
 
 function windValueColors(
@@ -796,11 +798,8 @@ function windValueColors(
   return values.map((v) => colorForWindValue(v, unit));
 }
 
-function windLabelColors(
-  values: (number | null)[],
-  unit: string,
-): string[] {
-  return values.map((v) => labelColorForWindValue(v, unit));
+function pollenValueColors(values: (number | null)[]): string[] {
+  return values.map((v) => colorForPollenValue(v));
 }
 
 function buildDetailDatasets(
@@ -836,29 +835,38 @@ function buildDetailDatasets(
   const lineLabel = detailLineLabel(series.id, language);
 
   const wind = isWindSeries(series);
-  const speedColors = wind ? windValueColors(values, series.unit) : null;
-  const labelColors = wind ? windLabelColors(values, series.unit) : null;
+  const pollen = series.id === "pollen";
+  const valueColors = wind
+    ? windValueColors(values, series.unit)
+    : pollen
+      ? pollenValueColors(values)
+      : null;
+  const segmentColor = wind
+    ? (y: number | null | undefined) => colorForWindValue(y, series.unit)
+    : pollen
+      ? colorForPollenValue
+      : null;
 
   const datasets: ChartConfiguration["data"]["datasets"] = [
     {
       type: "line",
       label: lineLabel,
       data: values,
-      borderColor: wind ? speedColors![0]! : "rgba(255, 152, 0, 1)",
+      borderColor: valueColors ? valueColors[0]! : DETAIL_LINE_FALLBACK,
       backgroundColor: "rgba(255, 152, 0, 0.15)",
       tension: 0.35,
       yAxisID: "yTemp",
       pointRadius: 3,
       spanGaps: true,
       order: 0,
-      ...(speedColors
+      ...(valueColors && segmentColor
         ? {
-            pointBackgroundColor: speedColors,
-            pointBorderColor: speedColors,
+            pointBackgroundColor: valueColors,
+            pointBorderColor: valueColors,
             segment: {
               borderColor: (ctx: {
                 p1?: { parsed?: { y: number | null } };
-              }) => colorForWindValue(ctx.p1?.parsed?.y, series.unit),
+              }) => segmentColor(ctx.p1?.parsed?.y),
             },
           }
         : {}),
@@ -866,15 +874,15 @@ function buildDetailDatasets(
         display: showValueLabel,
         align: "center",
         anchor: "center",
-        color: labelColors
+        color: valueColors
           ? (ctx: { dataIndex: number }) =>
-              labelColors[ctx.dataIndex] ?? "rgba(255, 152, 0, 1)"
-          : "rgba(255, 152, 0, 1)",
+              valueColors[ctx.dataIndex] ?? DETAIL_LINE_FALLBACK
+          : DETAIL_LINE_FALLBACK,
         backgroundColor: "rgba(255,255,255,0.92)",
-        borderColor: speedColors
+        borderColor: valueColors
           ? (ctx: { dataIndex: number }) =>
-              speedColors[ctx.dataIndex] ?? "rgba(255, 152, 0, 0.85)"
-          : "rgba(255, 152, 0, 0.85)",
+              valueColors[ctx.dataIndex] ?? DETAIL_LINE_FALLBACK_BORDER
+          : DETAIL_LINE_FALLBACK_BORDER,
         borderWidth: 1,
         borderRadius: 4,
         padding: { top: 1, bottom: 1, left: 3, right: 3 },

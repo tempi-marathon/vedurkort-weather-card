@@ -22,12 +22,14 @@ export interface UvBarModel {
   barPosition: number;
 }
 
+/** WHO category for the integer UV index (same number the UI shows). */
 export function uvCategory(uv: number | null | undefined): UvCategory {
   if (uv == null || Number.isNaN(uv)) return "unknown";
-  if (uv <= 2) return "low";
-  if (uv <= 5) return "moderate";
-  if (uv <= 7) return "high";
-  if (uv <= 10) return "very_high";
+  const n = Math.round(uv);
+  if (n <= 2) return "low";
+  if (n <= 5) return "moderate";
+  if (n <= 7) return "high";
+  if (n <= 10) return "very_high";
   return "extreme";
 }
 
@@ -97,7 +99,7 @@ export function buildUvLegendRows(
 
 /** Map UV index 0–11+ to horizontal bar position (percent). */
 export function uvBarPosition(uv: number): number {
-  const clamped = Math.max(0, Math.min(uv, 11));
+  const clamped = Math.max(0, Math.min(Math.round(uv), 11));
   return (clamped / 11) * 100;
 }
 
@@ -108,10 +110,11 @@ export function buildUvBarModel(
   const value = snap.uvIndex;
   if (value == null || Number.isNaN(value)) return null;
 
+  const rounded = Math.round(value);
   const category = uvCategory(value);
   return {
     value,
-    valueLabel: formatNumber(value, "", 0) ?? String(Math.round(value)),
+    valueLabel: formatNumber(value, "", 0) ?? String(rounded),
     heroIcon: uvIndexIcon(value),
     category,
     categoryLabel: localize(categoryLabelKey(category), language),

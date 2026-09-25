@@ -43,8 +43,11 @@ function snap(uvIndex: number | null): WeatherSnapshot {
 }
 
 describe("uv bar model", () => {
-  it("classifies WHO UV bands", () => {
+  it("classifies WHO UV bands from the rounded index", () => {
     expect(uvCategory(2)).toBe("low");
+    expect(uvCategory(2.1)).toBe("low");
+    expect(uvCategory(2.4)).toBe("low");
+    expect(uvCategory(2.5)).toBe("moderate");
     expect(uvCategory(3)).toBe("moderate");
     expect(uvCategory(6)).toBe("high");
     expect(uvCategory(9)).toBe("very_high");
@@ -55,6 +58,7 @@ describe("uv bar model", () => {
     expect(uvBarPosition(0)).toBe(0);
     expect(uvBarPosition(11)).toBe(100);
     expect(uvBarPosition(3)).toBeCloseTo(27.27, 1);
+    expect(uvBarPosition(2.1)).toBeCloseTo((2 / 11) * 100, 1);
   });
 
   it("builds localized hero model", () => {
@@ -63,6 +67,14 @@ describe("uv bar model", () => {
     expect(model?.categoryLabel).toBe("Matig");
     expect(model?.barPosition).toBeCloseTo(27.27, 1);
     expect(model?.advice).toContain("schaduw");
+  });
+
+  it("treats fractional UV that displays as 2 as low", () => {
+    const model = buildUvBarModel(snap(2.1), "en");
+    expect(model?.valueLabel).toBe("2");
+    expect(model?.category).toBe("low");
+    expect(model?.categoryLabel).toBe("Low");
+    expect(model?.heroIcon).toBe("uv-index-2");
   });
 });
 

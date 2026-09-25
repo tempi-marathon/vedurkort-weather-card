@@ -447,10 +447,6 @@ export const cardStyles = [
       border-radius: 3px;
       flex-shrink: 0;
     }
-    .pollen-legend-swatch.is-none {
-      background: transparent;
-      border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-    }
     .pollen-legend-none {
       opacity: 0.75;
     }
@@ -722,8 +718,8 @@ export const cardStyles = [
       background: linear-gradient(
         to right,
         #22c55e 0%,
-        #22c55e 16%,
-        #eab308 28%,
+        #22c55e 22%,
+        #eab308 27%,
         #f97316 45%,
         #ef4444 64%,
         #a855f7 88%,
