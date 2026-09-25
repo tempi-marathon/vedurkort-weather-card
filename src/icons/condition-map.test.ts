@@ -5,6 +5,7 @@ import {
   conditionToMeteocon,
   isOvercastCloudCover,
   OVERCAST_CLOUD_COVERAGE,
+  uvIndexIcon,
 } from "./condition-map";
 
 describe("bearingToLabel", () => {
@@ -155,5 +156,23 @@ describe("conditionToMeteocon escalate", () => {
     expect(conditionToMeteocon("partlycloudy", false, null, true)).toBe(
       "extreme-night",
     );
+  });
+});
+
+describe("uvIndexIcon", () => {
+  it("uses the default icon for null, NaN, and 0", () => {
+    expect(uvIndexIcon(null)).toBe("uv-index");
+    expect(uvIndexIcon(undefined)).toBe("uv-index");
+    expect(uvIndexIcon(Number.NaN)).toBe("uv-index");
+    expect(uvIndexIcon(0)).toBe("uv-index");
+    expect(uvIndexIcon(0.4)).toBe("uv-index");
+  });
+
+  it("maps rounded UV to numbered icons", () => {
+    expect(uvIndexIcon(0.6)).toBe("uv-index-1");
+    expect(uvIndexIcon(2)).toBe("uv-index-2");
+    expect(uvIndexIcon(2.1)).toBe("uv-index-2");
+    expect(uvIndexIcon(11)).toBe("uv-index-11-plus");
+    expect(uvIndexIcon(12)).toBe("uv-index-11-plus");
   });
 });

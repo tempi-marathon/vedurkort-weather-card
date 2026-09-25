@@ -58,7 +58,10 @@ export function renderPollenLegend(opts: {
                 `;
               })}
               <div class="pollen-legend-row pollen-legend-none">
-                <span class="pollen-legend-swatch is-none"></span>
+                <span
+                  class="pollen-legend-swatch"
+                  style="background:${POLLEN_LEVEL_COLORS.none}"
+                ></span>
                 <span>${localize("pollen_level_none", language)}</span>
               </div>
             </div>

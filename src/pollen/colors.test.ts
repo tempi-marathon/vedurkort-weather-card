@@ -16,10 +16,15 @@ describe("pollenLevelClass", () => {
 });
 
 describe("pollenLevelColor", () => {
-  it("returns swatch colors for active levels", () => {
+  it("returns swatch colors for all levels including none", () => {
+    expect(pollenLevelColor("none")).toBe("#94a3b8");
     expect(pollenLevelColor("low")).toBe("#eab308");
     expect(pollenLevelColor("medium")).toBe("#f97316");
     expect(pollenLevelColor("high")).toBe("#ef4444");
-    expect(pollenLevelColor("none")).toBeUndefined();
+  });
+
+  it("omits missing", () => {
+    expect(pollenLevelColor(null)).toBeUndefined();
+    expect(pollenLevelColor(undefined)).toBeUndefined();
   });
 });

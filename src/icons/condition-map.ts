@@ -204,7 +204,8 @@ export function beaufortIcon(bft: number): MeteoconName {
 
 export function uvIndexIcon(uv: number | null | undefined): MeteoconName {
   if (uv == null || Number.isNaN(uv)) return "uv-index";
-  if (uv >= 11) return "uv-index-11-plus";
-  const n = Math.max(1, Math.min(11, Math.round(uv)));
-  return `uv-index-${n}` as MeteoconName;
+  const n = Math.round(uv);
+  if (n <= 0) return "uv-index";
+  if (n >= 11) return "uv-index-11-plus";
+  return `uv-index-${Math.min(11, n)}` as MeteoconName;
 }
