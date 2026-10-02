@@ -18,4 +18,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run build
+      - name: Verify dist matches source
+        run: git diff --exit-code dist/vedurkort-weather-card.js
       - run: npm test
