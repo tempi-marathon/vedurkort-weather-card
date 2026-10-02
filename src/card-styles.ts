@@ -590,6 +590,73 @@ export const cardStyles = [
       min-width: 0;
       opacity: 0.9;
     }
+    .humidity-legend {
+      margin-top: 12px;
+    }
+    .humidity-legend-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 550;
+      padding: 4px 0;
+      cursor: pointer;
+      opacity: 0.85;
+    }
+    .humidity-legend-toggle:hover,
+    .humidity-legend-toggle:focus-visible {
+      opacity: 1;
+      outline: none;
+    }
+    .humidity-legend-toggle:hover .humidity-legend-label,
+    .humidity-legend-toggle:focus-visible .humidity-legend-label {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .humidity-legend-info {
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .humidity-legend-panel {
+      margin-top: 8px;
+      display: grid;
+      gap: 0;
+      font-size: 0.8rem;
+    }
+    .humidity-legend-head,
+    .humidity-legend-row {
+      display: grid;
+      grid-template-columns: 14px 3.5rem minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    }
+    .humidity-legend-head {
+      font-weight: 600;
+      opacity: 0.75;
+      border-top: none;
+      padding-top: 0;
+    }
+    .humidity-legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .humidity-legend-range {
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+    }
+    .humidity-legend-cat {
+      min-width: 0;
+      opacity: 0.9;
+    }
     .detail-sun-arc {
       margin-bottom: 8px;
     }

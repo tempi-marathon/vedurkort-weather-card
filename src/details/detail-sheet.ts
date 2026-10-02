@@ -4,6 +4,7 @@ import type { VedurkortCardConfig } from "../config";
 import type { HomeAssistant } from "../types";
 import type { IconRenderer } from "../sections/alerts-section";
 import { renderBeaufortLegend } from "./beaufort-legend";
+import { renderHumidityLegend } from "./humidity-legend";
 import { metricGroup } from "./groups";
 import { renderDetailHero } from "./hero";
 import { renderPollenLegend } from "./pollen-legend";
@@ -28,6 +29,8 @@ export interface DetailSheetContext {
   onTogglePollenLegend?: () => void;
   uvLegendOpen?: boolean;
   onToggleUvLegend?: () => void;
+  humidityLegendOpen?: boolean;
+  onToggleHumidityLegend?: () => void;
 }
 
 export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
@@ -47,6 +50,8 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
     onTogglePollenLegend,
     uvLegendOpen,
     onToggleUvLegend,
+    humidityLegendOpen,
+    onToggleHumidityLegend,
   } = ctx;
 
   const chartCols = model.series?.points.length ?? 0;
@@ -62,6 +67,7 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
   const isWind = metricGroup(model.id) === "wind";
   const isPollen = model.id === "pollen";
   const isUv = metricGroup(model.id) === "uv_index";
+  const isHumidity = metricGroup(model.id) === "humidity";
 
   return html`
     ${model.sunArc
@@ -162,6 +168,13 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
           language,
           open: !!pollenLegendOpen,
           onToggle: onTogglePollenLegend,
+        })
+      : nothing}
+    ${isHumidity && onToggleHumidityLegend
+      ? renderHumidityLegend({
+          language,
+          open: !!humidityLegendOpen,
+          onToggle: onToggleHumidityLegend,
         })
       : nothing}
   `;
