@@ -1037,7 +1037,7 @@ function detailChartOptions(
       humidityGradientFill: {
         enabled: series.id === "humidity",
       },
-    },
+    } as NonNullable<ChartConfiguration["options"]>["plugins"],
     scales: {
       x: {
         position: "top",
