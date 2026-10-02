@@ -417,6 +417,8 @@ npm run build
 
 `npm run sync-icons` copies the curated Meteocons subset into `src/assets/meteocons/` (also runs automatically during `npm run build`).
 
+If you change `src/`, commit the rebuilt `dist/vedurkort-weather-card.js` in the same PR. CI verifies the bundle stays in sync. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
