@@ -11,11 +11,18 @@ import {
   PointElement,
   Tooltip,
   type ChartConfiguration,
+  type Plugin,
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import type { ForecastBlockConfig, PrecipType } from "../config";
 import { beaufortColor } from "../details/beaufort-scale";
+import {
+  applyHumidityGradientStops,
+  humidityColor,
+  humidityLabelColor,
+  HUMIDITY_LINE_COLOR,
+} from "../details/humidity-scale";
 import type { MetricSeries } from "../details/types";
 import { insertSunEventsIntoHourly, type HourlySlotItem } from "../details/sun-events";
 import { metricSeriesFingerprint } from "../details/series";
@@ -25,6 +32,26 @@ import { labelFromLevel } from "../pollen/levels";
 import { sliceHourlyForecast } from "./hourly-window";
 import { localize } from "../localize";
 import type { ForecastItem } from "../types";
+
+const humidityGradientFillPlugin: Plugin<"line"> = {
+  id: "humidityGradientFill",
+  beforeDatasetsDraw(chart, _args, options) {
+    if (!(options as { enabled?: boolean }).enabled) return;
+    const dataset = chart.data.datasets[0];
+    if (!dataset || dataset.type !== "line") return;
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return;
+    const gradient = ctx.createLinearGradient(
+      0,
+      chartArea.bottom,
+      0,
+      chartArea.top,
+    );
+    applyHumidityGradientStops(gradient);
+    dataset.backgroundColor = gradient;
+    dataset.fill = true;
+  },
+};
 
 Chart.register(
   LineController,
@@ -38,6 +65,7 @@ Chart.register(
   Legend,
   Tooltip,
   ChartDataLabels,
+  humidityGradientFillPlugin,
 );
 
 export interface ChartSeries {
@@ -791,6 +819,23 @@ function colorForPollenValue(value: number | null | undefined): string {
   return pollenLevelColor(labelFromLevel(value)) ?? DETAIL_LINE_FALLBACK;
 }
 
+function colorForHumidityValue(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return HUMIDITY_LINE_COLOR;
+  return humidityColor(value);
+}
+
+function humidityValueColors(values: (number | null)[]): string[] {
+  return values.map((v) => colorForHumidityValue(v));
+}
+
+function humidityLabelColors(values: (number | null)[]): string[] {
+  return values.map((v) =>
+    v == null || Number.isNaN(v)
+      ? HUMIDITY_LINE_COLOR
+      : humidityLabelColor(v),
+  );
+}
+
 function windValueColors(
   values: (number | null)[],
   unit: string,
@@ -836,11 +881,15 @@ function buildDetailDatasets(
 
   const wind = isWindSeries(series);
   const pollen = series.id === "pollen";
+  const humidity = series.id === "humidity";
   const valueColors = wind
     ? windValueColors(values, series.unit)
     : pollen
       ? pollenValueColors(values)
-      : null;
+      : humidity
+        ? humidityValueColors(values)
+        : null;
+  const labelColors = humidity ? humidityLabelColors(values) : valueColors;
   const segmentColor = wind
     ? (y: number | null | undefined) => colorForWindValue(y, series.unit)
     : pollen
@@ -852,8 +901,15 @@ function buildDetailDatasets(
       type: "line",
       label: lineLabel,
       data: values,
-      borderColor: valueColors ? valueColors[0]! : DETAIL_LINE_FALLBACK,
-      backgroundColor: "rgba(255, 152, 0, 0.15)",
+      borderColor: humidity
+        ? HUMIDITY_LINE_COLOR
+        : valueColors
+          ? valueColors[0]!
+          : DETAIL_LINE_FALLBACK,
+      backgroundColor: humidity
+        ? "transparent"
+        : "rgba(255, 152, 0, 0.15)",
+      fill: humidity,
       tension: 0.35,
       yAxisID: "yTemp",
       pointRadius: 3,
@@ -869,19 +925,26 @@ function buildDetailDatasets(
               }) => segmentColor(ctx.p1?.parsed?.y),
             },
           }
-        : {}),
+        : humidity && valueColors
+          ? {
+              pointBackgroundColor: valueColors,
+              pointBorderColor: valueColors,
+            }
+          : {}),
       datalabels: {
         display: showValueLabel,
         align: "center",
         anchor: "center",
-        color: valueColors
+        color: labelColors
           ? (ctx: { dataIndex: number }) =>
-              valueColors[ctx.dataIndex] ?? DETAIL_LINE_FALLBACK
+              labelColors[ctx.dataIndex] ??
+              (humidity ? HUMIDITY_LINE_COLOR : DETAIL_LINE_FALLBACK)
           : DETAIL_LINE_FALLBACK,
         backgroundColor: "rgba(255,255,255,0.92)",
-        borderColor: valueColors
+        borderColor: labelColors
           ? (ctx: { dataIndex: number }) =>
-              valueColors[ctx.dataIndex] ?? DETAIL_LINE_FALLBACK_BORDER
+              labelColors[ctx.dataIndex] ??
+              (humidity ? HUMIDITY_LINE_COLOR : DETAIL_LINE_FALLBACK_BORDER)
           : DETAIL_LINE_FALLBACK_BORDER,
         borderWidth: 1,
         borderRadius: 4,
@@ -971,6 +1034,9 @@ function detailChartOptions(
         clip: false,
         font: { size: 10, weight: "bold" },
       },
+      humidityGradientFill: {
+        enabled: series.id === "humidity",
+      },
     },
     scales: {
       x: {
@@ -1004,17 +1070,23 @@ function detailChartOptions(
               max: 3,
               afterDataLimits: undefined,
             }
-          : series.id === "wind_speed" ||
-              series.id === "wind_gust" ||
-              series.id === "wind_direction"
-            ? series.unit === "Bft"
-              ? {
-                  min: 0,
-                  max: 12,
-                  afterDataLimits: undefined,
-                }
-              : { afterDataLimits: yTempAfterDataLimits }
-            : { afterDataLimits: yTempAfterDataLimits }),
+          : series.id === "humidity"
+            ? {
+                min: 0,
+                max: 100,
+                afterDataLimits: undefined,
+              }
+            : series.id === "wind_speed" ||
+                series.id === "wind_gust" ||
+                series.id === "wind_direction"
+              ? series.unit === "Bft"
+                ? {
+                    min: 0,
+                    max: 12,
+                    afterDataLimits: undefined,
+                  }
+                : { afterDataLimits: yTempAfterDataLimits }
+              : { afterDataLimits: yTempAfterDataLimits }),
       },
       yPrecip: {
         type: "linear",
