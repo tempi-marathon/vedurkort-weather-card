@@ -4754,8 +4754,8 @@ function Ja(e) {
 }
 function fl(e) {
   const t = [], i = Math.sqrt(e);
-  let a;
-  for (a = 1; a < i; a++) e % a === 0 && (t.push(a), t.push(e / a));
+  let a = 1;
+  for (; a < i; a++) e % a === 0 && (t.push(a), t.push(e / a));
   return i === (i | 0) && t.push(i), t.sort((r, n) => r - n).pop(), t;
 }
 function vl(e) {
@@ -11870,8 +11870,7 @@ function c0(e, t, i) {
   };
 }
 function m4(e, t) {
-  var i = Ar, a = Br, r = t.origin, n, s, l, o, d;
-  for (n = 0; n < e.length; ++n)
+  for (var i = Ar, a = Br, r = t.origin, n = 0, s, l, o, d; n < e.length; ++n)
     s = e[n], l = s.x - r.x, o = s.y - r.y, d = t.vx * l + t.vy * o, i = Math.min(i, d), a = Math.max(a, d);
   return {
     min: i,
@@ -11900,15 +11899,13 @@ function $r(e, t, i) {
   };
 }
 function ld(e, t) {
-  var i, a, r, n;
-  for (i = e.length - 1; i >= 0; --i)
+  for (var i = e.length - 1, a, r, n; i >= 0; --i)
     for (r = e[i].$layout, a = i - 1; a >= 0 && r._visible; --a)
       n = e[a].$layout, n._visible && r._box.intersects(n._box) && t(r, n);
   return e;
 }
 function od(e) {
-  var t, i, a, r, n, s, l;
-  for (t = 0, i = e.length; t < i; ++t)
+  for (var t = 0, i = e.length, a, r, n, s, l; t < i; ++t)
     a = e[t], r = a.$layout, r._visible && (l = new Proxy(a._el, { get: (o, d) => o.getProps([d], !0)[d] }), n = a.geometry(), s = $r(l, a.model(), n), r._box.update(s, n, a.rotation()));
   return ld(e, function(o, d) {
     var _ = o._hidable, c = d._hidable;
@@ -11982,8 +11979,7 @@ var T2, Ue, Or, Fi, ji, Zi, Ki, y0, z1, N2, Br, Ar, U2, Ae, f4, v4, o1, ci, Rr, 
       return Math.max(e, Math.min(t, i));
     },
     arrayDiff: function(e, t) {
-      var i = e.slice(), a = [], r, n, s, l;
-      for (r = 0, s = t.length; r < s; ++r)
+      for (var i = e.slice(), a = [], r = 0, n, s = t.length, l; r < s; ++r)
         l = t[r], n = i.indexOf(l), n === -1 ? a.push([l, 1]) : i.splice(n, 1);
       for (r = 0, s = i.length; r < s; ++r) a.push([i[r], -1]);
       return a;
@@ -12146,8 +12142,7 @@ var T2, Ue, Or, Fi, ji, Zi, Ki, y0, z1, N2, Br, Ar, U2, Ae, f4, v4, o1, ci, Rr, 
     }
   }), Ae = {
     prepare: function(e) {
-      var t = [], i, a, r, n, s;
-      for (i = 0, r = e.length; i < r; ++i) for (a = 0, n = e[i].length; a < n; ++a)
+      for (var t = [], i = 0, a, r = e.length, n, s; i < r; ++i) for (a = 0, n = e[i].length; a < n; ++a)
         s = e[i][a], t.push(s), s.$layout = {
           _box: new U2(),
           _hidable: !1,
@@ -12161,20 +12156,17 @@ var T2, Ue, Or, Fi, ji, Zi, Ki, y0, z1, N2, Br, Ar, U2, Ae, f4, v4, o1, ci, Rr, 
       }), this.update(t), t;
     },
     update: function(e) {
-      var t = !1, i, a, r, n, s;
-      for (i = 0, a = e.length; i < a; ++i)
+      for (var t = !1, i = 0, a = e.length, r, n, s; i < a; ++i)
         r = e[i], n = r.model(), s = r.$layout, s._hidable = n && n.display === "auto", s._visible = r.visible(), t |= s._hidable;
       t && od(e);
     },
     lookup: function(e, t) {
-      var i, a;
-      for (i = e.length - 1; i >= 0; --i)
+      for (var i = e.length - 1, a; i >= 0; --i)
         if (a = e[i].$layout, a && a._visible && a._box.contains(t)) return e[i];
       return null;
     },
     draw: function(e, t) {
-      var i, a, r, n, s, l;
-      for (i = 0, a = t.length; i < a; ++i)
+      for (var i = 0, a = t.length, r, n, s, l; i < a; ++i)
         r = t[i], n = r.$layout, n._visible && (s = r.geometry(), l = $r(r._el, r.model(), s), n._box.update(l, s, r.rotation()), r.draw(e, l));
     }
   }, f4 = function(e) {
@@ -12269,8 +12261,7 @@ var T2, Ue, Or, Fi, ji, Zi, Ki, y0, z1, N2, Br, Ar, U2, Ae, f4, v4, o1, ci, Rr, 
       }
     },
     afterEvent: function(e) {
-      var t = e[o1], i = t._actives, a = t._actives = e.getActiveElements(), r = Ue.arrayDiff(i, a), n, s, l, o, d, _, c;
-      for (n = 0, s = r.length; n < s; ++n)
+      for (var t = e[o1], i = t._actives, a = t._actives = e.getActiveElements(), r = Ue.arrayDiff(i, a), n = 0, s = r.length, l, o, d, _, c; n < s; ++n)
         if (d = r[n], d[1])
           for (c = d[0].element[o1] || [], l = 0, o = c.length; l < o; ++l)
             _ = c[l], _.$context.active = d[1] === 1, _.update(_.$context);
