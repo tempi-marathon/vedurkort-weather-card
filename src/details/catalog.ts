@@ -28,8 +28,11 @@ import {
   metricGroup,
   type DetailMetricGroup,
 } from "./groups";
-import { seriesFromHourly, currentConditionsSeries } from "./series";
-import { insertSunEvents } from "./sun-events";
+import {
+  seriesFromHourly,
+  currentConditionsSeriesFromSlice,
+} from "./series";
+import { insertSunEvents, sunTimesFromSnapshot } from "./sun-events";
 import { buildSunArcModel } from "./sun-arc-model";
 import { buildUvBarModel } from "./uv-bar-model";
 import type { DetailMetricId, DetailModel, MetricSeries } from "./types";
@@ -51,6 +54,8 @@ export interface BuildDetailContext {
   windSpeedUnit?: WindSpeedDisplayUnit;
   /** ha-pollen snapshot when opening the pollen detail sheet. */
   pollen?: PollenSnapshot | null;
+  /** Anchor for the 24h detail window (tests). */
+  nowMs?: number;
 }
 
 function heroForMetric(ctx: BuildDetailContext): {
@@ -342,20 +347,21 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
   const group = metricGroup(ctx.metricId);
   const hero = heroForMetric(ctx);
   const seriesMetric = chartMetricId(ctx.metricId);
+  const nowMs = ctx.nowMs ?? Date.now();
+  const hourlySlice = sliceHourlyForecast(ctx.hourlyForecast, 24, nowMs);
   const unit =
     group === "wind"
       ? ctx.snap.windSpeedUnit
       : unitForSeries(seriesMetric, ctx.snap, ctx.windSpeedUnit);
   let series =
     group === "current"
-      ? currentConditionsSeries(
-          ctx.hourlyForecast,
+      ? currentConditionsSeriesFromSlice(
+          hourlySlice,
           ctx.hourlyPrecipType,
           ctx.snap.precipitationUnit,
           unit,
-          24,
         )
-      : seriesFromHourly(ctx.hourlyForecast, seriesMetric, unit, 24);
+      : seriesFromHourly(ctx.hourlyForecast, seriesMetric, unit, 24, nowMs);
 
   if (group === "wind" && series) {
     series = convertWindSeries(
@@ -366,7 +372,6 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
   }
 
   const { high, low } = highLowFromHourly(ctx.hourlyForecast);
-  const hourlySlice = sliceHourlyForecast(ctx.hourlyForecast, 24);
   const copy = buildInterpretationCopy({
     metricId: ctx.metricId,
     snap: ctx.snap,
@@ -419,8 +424,7 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
         const withSun = insertSunEvents(
           model.series,
           model.hourlyRowItems,
-          ctx.snap.sunrise,
-          ctx.snap.sunset,
+          sunTimesFromSnapshot(ctx.snap),
         );
         model.series = withSun.series;
         model.hourlyRowItems = withSun.hourlyRowItems;

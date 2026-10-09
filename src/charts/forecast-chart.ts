@@ -24,7 +24,11 @@ import {
   HUMIDITY_LINE_COLOR,
 } from "../details/humidity-scale";
 import type { MetricSeries } from "../details/types";
-import { insertSunEventsIntoHourly, type HourlySlotItem } from "../details/sun-events";
+import {
+  insertSunEventsIntoHourly,
+  type HourlySlotItem,
+  type SunTimesForWindow,
+} from "../details/sun-events";
 import { metricSeriesFingerprint } from "../details/series";
 import { windSpeedToBeaufort } from "../icons/condition-map";
 import { pollenLevelColor } from "../pollen/colors";
@@ -196,11 +200,11 @@ export function buildHourlySeries(
   precipType: PrecipType,
   language?: string,
   nowMs?: number,
-  sun?: { sunrise: string | null; sunset: string | null },
+  sun?: SunTimesForWindow | null,
 ): ChartSeries {
   const slice = sliceHourlyForecast(items, hours, nowMs);
   const slots: HourlySlotItem[] = sun
-    ? insertSunEventsIntoHourly(slice, sun.sunrise, sun.sunset)
+    ? insertSunEventsIntoHourly(slice, sun)
     : slice.map((i) => ({ ...i }));
   const labels = slots.map((i) => {
     try {
