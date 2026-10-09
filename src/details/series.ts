@@ -41,18 +41,14 @@ function readField(item: ForecastItem, field: ForecastField): number | null {
   }
 }
 
-/** Extract hourly forecast into a history-ready series (v1: forecast only). */
-export function seriesFromHourly(
-  items: ForecastItem[],
+/** Build a metric series from an already-sliced hourly window. */
+export function seriesFromHourlySlice(
+  slice: ForecastItem[],
   metricId: DetailMetricId,
   unit: string,
-  hours = 24,
-  nowMs?: number,
 ): MetricSeries | null {
   const field = FIELD_BY_METRIC[metricId];
   if (!field) return null;
-
-  const slice = sliceHourlyForecast(items, hours, nowMs);
   if (!slice.length) return null;
 
   const points: MetricPoint[] = slice.map((item) => {
@@ -97,19 +93,28 @@ export function seriesFromHourly(
   return series;
 }
 
-/** Current-conditions detail chart: temp line, optional feels-like, precip bars. */
-export function currentConditionsSeries(
+/** Extract hourly forecast into a history-ready series (v1: forecast only). */
+export function seriesFromHourly(
   items: ForecastItem[],
-  precipType: PrecipType,
-  precipUnit: string,
-  temperatureUnit: string,
+  metricId: DetailMetricId,
+  unit: string,
   hours = 24,
   nowMs?: number,
 ): MetricSeries | null {
-  const base = seriesFromHourly(items, "current", temperatureUnit, hours, nowMs);
+  const slice = sliceHourlyForecast(items, hours, nowMs);
+  return seriesFromHourlySlice(slice, metricId, unit);
+}
+
+/** Current-conditions detail chart from a pre-sliced hourly window. */
+export function currentConditionsSeriesFromSlice(
+  slice: ForecastItem[],
+  precipType: PrecipType,
+  precipUnit: string,
+  temperatureUnit: string,
+): MetricSeries | null {
+  const base = seriesFromHourlySlice(slice, "current", temperatureUnit);
   if (!base) return null;
 
-  const slice = sliceHourlyForecast(items, hours, nowMs);
   const precip = slice.map((item) => {
     const value =
       precipType === "probability"
@@ -131,6 +136,24 @@ export function currentConditionsSeries(
     precipUnit,
     feelsLike: hasFeelsLike ? feelsLike : undefined,
   };
+}
+
+/** Current-conditions detail chart: temp line, optional feels-like, precip bars. */
+export function currentConditionsSeries(
+  items: ForecastItem[],
+  precipType: PrecipType,
+  precipUnit: string,
+  temperatureUnit: string,
+  hours = 24,
+  nowMs?: number,
+): MetricSeries | null {
+  const slice = sliceHourlyForecast(items, hours, nowMs);
+  return currentConditionsSeriesFromSlice(
+    slice,
+    precipType,
+    precipUnit,
+    temperatureUnit,
+  );
 }
 
 /** Reserved for v2 Recorder merge — returns forecast unchanged today. */

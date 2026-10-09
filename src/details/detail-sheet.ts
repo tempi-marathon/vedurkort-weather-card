@@ -68,6 +68,7 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
   const isPollen = model.id === "pollen";
   const isUv = metricGroup(model.id) === "uv_index";
   const isHumidity = metricGroup(model.id) === "humidity";
+  const sunEvents = model.series?.points.map((p) => p.sunEvent ?? null);
 
   return html`
     ${model.sunArc
@@ -112,9 +113,7 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
                         language,
                         sunEntity: config!.sun_entity,
                         weatherEntityId: entityId!,
-                        sunEvents: showConditionRow
-                          ? model.series?.points.map((p) => p.sunEvent ?? null)
-                          : undefined,
+                        sunEvents,
                       })}
                     </div>
                   `

@@ -1,4 +1,5 @@
 import type { ForecastItem } from "../types";
+import { resolveSunTimeOnLocalDate } from "../weather/adapter";
 import type { MetricSeries } from "./types";
 
 const NEAR_TICK_MS = 3 * 60 * 1000;
@@ -8,6 +9,14 @@ export type SunEventKind = "sunrise" | "sunset";
 /** Hourly column that may be a sunrise/sunset marker. */
 export type HourlySlotItem = ForecastItem & {
   sunEvent?: SunEventKind;
+};
+
+/** Sun times used to place sunrise/sunset columns in an hourly window. */
+export type SunTimesForWindow = {
+  sunrise: string | null;
+  sunset: string | null;
+  todaySunrise: string | null;
+  todaySunset: string | null;
 };
 
 function parseMs(iso: string | null | undefined): number | null {
@@ -31,19 +40,65 @@ function insertAtIndex<T>(arr: T[], index: number, value: T): T[] {
   return [...arr.slice(0, index), value, ...arr.slice(index)];
 }
 
-function collectEvents(
-  sunriseIso: string | null,
-  sunsetIso: string | null,
+function localDayStartMs(ms: number): number {
+  const d = new Date(ms);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function eventKey(kind: SunEventKind, ms: number): string {
+  return `${kind}:${ms}`;
+}
+
+/**
+ * All sunrise/sunset instants that fall strictly inside the hourly window
+ * (between first and last forecast tick).
+ */
+export function collectSunEventsInWindow(
+  items: ForecastItem[],
+  sun: SunTimesForWindow,
 ): { kind: SunEventKind; ms: number; iso: string }[] {
+  if (items.length < 2) return [];
+
+  const times = items.map((p) => new Date(p.datetime).getTime());
+  if (times.some(Number.isNaN)) return [];
+
+  const first = times[0]!;
+  const last = times[times.length - 1]!;
+
+  const dayStarts = new Set<number>();
+  for (const t of times) {
+    dayStarts.add(localDayStartMs(t));
+  }
+  dayStarts.add(localDayStartMs(first));
+  dayStarts.add(localDayStartMs(last));
+
+  const seen = new Set<string>();
   const events: { kind: SunEventKind; ms: number; iso: string }[] = [];
-  const riseMs = parseMs(sunriseIso);
-  if (riseMs != null && sunriseIso) {
-    events.push({ kind: "sunrise", ms: riseMs, iso: sunriseIso });
+
+  const push = (kind: SunEventKind, iso: string | null) => {
+    if (!iso) return;
+    const ms = parseMs(iso);
+    if (ms == null) return;
+    if (ms <= first || ms >= last) return;
+    const key = eventKey(kind, ms);
+    if (seen.has(key)) return;
+    seen.add(key);
+    events.push({ kind, ms, iso });
+  };
+
+  for (const dayStart of dayStarts) {
+    if (sun.sunrise) {
+      push("sunrise", resolveSunTimeOnLocalDate(sun.sunrise, dayStart));
+    }
+    if (sun.sunset) {
+      push("sunset", resolveSunTimeOnLocalDate(sun.sunset, dayStart));
+    }
   }
-  const setMs = parseMs(sunsetIso);
-  if (setMs != null && sunsetIso) {
-    events.push({ kind: "sunset", ms: setMs, iso: sunsetIso });
-  }
+
+  push("sunrise", sun.todaySunrise);
+  push("sunset", sun.todaySunset);
+
   events.sort((a, b) => a.ms - b.ms);
   return events;
 }
@@ -54,12 +109,11 @@ function collectEvents(
  */
 export function insertSunEventsIntoHourly(
   items: ForecastItem[],
-  sunriseIso: string | null,
-  sunsetIso: string | null,
+  sun: SunTimesForWindow | null,
 ): HourlySlotItem[] {
   if (items.length < 2) return items.map((i) => ({ ...i }));
 
-  const events = collectEvents(sunriseIso, sunsetIso);
+  const events = sun ? collectSunEventsInWindow(items, sun) : [];
   if (!events.length) return items.map((i) => ({ ...i }));
 
   let slots: HourlySlotItem[] = items.map((i) => ({ ...i }));
@@ -123,8 +177,7 @@ export function insertSunEventsIntoHourly(
 export function insertSunEvents(
   series: MetricSeries,
   hourlyRowItems: ForecastItem[],
-  sunriseIso: string | null,
-  sunsetIso: string | null,
+  sun: SunTimesForWindow | null,
 ): { series: MetricSeries; hourlyRowItems: HourlySlotItem[] } {
   if (series.id !== "current" || series.points.length < 2) {
     return { series, hourlyRowItems };
@@ -133,16 +186,11 @@ export function insertSunEvents(
     return { series, hourlyRowItems };
   }
 
-  const slots = insertSunEventsIntoHourly(
-    hourlyRowItems,
-    sunriseIso,
-    sunsetIso,
-  );
+  const slots = insertSunEventsIntoHourly(hourlyRowItems, sun);
   if (slots.length === hourlyRowItems.length) {
     return { series, hourlyRowItems: slots };
   }
 
-  // Rebuild aligned series arrays from the expanded slots.
   const byTime = new Map(
     series.points.map((p, i) => [
       p.t,
@@ -193,5 +241,16 @@ export function insertSunEvents(
       feelsLike,
     },
     hourlyRowItems: slots,
+  };
+}
+
+export function sunTimesFromSnapshot(
+  snap: SunTimesForWindow,
+): SunTimesForWindow {
+  return {
+    sunrise: snap.sunrise,
+    sunset: snap.sunset,
+    todaySunrise: snap.todaySunrise,
+    todaySunset: snap.todaySunset,
   };
 }

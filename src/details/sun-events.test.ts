@@ -2,16 +2,34 @@ import { describe, expect, it } from "vitest";
 import {
   insertSunEvents,
   insertSunEventsIntoHourly,
+  type SunTimesForWindow,
 } from "./sun-events";
 import type { MetricSeries } from "./types";
 import type { ForecastItem } from "../types";
+
+function sunTimes(
+  partial: Partial<SunTimesForWindow> & {
+    sunrise?: string | null;
+    sunset?: string | null;
+  },
+): SunTimesForWindow {
+  return {
+    sunrise: partial.sunrise ?? null,
+    sunset: partial.sunset ?? null,
+    todaySunrise: partial.todaySunrise ?? partial.sunrise ?? null,
+    todaySunset: partial.todaySunset ?? partial.sunset ?? null,
+  };
+}
 
 function makeSeries(
   hours: string[],
   temps: number[],
 ): { series: MetricSeries; rows: ForecastItem[] } {
   const points = hours.map((t, i) => ({ t, value: temps[i]! }));
-  const rows = hours.map((datetime) => ({ datetime, temperature: temps[hours.indexOf(datetime)] }));
+  const rows = hours.map((datetime) => ({
+    datetime,
+    temperature: temps[hours.indexOf(datetime)],
+  }));
   return {
     series: {
       id: "current",
@@ -41,10 +59,15 @@ describe("insertSunEventsIntoHourly", () => {
       { datetime: "2026-09-19T21:00:00+02:00", temperature: 17 },
     ];
     const sunset = "2026-09-19T19:48:00+02:00";
-    const slots = insertSunEventsIntoHourly(items, null, sunset);
+    const slots = insertSunEventsIntoHourly(
+      items,
+      sunTimes({ sunset }),
+    );
     expect(slots).toHaveLength(5);
     expect(slots[2]?.sunEvent).toBe("sunset");
-    expect(slots[2]?.datetime).toBe(sunset);
+    expect(new Date(slots[2]!.datetime).getTime()).toBe(
+      new Date(sunset).getTime(),
+    );
     expect(slots[2]?.temperature).toBeCloseTo(19 + (18 - 19) * 0.8, 5);
   });
 
@@ -55,8 +78,10 @@ describe("insertSunEventsIntoHourly", () => {
     ];
     const slots = insertSunEventsIntoHourly(
       items,
-      "2026-09-19T07:25:00+02:00",
-      "2026-09-19T21:00:00+02:00",
+      sunTimes({
+        sunrise: "2026-09-19T07:25:00+02:00",
+        sunset: "2026-09-19T21:00:00+02:00",
+      }),
     );
     expect(slots).toHaveLength(2);
   });
@@ -68,8 +93,7 @@ describe("insertSunEventsIntoHourly", () => {
     ];
     const slots = insertSunEventsIntoHourly(
       items,
-      null,
-      "2026-09-19T19:01:00+02:00",
+      sunTimes({ sunset: "2026-09-19T19:01:00+02:00" }),
     );
     expect(slots).toHaveLength(2);
   });
@@ -79,7 +103,7 @@ describe("insertSunEventsIntoHourly", () => {
       { datetime: "2026-09-19T18:00:00+02:00", temperature: 20 },
       { datetime: "2026-09-19T19:00:00+02:00", temperature: 19 },
     ];
-    const slots = insertSunEventsIntoHourly(items, null, null);
+    const slots = insertSunEventsIntoHourly(items, null);
     expect(slots).toHaveLength(2);
     expect(slots.every((s) => !s.sunEvent)).toBe(true);
   });
@@ -97,12 +121,12 @@ describe("insertSunEvents", () => {
       [20, 19, 18, 17],
     );
     const sunset = "2026-09-19T19:48:00+02:00";
-    const out = insertSunEvents(series, rows, null, sunset);
+    const out = insertSunEvents(series, rows, sunTimes({ sunset }));
     expect(out.series.points).toHaveLength(5);
     expect(out.hourlyRowItems).toHaveLength(5);
     const slot = out.series.points[2]!;
     expect(slot.sunEvent).toBe("sunset");
-    expect(slot.t).toBe(sunset);
+    expect(new Date(slot.t).getTime()).toBe(new Date(sunset).getTime());
     expect(slot.value).toBeCloseTo(19 + (18 - 19) * 0.8, 5);
     expect(out.series.precip?.[2]).toBeNull();
     expect(out.series.feelsLike?.[2]).toBeCloseTo(18 + (17 - 18) * 0.8, 5);
@@ -123,8 +147,10 @@ describe("insertSunEvents", () => {
     const out = insertSunEvents(
       series,
       rows,
-      "2026-09-19T07:25:00+02:00",
-      "2026-09-19T19:48:00+02:00",
+      sunTimes({
+        sunrise: "2026-09-19T07:25:00+02:00",
+        sunset: "2026-09-19T19:48:00+02:00",
+      }),
     );
     expect(out.series.points).toHaveLength(8);
     const kinds = out.series.points

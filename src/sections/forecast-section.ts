@@ -2,7 +2,11 @@ import { html, nothing, type TemplateResult } from "lit";
 import { sliceHourlyForecast } from "../charts/hourly-window";
 import { renderForecastRow } from "../charts/forecast-row";
 import type { VedurkortCardConfig } from "../config";
-import { insertSunEventsIntoHourly, type HourlySlotItem } from "../details/sun-events";
+import {
+  insertSunEventsIntoHourly,
+  sunTimesFromSnapshot,
+  type HourlySlotItem,
+} from "../details/sun-events";
 import { localize } from "../localize";
 import type { ForecastItem, HomeAssistant } from "../types";
 import type { WeatherSnapshot } from "../weather/adapter";
@@ -45,8 +49,7 @@ export function renderForecastSection(
       ? items.slice(0, config.daily.days)
       : insertSunEventsIntoHourly(
           sliceHourlyForecast(items, config.hourly.hours),
-          snap.sunrise,
-          snap.sunset,
+          sunTimesFromSnapshot(snap),
         );
   const sunEvents =
     mode === "hourly"

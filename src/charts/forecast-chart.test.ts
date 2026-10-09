@@ -46,6 +46,8 @@ describe("forecast-chart", () => {
     const series = buildHourlySeries(items, 4, "rainfall", "en", now, {
       sunrise: null,
       sunset: "2026-09-19T19:48:00+02:00",
+      todaySunrise: null,
+      todaySunset: "2026-09-19T19:48:00+02:00",
     });
     expect(series.labels).toHaveLength(5);
     expect(series.sunEvents?.[2]).toBe("sunset");

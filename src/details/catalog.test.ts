@@ -141,3 +141,65 @@ describe("buildDetailModel wind layouts", () => {
     expect(speed?.subline).toBe("3 Bft");
   });
 });
+
+describe("buildDetailModel current forecast sun columns", () => {
+  it("inserts sunrise/sunset into series and hourly row", () => {
+    const nowMs = Date.parse("2026-10-09T17:09:00+02:00");
+    const items: ForecastItem[] = [];
+    const start = new Date("2026-10-09T17:00:00+02:00");
+    for (let i = 0; i < 24; i++) {
+      items.push({
+        datetime: new Date(start.getTime() + i * 3_600_000).toISOString(),
+        temperature: 17,
+        precipitation: 0.5,
+      });
+    }
+    const model = buildDetailModel(
+      ctx("current", {
+        nowMs,
+        hourlyForecast: items,
+        snap: snap({
+          sunrise: "2026-10-10T06:44:00+02:00",
+          sunset: "2026-10-09T19:48:00+02:00",
+          todaySunrise: "2026-10-09T06:44:00+02:00",
+          todaySunset: "2026-10-09T19:48:00+02:00",
+        }),
+      }),
+    );
+    const sunPoints = model.series?.points.filter((p) => p.sunEvent) ?? [];
+    expect(sunPoints.length).toBeGreaterThan(0);
+    expect(model.hourlyRowItems?.length).toBe(model.series?.points.length);
+    const sunset = sunPoints.find((p) => p.sunEvent === "sunset");
+    expect(new Date(sunset!.t).getTime()).toBe(
+      Date.parse("2026-10-09T19:48:00+02:00"),
+    );
+  });
+
+  it("leaves series unchanged when sun times are missing", () => {
+    const nowMs = Date.parse("2026-10-09T17:09:00+02:00");
+    const items: ForecastItem[] = [
+      {
+        datetime: new Date("2026-10-09T17:00:00+02:00").toISOString(),
+        temperature: 17,
+      },
+      {
+        datetime: new Date("2026-10-09T18:00:00+02:00").toISOString(),
+        temperature: 16,
+      },
+    ];
+    const model = buildDetailModel(
+      ctx("current", {
+        nowMs,
+        hourlyForecast: items,
+        snap: snap({
+          sunrise: null,
+          sunset: null,
+          todaySunrise: null,
+          todaySunset: null,
+        }),
+      }),
+    );
+    expect(model.series?.points.every((p) => !p.sunEvent)).toBe(true);
+    expect(model.series?.points.length).toBe(2);
+  });
+});

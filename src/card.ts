@@ -19,7 +19,10 @@ import {
 import { buildDetailModel } from "./details/catalog";
 import { buildCurrentConditionsCopy } from "./details/copy";
 import { renderDetailSheetBody } from "./details/detail-sheet";
-import { insertSunEventsIntoHourly } from "./details/sun-events";
+import {
+  insertSunEventsIntoHourly,
+  sunTimesFromSnapshot,
+} from "./details/sun-events";
 import type { DetailMetricId } from "./details/types";
 import { metricSeriesFingerprint } from "./details/series";
 import {
@@ -432,8 +435,7 @@ export class VedurkortWeatherCard extends LitElement {
     );
     const slots = insertSunEventsIntoHourly(
       slice,
-      snap?.sunrise ?? null,
-      snap?.sunset ?? null,
+      snap ? sunTimesFromSnapshot(snap) : null,
     );
     if (!slots.length) return "";
     return `${this._config.hourly.hours}:${slots.map((i) => i.datetime).join(",")}`;
@@ -470,8 +472,7 @@ export class VedurkortWeatherCard extends LitElement {
     const snap = getWeatherSnapshot(this.hass, this._config);
     const slots = insertSunEventsIntoHourly(
       slice,
-      snap?.sunrise ?? null,
-      snap?.sunset ?? null,
+      snap ? sunTimesFromSnapshot(snap) : null,
     );
     const pos = findHourlyNowPosition(slots.map((i) => i.datetime));
     if (pos < 0) return;
@@ -625,7 +626,7 @@ export class VedurkortWeatherCard extends LitElement {
             language,
             undefined,
             snap
-              ? { sunrise: snap.sunrise, sunset: snap.sunset }
+              ? sunTimesFromSnapshot(snap)
               : undefined,
           );
 
@@ -789,7 +790,11 @@ export class VedurkortWeatherCard extends LitElement {
 
     const language = resolveLanguage(this.hass);
     const temperatureUnit = snap.temperatureUnit;
-    const modeKey = `${model.series.id}:${textColor}:${this._config.animated_background}:${scene}`;
+    const sunKey =
+      model.series.id === "current"
+        ? `${snap.sunrise ?? ""}|${snap.sunset ?? ""}|${snap.todaySunrise ?? ""}|${snap.todaySunset ?? ""}`
+        : "";
+    const modeKey = `${model.series.id}:${textColor}:${this._config.animated_background}:${scene}:${sunKey}`;
     const fingerprint = metricSeriesFingerprint(model.series);
 
     if (
