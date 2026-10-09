@@ -11,7 +11,11 @@ import { getMeteoconSvg } from "../icons/meteocons";
 import { localize } from "../localize";
 import type { ForecastItem, HomeAssistant } from "../types";
 import { tipWrap } from "../ui/tooltip";
-import { formatConditionLabel, isDaytimeAt, isSunUp } from "../weather/adapter";
+import {
+  formatConditionLabel,
+  isDaytimeForHourlyColumn,
+  isSunUp,
+} from "../weather/adapter";
 import {
   formatWindSpeed,
   type WindSpeedDisplayUnit,
@@ -75,7 +79,7 @@ export function renderForecastRow(
         // Fall back to forecast is_daytime, then sun.sun for daily.
         const isDay =
           opts.mode === "hourly"
-            ? isDaytimeAt(hass, item.datetime, sunEntity)
+            ? isDaytimeForHourlyColumn(hass, item.datetime, sunEntity)
             : (item.is_daytime ?? isSunUp(hass, sunEntity));
         const icon = conditionToMeteocon(
           item.condition,

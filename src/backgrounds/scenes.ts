@@ -7,6 +7,7 @@ export type BackgroundScene =
   | "partlycloudy-day"
   | "partlycloudy-night"
   | "cloudy"
+  | "cloudy-night"
   | "rain"
   | "pouring"
   | "snow"
@@ -15,6 +16,7 @@ export type BackgroundScene =
   | "lightning-rainy"
   | "hail"
   | "fog"
+  | "fog-night"
   | "wind"
   | "exceptional";
 
@@ -202,7 +204,7 @@ export function conditionToScene(
     case "partlycloudy":
       return isDay ? "partlycloudy-day" : "partlycloudy-night";
     case "cloudy":
-      return "cloudy";
+      return isDay ? "cloudy" : "cloudy-night";
     case "rainy":
       return "rain";
     case "pouring":
@@ -220,7 +222,7 @@ export function conditionToScene(
     case "exceptional":
       return "exceptional";
     case "fog":
-      return "fog";
+      return isDay ? "fog" : "fog-night";
     case "windy":
     case "windy-variant":
       return "wind";
@@ -445,6 +447,7 @@ function renderFx(scene: BackgroundScene): TemplateResult | typeof nothing {
     case "clear-night":
       return renderClearNightFx();
     case "partlycloudy-night":
+    case "cloudy-night":
       return html`
         ${NIGHT_STARS.slice(0, 5).map(
           (s) => html`
@@ -473,6 +476,8 @@ function renderClouds(scene: BackgroundScene): TemplateResult | typeof nothing {
       return renderNightClouds();
     case "cloudy":
       return renderDayClouds(true);
+    case "cloudy-night":
+      return renderDayClouds(true);
     case "rain":
     case "pouring":
     case "hail":
@@ -483,6 +488,7 @@ function renderClouds(scene: BackgroundScene): TemplateResult | typeof nothing {
     case "lightning-rainy":
       return html`<div class="vk-storm-clouds"></div>`;
     case "fog":
+    case "fog-night":
       return html`<div class="vk-fog-wisps"></div>`;
     default:
       return nothing;
@@ -643,6 +649,24 @@ export const backgroundStyles = css`
   }
   .vk-bg--cloudy .vk-bg__sky {
     background: linear-gradient(180deg, #6b7c93 0%, #9aabbd 50%, #c5d0db 100%);
+  }
+  .vk-bg--cloudy-night .vk-bg__sky {
+    background: radial-gradient(
+      ellipse at 50% 110%,
+      #2a3548 0%,
+      #1a2235 55%,
+      #0e1220 100%
+    );
+  }
+  .vk-bg--cloudy-night .vk-bg__scrim {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.2) 0%,
+      rgba(0, 0, 0, 0.45) 100%
+    );
+  }
+  .vk-bg--cloudy-night .vk-cloud {
+    color: rgba(100, 110, 130, 0.72);
   }
   .vk-bg__clouds {
     overflow: hidden;
@@ -892,6 +916,19 @@ export const backgroundStyles = css`
       180deg,
       transparent 0%,
       rgba(220, 224, 218, 0.35) 100%
+    );
+  }
+  .vk-bg--fog-night .vk-bg__sky {
+    background: linear-gradient(180deg, #3a4048 0%, #2a3038 55%, #1e242c 100%);
+  }
+  .vk-bg--fog-night .vk-fog-wisps {
+    opacity: 0.55;
+  }
+  .vk-bg--fog-night .vk-bg__scrim {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.12) 0%,
+      rgba(0, 0, 0, 0.38) 100%
     );
   }
 
