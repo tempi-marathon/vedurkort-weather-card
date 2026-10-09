@@ -64,7 +64,10 @@ describe("isOvercastCloudCover", () => {
 describe("conditionToMeteocon", () => {
   it("uses sunless icons when coverage is missing, null, NaN, or high", () => {
     for (const coverage of [undefined, null, Number.NaN, 65, 100] as const) {
-      expect(conditionToMeteocon("cloudy", true, coverage)).toBe("overcast");
+      expect(conditionToMeteocon("cloudy", true, coverage)).toBe("overcast-day");
+      expect(conditionToMeteocon("cloudy", false, coverage)).toBe(
+        "overcast-night",
+      );
       expect(conditionToMeteocon("rainy", true, coverage)).toBe("rain");
       expect(conditionToMeteocon("pouring", true, coverage)).toBe("extreme-rain");
       expect(conditionToMeteocon("snowy", true, coverage)).toBe("snow");

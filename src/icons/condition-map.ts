@@ -82,7 +82,6 @@ export function conditionToMeteocon(
     case "sunny":
       return isDay ? "clear-day" : "clear-night";
     case "cloudy":
-      if (overcast) return "overcast";
       return isDay ? "overcast-day" : "overcast-night";
     case "fog":
       return isDay ? "fog-day" : "fog-night";

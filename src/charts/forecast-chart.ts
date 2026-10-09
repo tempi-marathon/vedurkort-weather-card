@@ -141,6 +141,8 @@ export function chartChromeForScene(
   const darkScenes: BackgroundScene[] = [
     "clear-night",
     "partlycloudy-night",
+    "cloudy-night",
+    "fog-night",
     "rain",
     "pouring",
     "lightning",

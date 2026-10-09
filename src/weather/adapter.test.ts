@@ -5,6 +5,7 @@ import {
   fetchForecastOnce,
   getWeatherSnapshot,
   isDaytimeAt,
+  isDaytimeForHourlyColumn,
   isSunUp,
   nextSunEvent,
   subscribeForecast,
@@ -141,6 +142,39 @@ describe("weather adapter", () => {
     const noon = new Date();
     noon.setHours(12, 0, 0, 0);
     expect(isDaytimeAt(hass, noon.toISOString())).toBe(true);
+  });
+});
+
+describe("isDaytimeForHourlyColumn", () => {
+  function hassAfternoonSun() {
+    const sunriseTomorrow = new Date(2026, 9, 10, 6, 24, 0, 0);
+    const sunsetToday = new Date(2026, 9, 9, 19, 24, 0, 0);
+    return mockHass({
+      "sun.sun": {
+        entity_id: "sun.sun",
+        state: "above_horizon",
+        attributes: {
+          next_rising: sunriseTomorrow.toISOString(),
+          next_setting: sunsetToday.toISOString(),
+        },
+      },
+    });
+  }
+
+  it("keeps day icon through the sunset hour (19:00 when sunset 19:24)", () => {
+    const hass = hassAfternoonSun();
+    const hour19 = new Date(2026, 9, 9, 19, 0, 0, 0);
+    const hour20 = new Date(2026, 9, 9, 20, 0, 0, 0);
+    expect(isDaytimeForHourlyColumn(hass, hour19.toISOString())).toBe(true);
+    expect(isDaytimeForHourlyColumn(hass, hour20.toISOString())).toBe(false);
+  });
+
+  it("switches to day at the hour after sunrise (07:00 when sunrise 06:24)", () => {
+    const hass = hassAfternoonSun();
+    const hour6 = new Date(2026, 9, 9, 6, 0, 0, 0);
+    const hour7 = new Date(2026, 9, 9, 7, 0, 0, 0);
+    expect(isDaytimeForHourlyColumn(hass, hour6.toISOString())).toBe(false);
+    expect(isDaytimeForHourlyColumn(hass, hour7.toISOString())).toBe(true);
   });
 });
 

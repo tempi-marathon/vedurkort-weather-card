@@ -41,7 +41,9 @@ describe("conditionToScene", () => {
   it("maps exceptional and fog", () => {
     expect(conditionToScene("exceptional", true)).toBe("exceptional");
     expect(conditionToScene("fog", true)).toBe("fog");
+    expect(conditionToScene("fog", false)).toBe("fog-night");
     expect(conditionToScene("cloudy", true)).toBe("cloudy");
+    expect(conditionToScene("cloudy", false)).toBe("cloudy-night");
   });
 
   it("returns exceptional when escalate is true", () => {

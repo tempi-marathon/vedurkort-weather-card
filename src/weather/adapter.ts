@@ -67,28 +67,36 @@ function sensorUnit(entity: HassEntity | undefined): string | undefined {
   return typeof u === "string" ? u : undefined;
 }
 
-/** Map sun.sun next_* to an occurrence on today's local calendar date. */
-export function resolveSunTimeToday(
+/** Map sun.sun next_* to an occurrence on the local calendar date of `anchorMs`. */
+export function resolveSunTimeOnLocalDate(
   nextIso: string | undefined,
-  nowMs = Date.now(),
+  anchorMs: number,
 ): string | null {
   if (!nextIso) return null;
   const t = new Date(nextIso).getTime();
   if (Number.isNaN(t)) return null;
 
   const dayMs = 86_400_000;
-  const today = new Date(nowMs);
-  today.setHours(0, 0, 0, 0);
-  const todayStart = today.getTime();
-  const todayEnd = todayStart + dayMs;
+  const day = new Date(anchorMs);
+  day.setHours(0, 0, 0, 0);
+  const dayStart = day.getTime();
+  const dayEnd = dayStart + dayMs;
 
   for (const offset of [-dayMs, 0, dayMs]) {
     const candidate = t + offset;
-    if (candidate >= todayStart && candidate < todayEnd) {
+    if (candidate >= dayStart && candidate < dayEnd) {
       return new Date(candidate).toISOString();
     }
   }
   return null;
+}
+
+/** Map sun.sun next_* to an occurrence on today's local calendar date. */
+export function resolveSunTimeToday(
+  nextIso: string | undefined,
+  nowMs = Date.now(),
+): string | null {
+  return resolveSunTimeOnLocalDate(nextIso, nowMs);
 }
 
 export type NextSunEvent = {
@@ -171,6 +179,49 @@ export function isDaytimeAt(
     }
   }
   return false;
+}
+
+function localHourStartMs(iso: string): number {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return Number.NaN;
+  d.setMinutes(0, 0, 0);
+  return d.getTime();
+}
+
+/**
+ * Day/night for hourly forecast column icons: use the local clock hour start
+ * (H:00) against that day's sunrise/sunset (night from the hour after sunset).
+ */
+export function isDaytimeForHourlyColumn(
+  hass: HomeAssistant,
+  iso: string,
+  sunEntity = "sun.sun",
+): boolean {
+  const hourStart = localHourStartMs(iso);
+  if (Number.isNaN(hourStart)) {
+    return isDaytimeAt(hass, iso, sunEntity);
+  }
+
+  const sun = hass.states[sunEntity];
+  const nextRising = sun?.attributes.next_rising as string | undefined;
+  const nextSetting = sun?.attributes.next_setting as string | undefined;
+  if (!nextRising || !nextSetting) {
+    return isDaytimeAt(hass, iso, sunEntity);
+  }
+
+  const riseIso = resolveSunTimeOnLocalDate(nextRising, hourStart);
+  const setIso = resolveSunTimeOnLocalDate(nextSetting, hourStart);
+  if (!riseIso || !setIso) {
+    return isDaytimeAt(hass, iso, sunEntity);
+  }
+
+  const rise = new Date(riseIso).getTime();
+  const set = new Date(setIso).getTime();
+  if (Number.isNaN(rise) || Number.isNaN(set) || set <= rise) {
+    return isDaytimeAt(hass, iso, sunEntity);
+  }
+
+  return hourStart >= rise && hourStart < set;
 }
 
 export function getWeatherSnapshot(
