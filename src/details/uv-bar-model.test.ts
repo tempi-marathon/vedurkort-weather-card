@@ -5,6 +5,7 @@ import {
   UV_CATEGORY_COLORS,
   uvBarPosition,
   uvCategory,
+  uvColorForValue,
 } from "./uv-bar-model";
 import type { WeatherSnapshot } from "../weather/adapter";
 
@@ -75,6 +76,16 @@ describe("uv bar model", () => {
     expect(model?.category).toBe("low");
     expect(model?.categoryLabel).toBe("Low");
     expect(model?.heroIcon).toBe("uv-index-2");
+  });
+});
+
+describe("uvColorForValue", () => {
+  it("maps index to WHO legend colors", () => {
+    expect(uvColorForValue(2)).toBe(UV_CATEGORY_COLORS.low);
+    expect(uvColorForValue(5)).toBe(UV_CATEGORY_COLORS.moderate);
+    expect(uvColorForValue(7)).toBe(UV_CATEGORY_COLORS.high);
+    expect(uvColorForValue(10)).toBe(UV_CATEGORY_COLORS.very_high);
+    expect(uvColorForValue(11)).toBe(UV_CATEGORY_COLORS.extreme);
   });
 });
 

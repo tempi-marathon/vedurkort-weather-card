@@ -68,6 +68,15 @@ export const UV_CATEGORY_COLORS: Readonly<
   extreme: "#a855f7",
 };
 
+const UV_UNKNOWN_COLOR = "#94a3b8";
+
+/** Chart / label color for a UV index value (WHO bands, same as legend swatches). */
+export function uvColorForValue(value: number | null | undefined): string {
+  const category = uvCategory(value);
+  if (category === "unknown") return UV_UNKNOWN_COLOR;
+  return UV_CATEGORY_COLORS[category];
+}
+
 export interface UvLegendRow {
   category: Exclude<UvCategory, "unknown">;
   color: string;

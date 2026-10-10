@@ -11,6 +11,7 @@ const hourly: ForecastItem[] = [
     precipitation: 0,
     precipitation_probability: 10,
     cloud_coverage: 30,
+    uv_index: 4,
   },
   {
     datetime: "2026-08-23T11:00:00+00:00",
@@ -42,8 +43,21 @@ describe("seriesFromHourly", () => {
     expect(s!.points[0]!.value).toBe(18);
   });
 
+  it("extracts uv_index series when forecast provides it", () => {
+    const s = seriesFromHourly(
+      hourly,
+      "uv_index",
+      "",
+      24,
+      Date.parse("2026-08-23T10:30:00+00:00"),
+    );
+    expect(s).not.toBeNull();
+    expect(s!.id).toBe("uv_index");
+    expect(s!.chartType).toBe("line");
+    expect(s!.points[0]!.value).toBe(4);
+  });
+
   it("returns null for metrics without forecast field", () => {
-    expect(seriesFromHourly(hourly, "uv_index", "", 24)).toBeNull();
     expect(seriesFromHourly(hourly, "pressure", "hPa", 24)).toBeNull();
     expect(seriesFromHourly(hourly, "dew_point", "°C", 24)).toBeNull();
   });
