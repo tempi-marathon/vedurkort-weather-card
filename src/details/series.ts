@@ -1,6 +1,7 @@
 import { sliceHourlyForecast } from "../charts/hourly-window";
 import type { PrecipType } from "../config";
 import type { ForecastItem } from "../types";
+import type { HourlySlotItem } from "./sun-events";
 import type { DetailMetricId, MetricPoint, MetricSeries } from "./types";
 
 export type ForecastField =
@@ -43,7 +44,7 @@ function readField(item: ForecastItem, field: ForecastField): number | null {
 
 /** Build a metric series from an already-sliced hourly window. */
 export function seriesFromHourlySlice(
-  slice: ForecastItem[],
+  slice: ForecastItem[] | HourlySlotItem[],
   metricId: DetailMetricId,
   unit: string,
 ): MetricSeries | null {
@@ -52,12 +53,15 @@ export function seriesFromHourlySlice(
   if (!slice.length) return null;
 
   const points: MetricPoint[] = slice.map((item) => {
+    const slot = item as HourlySlotItem;
     const value = readField(item, field);
-    return {
+    const point: MetricPoint = {
       t: item.datetime,
       value:
         value != null && !Number.isNaN(value) ? value : null,
     };
+    if (slot.sunEvent) point.sunEvent = slot.sunEvent;
+    return point;
   });
 
   const hasAnyValue = points.some((p) => p.value != null);
@@ -107,7 +111,7 @@ export function seriesFromHourly(
 
 /** Current-conditions detail chart from a pre-sliced hourly window. */
 export function currentConditionsSeriesFromSlice(
-  slice: ForecastItem[],
+  slice: ForecastItem[] | HourlySlotItem[],
   precipType: PrecipType,
   precipUnit: string,
   temperatureUnit: string,
@@ -116,6 +120,7 @@ export function currentConditionsSeriesFromSlice(
   if (!base) return null;
 
   const precip = slice.map((item) => {
+    if ((item as HourlySlotItem).sunEvent) return null;
     const value =
       precipType === "probability"
         ? item.precipitation_probability
@@ -135,6 +140,71 @@ export function currentConditionsSeriesFromSlice(
     precipType,
     precipUnit,
     feelsLike: hasFeelsLike ? feelsLike : undefined,
+  };
+}
+
+/** Re-index series arrays onto hourly row timestamps (ms match). */
+export function alignMetricSeriesToHourlyRow(
+  series: MetricSeries,
+  row: ForecastItem[],
+): MetricSeries {
+  if (series.points.length === row.length) return series;
+
+  const byMs = new Map(
+    series.points.map((p, i) => [
+      new Date(p.t).getTime(),
+      {
+        point: p,
+        precip: series.precip?.[i] ?? null,
+        feelsLike: series.feelsLike?.[i] ?? null,
+        gust: series.gust?.[i] ?? null,
+      },
+    ]),
+  );
+
+  const points = row.map((item) => {
+    const ms = new Date(item.datetime).getTime();
+    const hit = Number.isNaN(ms) ? undefined : byMs.get(ms);
+    if (hit) return hit.point;
+    const value = item.temperature;
+    return {
+      t: item.datetime,
+      value:
+        value != null && !Number.isNaN(value) ? value : null,
+    };
+  });
+
+  const precip = series.precip
+    ? row.map((item) => {
+        const ms = new Date(item.datetime).getTime();
+        return Number.isNaN(ms) ? null : (byMs.get(ms)?.precip ?? null);
+      })
+    : undefined;
+
+  const feelsLike = series.feelsLike
+    ? row.map((item) => {
+        const ms = new Date(item.datetime).getTime();
+        if (Number.isNaN(ms)) return null;
+        const hit = byMs.get(ms);
+        if (hit) return hit.feelsLike;
+        const value = item.apparent_temperature;
+        return value != null && !Number.isNaN(value) ? value : null;
+      })
+    : undefined;
+
+  const gust = series.gust
+    ? row.map((item) => {
+        const ms = new Date(item.datetime).getTime();
+        return Number.isNaN(ms) ? null : (byMs.get(ms)?.gust ?? null);
+      })
+    : undefined;
+
+  return {
+    ...series,
+    points,
+    precip,
+    feelsLike,
+    gust,
   };
 }
 

@@ -16,6 +16,20 @@ export function isOvercastCloudCover(
 }
 
 /**
+ * Hourly forecast rows often carry `clear-night` / `sunny` from the provider
+ * before the local sunset hour ends. Reconcile with hour-bucket day/night.
+ */
+export function hourlyForecastCondition(
+  condition: HaWeatherCondition | undefined,
+  isDay: boolean,
+): HaWeatherCondition | undefined {
+  if (!condition) return condition;
+  if (condition === "clear-night" && isDay) return "sunny";
+  if (condition === "sunny" && !isDay) return "clear-night";
+  return condition;
+}
+
+/**
  * Map HA weather conditions → Meteocon names with day/night variants.
  * Cloudy / precip / storm icons use sunless names when cloud coverage is
  * missing or ≥ {@link OVERCAST_CLOUD_COVERAGE}; otherwise day/night peeks.

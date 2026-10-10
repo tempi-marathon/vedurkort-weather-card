@@ -3,6 +3,7 @@ import {
   bearingToLabel,
   bearingToWindIcon,
   conditionToMeteocon,
+  hourlyForecastCondition,
   isOvercastCloudCover,
   OVERCAST_CLOUD_COVERAGE,
   uvIndexIcon,
@@ -177,5 +178,22 @@ describe("uvIndexIcon", () => {
     expect(uvIndexIcon(2.1)).toBe("uv-index-2");
     expect(uvIndexIcon(11)).toBe("uv-index-11-plus");
     expect(uvIndexIcon(12)).toBe("uv-index-11-plus");
+  });
+});
+
+describe("hourlyForecastCondition", () => {
+  it("keeps clear-day through the sunset hour when still daytime", () => {
+    expect(hourlyForecastCondition("clear-night", true)).toBe("sunny");
+    expect(conditionToMeteocon("clear-night", true)).toBe("clear-night");
+    expect(
+      conditionToMeteocon(hourlyForecastCondition("clear-night", true), true),
+    ).toBe("clear-day");
+  });
+
+  it("uses clear-night before sunrise hour ends", () => {
+    expect(hourlyForecastCondition("sunny", false)).toBe("clear-night");
+    expect(
+      conditionToMeteocon(hourlyForecastCondition("sunny", false), false),
+    ).toBe("clear-night");
   });
 });
