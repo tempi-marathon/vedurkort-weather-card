@@ -111,4 +111,6 @@ export interface ForecastItem {
   humidity?: number;
   is_daytime?: boolean;
   cloud_coverage?: number;
+  /** UV index when the integration provides it in hourly forecast. */
+  uv_index?: number;
 }

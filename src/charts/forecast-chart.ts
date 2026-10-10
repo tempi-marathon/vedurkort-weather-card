@@ -30,6 +30,7 @@ import {
   type SunTimesForWindow,
 } from "../details/sun-events";
 import { metricSeriesFingerprint } from "../details/series";
+import { uvColorForValue } from "../details/uv-bar-model";
 import { windSpeedToBeaufort } from "../icons/condition-map";
 import { pollenLevelColor } from "../pollen/colors";
 import { labelFromLevel } from "../pollen/levels";
@@ -853,6 +854,10 @@ function pollenValueColors(values: (number | null)[]): string[] {
   return values.map((v) => colorForPollenValue(v));
 }
 
+function uvValueColors(values: (number | null)[]): string[] {
+  return values.map((v) => uvColorForValue(v));
+}
+
 function buildDetailDatasets(
   series: MetricSeries,
   language?: string,
@@ -888,19 +893,24 @@ function buildDetailDatasets(
   const wind = isWindSeries(series);
   const pollen = series.id === "pollen";
   const humidity = series.id === "humidity";
+  const uv = series.id === "uv_index";
   const valueColors = wind
     ? windValueColors(values, series.unit)
     : pollen
       ? pollenValueColors(values)
-      : humidity
-        ? humidityValueColors(values)
-        : null;
+      : uv
+        ? uvValueColors(values)
+        : humidity
+          ? humidityValueColors(values)
+          : null;
   const labelColors = humidity ? humidityLabelColors(values) : valueColors;
   const segmentColor = wind
     ? (y: number | null | undefined) => colorForWindValue(y, series.unit)
     : pollen
       ? colorForPollenValue
-      : null;
+      : uv
+        ? uvColorForValue
+        : null;
 
   const datasets: ChartConfiguration["data"]["datasets"] = [
     {
@@ -1082,7 +1092,13 @@ function detailChartOptions(
                 max: 100,
                 afterDataLimits: undefined,
               }
-            : series.id === "wind_speed" ||
+            : series.id === "uv_index"
+              ? {
+                  min: 0,
+                  max: 11,
+                  afterDataLimits: undefined,
+                }
+              : series.id === "wind_speed" ||
                 series.id === "wind_gust" ||
                 series.id === "wind_direction"
               ? series.unit === "Bft"
