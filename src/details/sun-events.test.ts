@@ -71,6 +71,17 @@ describe("insertSunEventsIntoHourly", () => {
     expect(slots[2]?.temperature).toBeCloseTo(19 + (18 - 19) * 0.8, 5);
   });
 
+  it("inserts sunset in the last hourly bucket of the slice", () => {
+    const items: ForecastItem[] = [
+      { datetime: "2026-09-19T18:00:00+02:00", temperature: 20 },
+      { datetime: "2026-09-19T19:00:00+02:00", temperature: 19 },
+      { datetime: "2026-09-19T20:00:00+02:00", temperature: 18 },
+    ];
+    const sunset = "2026-09-19T19:55:00+02:00";
+    const slots = insertSunEventsIntoHourly(items, sunTimes({ sunset }));
+    expect(slots.some((s) => s.sunEvent === "sunset")).toBe(true);
+  });
+
   it("skips events outside the window", () => {
     const items: ForecastItem[] = [
       { datetime: "2026-09-19T18:00:00+02:00", temperature: 20 },
@@ -86,16 +97,47 @@ describe("insertSunEventsIntoHourly", () => {
     expect(slots).toHaveLength(2);
   });
 
-  it("skips events near an hour tick", () => {
+  it("inserts sunset after the hour tick without replacing that hour column", () => {
     const items: ForecastItem[] = [
       { datetime: "2026-09-19T19:00:00+02:00", temperature: 19 },
       { datetime: "2026-09-19T20:00:00+02:00", temperature: 18 },
     ];
+    const sunset = "2026-09-19T19:00:17+02:00";
+    const slots = insertSunEventsIntoHourly(items, sunTimes({ sunset }));
+    expect(slots).toHaveLength(3);
+    expect(slots[0]?.sunEvent).toBeUndefined();
+    expect(slots[0]?.temperature).toBe(19);
+    expect(slots[1]?.sunEvent).toBe("sunset");
+    expect(new Date(slots[1]!.datetime).getTime()).toBe(
+      new Date(sunset).getTime(),
+    );
+    expect(slots[2]?.temperature).toBe(18);
+  });
+
+  it("tags the hour column for HA-style sunset on the hour (user sun.sun)", () => {
+    const items: ForecastItem[] = [];
+    const start = Date.parse("2026-10-10T08:00:00.000Z");
+    for (let i = 0; i < 24; i++) {
+      items.push({
+        datetime: new Date(start + i * 3_600_000).toISOString(),
+        temperature: 15,
+      });
+    }
+    const sunset = "2026-10-10T17:00:17.703176+00:00";
     const slots = insertSunEventsIntoHourly(
       items,
-      sunTimes({ sunset: "2026-09-19T19:01:00+02:00" }),
+      sunTimes({
+        sunset,
+        todaySunset: sunset,
+        sunrise: "2026-10-11T06:01:07.900254+00:00",
+        todaySunrise: "2026-10-10T06:01:07.900254+00:00",
+      }),
     );
-    expect(slots).toHaveLength(2);
+    const sunsetIdx = slots.findIndex((s) => s.sunEvent === "sunset");
+    expect(sunsetIdx).toBeGreaterThan(0);
+    expect(slots[sunsetIdx - 1]?.sunEvent).toBeUndefined();
+    expect(slots[sunsetIdx - 1]?.temperature).toBe(15);
+    expect(slots.length).toBeGreaterThan(24);
   });
 
   it("leaves items unchanged when sun times are missing", () => {

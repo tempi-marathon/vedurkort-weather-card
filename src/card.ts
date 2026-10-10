@@ -23,7 +23,7 @@ import {
   insertSunEventsIntoHourly,
   sunTimesFromSnapshot,
 } from "./details/sun-events";
-import type { DetailMetricId } from "./details/types";
+import type { DetailMetricId, DetailModel } from "./details/types";
 import { metricSeriesFingerprint } from "./details/series";
 import {
   DEFAULT_CONFIG,
@@ -109,6 +109,8 @@ export class VedurkortWeatherCard extends LitElement {
   private _detailScrollKey = "";
   private _detailScrollUserAdjusted = false;
   private _detailScrollProgrammatic = false;
+  /** Stable anchor while the detail modal is open (chart + icon row). */
+  private _detailWindowNowMs = 0;
 
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
     await import("./editor");
@@ -488,18 +490,10 @@ export class VedurkortWeatherCard extends LitElement {
     });
   }
 
-  private _scrollDetailToNow(): void {
-    if (!this._detailMetric || !this._config || !this.hass) return;
-    const scrollEl = this.renderRoot.querySelector(
-      ".detail-chart-scroll",
-    ) as HTMLElement | null;
-    if (!scrollEl) return;
-
-    const snap = getWeatherSnapshot(this.hass, this._config);
-    if (!snap) return;
-
+  private _buildOpenDetailModel(snap: ReturnType<typeof getWeatherSnapshot>): DetailModel | null {
+    if (!this._detailMetric || !this._config || !this.hass || !snap) return null;
     const escalate = this._shouldEscalateForAlerts();
-    const model = buildDetailModel({
+    return buildDetailModel({
       metricId: this._detailMetric,
       snap,
       iconName: conditionToMeteocon(
@@ -515,8 +509,23 @@ export class VedurkortWeatherCard extends LitElement {
       hourlyPrecipType: this._config.hourly.precip_type,
       windSpeedUnit: this._config.wind_speed_unit,
       pollen: resolvePollen(this.hass, this._config),
+      nowMs: this._detailWindowNowMs || Date.now(),
     });
-    const datetimes = model.series?.points.map((p) => p.t) ?? [];
+  }
+
+  private _scrollDetailToNow(): void {
+    if (!this._detailMetric || !this._config || !this.hass) return;
+    const scrollEl = this.renderRoot.querySelector(
+      ".detail-chart-scroll",
+    ) as HTMLElement | null;
+    if (!scrollEl) return;
+
+    const snap = getWeatherSnapshot(this.hass, this._config);
+    if (!snap) return;
+
+    const model = this._buildOpenDetailModel(snap);
+    if (!model?.series) return;
+    const datetimes = model.series.points.map((p) => p.t);
     if (!datetimes.length) return;
 
     const pos = findHourlyNowPosition(datetimes);
@@ -736,29 +745,15 @@ export class VedurkortWeatherCard extends LitElement {
     const snap = getWeatherSnapshot(this.hass, this._config);
     if (!snap) return;
 
-    const escalate = this._shouldEscalateForAlerts();
-    const model = buildDetailModel({
-      metricId: this._detailMetric,
-      snap,
-      iconName: conditionToMeteocon(
-        snap.condition,
-        snap.isDay,
-        snap.cloudCoverage,
-        escalate,
-      ),
-      hourlyForecast: this._hourlyForecast,
-      language: resolveLanguage(this.hass),
-      bft: windSpeedToBeaufort(snap.windSpeed, snap.windSpeedUnit),
-      gustBft: windSpeedToBeaufort(snap.windGust, snap.windSpeedUnit),
-      hourlyPrecipType: this._config.hourly.precip_type,
-      windSpeedUnit: this._config.wind_speed_unit,
-      pollen: resolvePollen(this.hass, this._config),
-    });
+    const model = this._buildOpenDetailModel(snap);
 
-    if (!model.series) {
+    if (!model?.series) {
       this._destroyMetricChart();
       return;
     }
+
+    const series = model.series;
+    const escalate = this._shouldEscalateForAlerts();
 
     if (!this._chartMod && !this._chartModLoading) {
       this._chartModLoading = true;
@@ -791,11 +786,14 @@ export class VedurkortWeatherCard extends LitElement {
     const language = resolveLanguage(this.hass);
     const temperatureUnit = snap.temperatureUnit;
     const sunKey =
-      model.series.id === "current"
+      series.id === "current"
         ? `${snap.sunrise ?? ""}|${snap.sunset ?? ""}|${snap.todaySunrise ?? ""}|${snap.todaySunset ?? ""}`
         : "";
-    const modeKey = `${model.series.id}:${textColor}:${this._config.animated_background}:${scene}:${sunKey}`;
-    const fingerprint = metricSeriesFingerprint(model.series);
+    const colCount = series.points.length;
+    const sunColCount = series.points.filter((p) => p.sunEvent).length;
+    const modeKey = `${series.id}:${colCount}:${sunColCount}:${textColor}:${this._config.animated_background}:${scene}:${sunKey}`;
+    const fingerprint = metricSeriesFingerprint(series);
+    const prevColCount = this._metricChart?.data.labels?.length ?? 0;
 
     if (
       this._metricChart &&
@@ -805,10 +803,14 @@ export class VedurkortWeatherCard extends LitElement {
       return;
     }
 
-    if (this._metricChart && this._metricChartModeKey === modeKey) {
+    if (
+      this._metricChart &&
+      this._metricChartModeKey === modeKey &&
+      prevColCount === colCount
+    ) {
       mod.syncDetailMetricChart(
         this._metricChart,
-        model.series,
+        series,
         chrome,
         language,
         temperatureUnit,
@@ -820,7 +822,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._destroyMetricChart();
     this._metricChart = mod.createDetailMetricChart(
       canvas,
-      model.series,
+      series,
       chrome,
       language,
       temperatureUnit,
@@ -840,6 +842,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._humidityLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
+    this._detailWindowNowMs = Date.now();
   }
 
   private _closeDetail(): void {
@@ -851,6 +854,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._humidityLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
+    this._detailWindowNowMs = 0;
     this._destroyMetricChart();
   }
 
@@ -999,20 +1003,7 @@ export class VedurkortWeatherCard extends LitElement {
     const onOpenAlerts = (a: WeatherAlert[]) => this._openAlerts(a);
     const onOpenDetail = (id: DetailMetricId) => this._openDetail(id);
     const detailModel =
-      this._detailMetric != null
-        ? buildDetailModel({
-            metricId: this._detailMetric,
-            snap,
-            iconName,
-            hourlyForecast: this._hourlyForecast,
-            language,
-            bft,
-            gustBft,
-            hourlyPrecipType: this._config.hourly.precip_type,
-            windSpeedUnit: this._config.wind_speed_unit,
-            pollen,
-          })
-        : null;
+      this._detailMetric != null ? this._buildOpenDetailModel(snap) : null;
     const dialogShell = {
       animatedBackground: this._config.animated_background,
       scene,
