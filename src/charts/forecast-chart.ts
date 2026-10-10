@@ -259,37 +259,87 @@ function yTempAfterDataLimits(scale: { min: number; max: number }): void {
   scale.min -= span * 0.2;
 }
 
+type DatalabelCtx = {
+  dataIndex: number;
+  dataset: { data: unknown[] };
+};
+
+function sunEventShortLabel(
+  kind: "sunrise" | "sunset",
+  language?: string,
+): string {
+  return localize(
+    kind === "sunrise" ? "sunrise_short" : "sunset_short",
+    language,
+  );
+}
+
 function precipDatalabels(
   precipType: PrecipType,
   precipUnit: string,
-  display?: (ctx: {
-    dataset: { data: unknown[] };
-    dataIndex: number;
-  }) => boolean,
+  language?: string,
+  sunEvents?: (("sunrise" | "sunset") | null)[],
+  display?: (ctx: DatalabelCtx) => boolean,
 ) {
+  const sunAt = (index: number) => sunEvents?.[index] ?? null;
+
   return {
-    display:
-      display ??
-      ((ctx: { dataset: { data: unknown[] }; dataIndex: number }) => {
-        const v = ctx.dataset.data[ctx.dataIndex];
-        return typeof v === "number" && !Number.isNaN(v);
-      }),
-    // Sit below the bar, in layout bottom padding
+    display: (ctx: DatalabelCtx) => {
+      if (sunAt(ctx.dataIndex)) return true;
+      if (display) return display(ctx);
+      const v = ctx.dataset.data[ctx.dataIndex];
+      return typeof v === "number" && !Number.isNaN(v);
+    },
     anchor: "start" as const,
     align: "bottom" as const,
-    offset: 4,
+    // Sun labels have no pill padding; nudge down to match precip text baseline.
+    offset: (ctx: DatalabelCtx) => (sunAt(ctx.dataIndex) ? 11 : 4),
     clamp: false,
     clip: false,
-    color: "rgba(30, 90, 130, 1)",
-    backgroundColor: "rgba(255,255,255,0.95)",
-    borderColor: "rgba(100, 180, 230, 1)",
-    borderWidth: 1,
-    borderRadius: 4,
-    padding: { top: 2, bottom: 2, left: 4, right: 4 },
-    font: { size: 10, weight: "bold" as const },
-    formatter: (v: number | null) =>
-      formatPrecipLabel(v, precipType, precipUnit),
+    color: (ctx: DatalabelCtx) =>
+      sunAt(ctx.dataIndex)
+        ? "rgba(255, 255, 255, 0.88)"
+        : "rgba(30, 90, 130, 1)",
+    backgroundColor: (ctx: DatalabelCtx) =>
+      sunAt(ctx.dataIndex) ? "transparent" : "rgba(255,255,255,0.95)",
+    borderColor: (ctx: DatalabelCtx) =>
+      sunAt(ctx.dataIndex) ? "transparent" : "rgba(100, 180, 230, 1)",
+    borderWidth: (ctx: DatalabelCtx) => (sunAt(ctx.dataIndex) ? 0 : 1),
+    borderRadius: (ctx: DatalabelCtx) => (sunAt(ctx.dataIndex) ? 0 : 4),
+    padding: (ctx: DatalabelCtx) =>
+      sunAt(ctx.dataIndex)
+        ? { top: 0, bottom: 0, left: 0, right: 0 }
+        : { top: 2, bottom: 2, left: 4, right: 4 },
+    font: (ctx: DatalabelCtx) =>
+      sunAt(ctx.dataIndex)
+        ? { size: 9, weight: "normal" as const }
+        : { size: 10, weight: "bold" as const },
+    formatter: (v: number | null, ctx: DatalabelCtx) => {
+      const kind = sunAt(ctx.dataIndex);
+      if (kind) return sunEventShortLabel(kind, language);
+      return formatPrecipLabel(v, precipType, precipUnit);
+    },
   };
+}
+
+function detailPrecipDatalabels(
+  series: MetricSeries,
+  precipType: PrecipType,
+  precipUnit: string,
+  language?: string,
+) {
+  const sunAt = (index: number) => series.points[index]?.sunEvent ?? null;
+  const sunEvents = series.points.map((p) => p.sunEvent ?? null);
+  return precipDatalabels(
+    precipType,
+    precipUnit,
+    language,
+    sunEvents,
+    (ctx) => {
+      if (sunAt(ctx.dataIndex)) return false;
+      return detailShowValueLabel(ctx);
+    },
+  );
 }
 
 function buildDatasets(
@@ -375,7 +425,12 @@ function buildDatasets(
     borderRadius: 3,
     yAxisID: "yPrecip",
     order: 1,
-    datalabels: precipDatalabels(precipType, precipUnit),
+    datalabels: precipDatalabels(
+      precipType,
+      precipUnit,
+      language,
+      series.sunEvents,
+    ),
   });
 
   // silence unused chrome in datasets (used by scales)
@@ -701,10 +756,11 @@ function buildCurrentDetailDatasets(
       borderRadius: 3,
       yAxisID: "yPrecip",
       order: 1,
-      datalabels: precipDatalabels(
+      datalabels: detailPrecipDatalabels(
+        series,
         precipType,
         precipUnit,
-        detailShowValueLabel,
+        language,
       ),
     });
   }
@@ -883,7 +939,13 @@ function buildDetailDatasets(
         borderRadius: 3,
         yAxisID: "yPrecip",
         order: 1,
-        datalabels: precipDatalabels(precipType, series.unit, showValueLabel),
+        datalabels: precipDatalabels(
+          precipType,
+          series.unit,
+          language,
+          undefined,
+          showValueLabel,
+        ),
       },
     ];
   }
@@ -1143,6 +1205,7 @@ export function createDetailMetricChart(
   };
   const chart = new Chart(canvas, config);
   applyChrome(chart, chrome);
+  requestAnimationFrame(() => chart.resize());
   return chart;
 }
 
@@ -1169,6 +1232,7 @@ export function syncDetailMetricChart(
   }
   applyChrome(chart, chrome);
   chart.update("none");
+  chart.resize();
 }
 
 export { metricSeriesFingerprint };

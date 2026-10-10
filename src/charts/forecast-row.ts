@@ -5,8 +5,10 @@ import {
   bearingToWindIcon,
   beaufortIcon,
   conditionToMeteocon,
+  hourlyForecastCondition,
   windSpeedToBeaufort,
 } from "../icons/condition-map";
+import type { HourlySlotItem } from "../details/sun-events";
 import { getMeteoconSvg } from "../icons/meteocons";
 import { localize } from "../localize";
 import type { ForecastItem, HomeAssistant } from "../types";
@@ -40,6 +42,8 @@ export function renderForecastRow(
     weatherEntityId: string;
     /** Aligned sunrise/sunset markers (current detail sheet). */
     sunEvents?: (("sunrise" | "sunset") | null)[];
+    /** Match chart column count when it differs from `items.length`. */
+    columnCount?: number;
   },
 ): TemplateResult | typeof nothing {
   if (
@@ -54,10 +58,14 @@ export function renderForecastRow(
   const weatherEntity = hass.states[opts.weatherEntityId];
   const sunEntity = opts.sunEntity ?? "sun.sun";
 
+  const cols = opts.columnCount ?? items.length;
+
   return html`
-    <div class="forecast-row" style="--cols: ${items.length}">
+    <div class="forecast-row" style="--cols: ${cols}">
       ${items.map((item, index) => {
-        const sunEvent = opts.sunEvents?.[index] ?? null;
+        const slot = item as HourlySlotItem;
+        const sunEvent =
+          opts.sunEvents?.[index] ?? slot.sunEvent ?? null;
         if (sunEvent) {
           const iconName = sunEvent === "sunrise" ? "sunrise" : "sunset";
           const svg = getMeteoconSvg(iconName, opts.iconStyle, opts.animated);
@@ -81,8 +89,12 @@ export function renderForecastRow(
           opts.mode === "hourly"
             ? isDaytimeForHourlyColumn(hass, item.datetime, sunEntity)
             : (item.is_daytime ?? isSunUp(hass, sunEntity));
+        const condition =
+          opts.mode === "hourly"
+            ? hourlyForecastCondition(item.condition, isDay)
+            : item.condition;
         const icon = conditionToMeteocon(
-          item.condition,
+          condition,
           isDay,
           item.cloud_coverage,
         );

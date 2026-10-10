@@ -1,6 +1,7 @@
 import type { MeteoconName } from "../icons/allowlist";
 import type { PrecipType } from "../config";
 import type { ForecastItem } from "../types";
+import type { HourlySlotItem } from "./sun-events";
 import type { SunArcModel } from "./sun-arc-model";
 import type { UvBarModel } from "./uv-bar-model";
 
@@ -73,7 +74,7 @@ export interface DetailModel {
   /** UV sheet: gradient bar replaces the standard hero. */
   uvBar?: UvBarModel | null;
   /** Hourly items for condition/wind rows under the chart. */
-  hourlyRowItems?: ForecastItem[];
+  hourlyRowItems?: HourlySlotItem[];
   /** Current-conditions sheet: hourly condition icons under chart. */
   showConditionRow?: boolean;
   /** Wind sheet: hourly wind direction under chart. */

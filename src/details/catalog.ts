@@ -32,7 +32,11 @@ import {
   seriesFromHourly,
   currentConditionsSeriesFromSlice,
 } from "./series";
-import { insertSunEvents, sunTimesFromSnapshot } from "./sun-events";
+import {
+  insertSunEventsIntoHourly,
+  sunTimesFromSnapshot,
+  type HourlySlotItem,
+} from "./sun-events";
 import { buildSunArcModel } from "./sun-arc-model";
 import { buildUvBarModel } from "./uv-bar-model";
 import type { DetailMetricId, DetailModel, MetricSeries } from "./types";
@@ -349,6 +353,13 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
   const seriesMetric = chartMetricId(ctx.metricId);
   const nowMs = ctx.nowMs ?? Date.now();
   const hourlySlice = sliceHourlyForecast(ctx.hourlyForecast, 24, nowMs);
+  const currentHourlyRow: HourlySlotItem[] =
+    group === "current"
+      ? insertSunEventsIntoHourly(
+          hourlySlice,
+          sunTimesFromSnapshot(ctx.snap),
+        )
+      : hourlySlice;
   const unit =
     group === "wind"
       ? ctx.snap.windSpeedUnit
@@ -356,7 +367,7 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
   let series =
     group === "current"
       ? currentConditionsSeriesFromSlice(
-          hourlySlice,
+          currentHourlyRow,
           ctx.hourlyPrecipType,
           ctx.snap.precipitationUnit,
           unit,
@@ -418,19 +429,11 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
   }
 
   if (group === "current" || group === "wind") {
-    model.hourlyRowItems = hourlySlice;
     if (group === "current") {
-      if (model.series) {
-        const withSun = insertSunEvents(
-          model.series,
-          model.hourlyRowItems,
-          sunTimesFromSnapshot(ctx.snap),
-        );
-        model.series = withSun.series;
-        model.hourlyRowItems = withSun.hourlyRowItems;
-      }
+      model.hourlyRowItems = currentHourlyRow;
       model.showConditionRow = model.hourlyRowItems.length > 0;
     } else {
+      model.hourlyRowItems = hourlySlice;
       model.showWindRow = model.hourlyRowItems.length > 0;
     }
   }
