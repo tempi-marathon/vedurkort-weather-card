@@ -90,7 +90,7 @@ export function renderForecastSection(
               </div>
               <div
                 class="forecast-row-slot"
-                style=${!scrollable && plotWidth
+                style=${plotWidth
                   ? `margin-left:${plotLeft}px;width:${plotWidth}px`
                   : ""}
               >
