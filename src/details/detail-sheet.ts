@@ -22,6 +22,9 @@ export interface DetailSheetContext {
   entityId?: string;
   language?: string;
   windSpeedUnit?: string;
+  /** Chart.js plot area inset so icon columns match category centers. */
+  plotLeft?: number;
+  plotWidth?: number;
   onChartScroll?: () => void;
   beaufortLegendOpen?: boolean;
   onToggleBeaufortLegend?: () => void;
@@ -43,6 +46,8 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
     entityId,
     language,
     windSpeedUnit,
+    plotLeft = 0,
+    plotWidth = 0,
     onChartScroll,
     beaufortLegendOpen,
     onToggleBeaufortLegend,
@@ -102,7 +107,12 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
               </div>
               ${showHourlyRow
                 ? html`
-                    <div class="forecast-row-slot">
+                    <div
+                      class="forecast-row-slot"
+                      style=${plotWidth
+                        ? `margin-left:${plotLeft}px;width:${plotWidth}px`
+                        : ""}
+                    >
                       ${renderForecastRow(hass!, model.hourlyRowItems!, {
                         showIcons: showConditionRow,
                         showWindSpeed: false,

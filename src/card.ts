@@ -73,6 +73,8 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _dailyPlotWidth = 0;
   @state() private _hourlyPlotLeft = 0;
   @state() private _hourlyPlotWidth = 0;
+  @state() private _detailPlotLeft = 0;
+  @state() private _detailPlotWidth = 0;
   @state() private _alertsOpen = false;
   @state() private _expandedAlertIds: string[] = [];
   @state() private _detailMetric: DetailMetricId | null = null;
@@ -385,6 +387,20 @@ export class VedurkortWeatherCard extends LitElement {
     ) {
       this._hourlyPlotLeft = area.left;
       this._hourlyPlotWidth = area.width;
+    }
+  }
+
+  private _syncDetailPlotArea(): void {
+    const mod = this._chartMod;
+    if (!mod || !this._metricChart) return;
+    const area = mod.getChartPlotArea(this._metricChart);
+    if (!area) return;
+    if (
+      Math.abs(area.left - this._detailPlotLeft) > 0.5 ||
+      Math.abs(area.width - this._detailPlotWidth) > 0.5
+    ) {
+      this._detailPlotLeft = area.left;
+      this._detailPlotWidth = area.width;
     }
   }
 
@@ -717,6 +733,8 @@ export class VedurkortWeatherCard extends LitElement {
     this._metricChart = null;
     this._metricChartFingerprint = "";
     this._metricChartModeKey = "";
+    this._detailPlotLeft = 0;
+    this._detailPlotWidth = 0;
   }
 
   private _modalTextColor(): string {
@@ -800,6 +818,7 @@ export class VedurkortWeatherCard extends LitElement {
       this._metricChartModeKey === modeKey &&
       this._metricChartFingerprint === fingerprint
     ) {
+      this._syncDetailPlotArea();
       return;
     }
 
@@ -816,6 +835,7 @@ export class VedurkortWeatherCard extends LitElement {
         temperatureUnit,
       );
       this._metricChartFingerprint = fingerprint;
+      this._syncDetailPlotArea();
       return;
     }
 
@@ -829,6 +849,7 @@ export class VedurkortWeatherCard extends LitElement {
     );
     this._metricChartFingerprint = fingerprint;
     this._metricChartModeKey = modeKey;
+    requestAnimationFrame(() => this._syncDetailPlotArea());
   }
 
   private _openDetail(metricId: DetailMetricId): void {
@@ -1116,6 +1137,8 @@ export class VedurkortWeatherCard extends LitElement {
               entityId: this._config.entity,
               language,
               windSpeedUnit: snap.windSpeedUnit,
+              plotLeft: this._detailPlotLeft,
+              plotWidth: this._detailPlotWidth,
               onChartScroll: () => this._onDetailScroll(),
               beaufortLegendOpen: this._beaufortLegendOpen,
               onToggleBeaufortLegend: () => this._toggleBeaufortLegend(),
