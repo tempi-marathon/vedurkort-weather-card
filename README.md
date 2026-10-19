@@ -1,6 +1,6 @@
 # Veðurkort Weather Card
 
-[![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5?style=for-the-badge&logo=homeassistantcommunitystore&logoColor=white)](https://hacs.xyz/)
+[![HACS](https://img.shields.io/badge/HACS-41BDF5?style=for-the-badge&logo=homeassistantcommunitystore&logoColor=white)](https://hacs.xyz/)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Lovelace-18BCF2?style=for-the-badge&logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -64,10 +64,13 @@ Not translated by the card: weather condition names (from Home Assistant entity 
 
 ### HACS
 
-1. Add this repository as a **custom repository** (category: Lovelace / Dashboard)
-2. Install **Veðurkort Weather Card**
-3. Add the resource if needed: `/hacsfiles/vedurkort-weather-card/vedurkort-weather-card.js` (type: JavaScript Module)
-4. Refresh Lovelace cache / restart Home Assistant if the card does not appear
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tempi-marathon&repository=https%3A%2F%2Fgithub.com%2Ftempi-marathon%2Fvedurkort-weather-card&category=plugin)
+
+Or search for **Veðurkort Weather Card** in HACS, then:
+
+1. Download / install the card
+2. Add the resource if needed: `/hacsfiles/vedurkort-weather-card/vedurkort-weather-card.js` (type: JavaScript Module)
+3. Refresh Lovelace cache / restart Home Assistant if the card does not appear
 
 ### Manual
 
