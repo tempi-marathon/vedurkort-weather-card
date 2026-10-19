@@ -1,6 +1,6 @@
 {
   "name": "vedurkort-weather-card",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Veðurkort — Home Assistant weather card with Meteocons icons",
   "type": "module",
   "main": "dist/vedurkort-weather-card.js",
