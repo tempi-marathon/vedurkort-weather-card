@@ -64,7 +64,7 @@ Not translated by the card: weather condition names (from Home Assistant entity 
 
 ### HACS
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tempi-marathon&repository=https%3A%2F%2Fgithub.com%2Ftempi-marathon%2Fvedurkort-weather-card&category=plugin)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tempi-marathon&repository=vedurkort-weather-card&category=plugin)
 
 Or search for **Veðurkort Weather Card** in HACS, then:
 
