@@ -28,19 +28,6 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - Optional **pollen** chip via companion [Pollen](https://github.com/tempi-marathon/ha-pollen) (Europe / CAMS)
 - Localized UI (`en`, `nl`, `is`) — see [7. Localization](docs/07-localization.md)
 
-## Ecosystem
-
-Veðurkort reads Home Assistant entities — it does not call weather/alert/pollen APIs itself.
-
-```mermaid
-flowchart TD
-  Weather["weather.* entity"] --> Card[Vedurkort]
-  Overrides["Optional sensor overrides"] --> Card
-  CAP["CAP Alerts device"] -.->|"optional alerts"| Card
-  Meteo["MeteoAlarm binary_sensor"] -.->|"optional alerts"| Card
-  Pollen["Pollen device"] -.->|"optional pollen chip"| Card
-```
-
 ## Install
 
 **Home Assistant 2023.9+** recommended for live forecasts (`weather/subscribe_forecast`).
