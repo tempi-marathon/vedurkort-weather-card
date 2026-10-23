@@ -230,6 +230,7 @@ export const cardStyles = [
       width: min(520px, calc(100vw - 32px));
       max-height: min(85vh, 720px);
       overflow: hidden;
+      overscroll-behavior: contain;
       border-radius: 12px;
       background: var(--card-background-color, #fff);
       color: var(--primary-text-color, #212121);
@@ -291,6 +292,7 @@ export const cardStyles = [
     }
     .vk-modal-body {
       overflow: auto;
+      overscroll-behavior: contain;
       padding: 0 16px 16px;
       flex: 1;
       min-height: 0;
