@@ -3173,6 +3173,7 @@ var el = [Js, $t`
       width: min(520px, calc(100vw - 32px));
       max-height: min(85vh, 720px);
       overflow: hidden;
+      overscroll-behavior: contain;
       border-radius: 12px;
       background: var(--card-background-color, #fff);
       color: var(--primary-text-color, #212121);
@@ -3234,6 +3235,7 @@ var el = [Js, $t`
     }
     .vk-modal-body {
       overflow: auto;
+      overscroll-behavior: contain;
       padding: 0 16px 16px;
       flex: 1;
       min-height: 0;
@@ -16841,6 +16843,50 @@ function $S(e) {
   };
   return e.addEventListener("keydown", i), () => e.removeEventListener("keydown", i);
 }
+var OS = /* @__PURE__ */ new Set([
+  "auto",
+  "scroll",
+  "overlay"
+]);
+function BS(e) {
+  const t = getComputedStyle(e);
+  return OS.has(t.overflowY) ? e.scrollHeight > e.clientHeight : !1;
+}
+function* AS(e) {
+  let t = e;
+  for (; t; ) {
+    const i = t.parentElement ?? t.getRootNode().host ?? null;
+    i instanceof HTMLElement && (yield i), t = i;
+  }
+}
+function RS(e) {
+  const t = /* @__PURE__ */ new Set(), i = [], a = (r) => {
+    !r || t.has(r) || (t.add(r), i.push(r));
+  };
+  a(document.documentElement), a(document.body);
+  for (const r of AS(e)) BS(r) && a(r);
+  return i;
+}
+function GS(e) {
+  const t = RS(e), i = [], a = window.scrollY;
+  for (const n of t) {
+    const s = {
+      el: n,
+      overflow: n.style.overflow,
+      overflowY: n.style.overflowY
+    };
+    n === document.body && (s.position = n.style.position, s.top = n.style.top, s.width = n.style.width, s.scrollTop = a, n.style.position = "fixed", n.style.top = `-${a}px`, n.style.width = "100%"), n.style.overflow = "hidden", n.style.overflowY = "hidden", i.push(s);
+  }
+  let r = !1;
+  return () => {
+    if (!r) {
+      r = !0;
+      for (const n of i)
+        n.el.style.overflow = n.overflow, n.el.style.overflowY = n.overflowY, n.position !== void 0 && (n.el.style.position = n.position, n.el.style.top = n.top ?? "", n.el.style.width = n.width ?? "");
+      a && window.scrollTo(0, a);
+    }
+  };
+}
 function D(e, t, i, a) {
   var r = arguments.length, n = r < 3 ? t : a === null ? a = Object.getOwnPropertyDescriptor(t, i) : a, s;
   if (typeof Reflect == "object" && typeof Reflect.decorate == "function") n = Reflect.decorate(e, t, i, a);
@@ -16848,7 +16894,7 @@ function D(e, t, i, a) {
   return r > 3 && n && Object.defineProperty(t, i, n), n;
 }
 var Ln = U((() => {
-})), OS = /* @__PURE__ */ W4({ VedurkortWeatherCardEditor: () => $1 }), $1, BS = U((() => {
+})), VS = /* @__PURE__ */ W4({ VedurkortWeatherCardEditor: () => $1 }), $1, DS = U((() => {
   n1(), l8(), c8(), yn(), Pn(), Z(), z1(), Ln(), $1 = class extends me {
     constructor(...t) {
       super(...t), this._dailyHasProbability = null, this._hourlyHasProbability = null, this._alertsSource = "cap", this._probeKey = "", this._capEntityFilter = (i) => Za(this.hass, i.entity_id), this._alertEntityFilter = (i) => ps(this.hass, i.entity_id) || Za(this.hass, i.entity_id), this._pollenEntityFilter = (i) => this.hass.entities?.[i.entity_id]?.platform === "pollen" ? !0 : i.attributes?.provider === "open_meteo";
@@ -17717,7 +17763,7 @@ var e1 = class extends me {
     super(...t), this._dailyForecast = [], this._hourlyForecast = [], this._dailyError = null, this._hourlyError = null, this._dailyPlotLeft = 0, this._dailyPlotWidth = 0, this._hourlyPlotLeft = 0, this._hourlyPlotWidth = 0, this._detailPlotLeft = 0, this._detailPlotWidth = 0, this._alertsOpen = !1, this._expandedAlertIds = [], this._detailMetric = null, this._beaufortLegendOpen = !1, this._pollenLegendOpen = !1, this._uvLegendOpen = !1, this._humidityLegendOpen = !1, this._dailyChart = null, this._hourlyChart = null, this._metricChart = null, this._metricChartFingerprint = "", this._metricChartModeKey = "", this._dailyChartFingerprint = "", this._hourlyChartFingerprint = "", this._dailyChartModeKey = "", this._hourlyChartModeKey = "", this._forecastKey = "", this._forecastLoading = !1, this._chartMod = null, this._chartModLoading = !1, this._alertsTrigger = null, this._detailTrigger = null, this._boundDialog = null, this._hourlyScrollKey = "", this._hourlyScrollUserAdjusted = !1, this._hourlyScrollProgrammatic = !1, this._detailScrollKey = "", this._detailScrollUserAdjusted = !1, this._detailScrollProgrammatic = !1, this._detailWindowNowMs = 0, this._icon = (i) => w0(i, this._config.icon_style, this._config.animated_icons);
   }
   static async getConfigElement() {
-    return await Promise.resolve().then(() => (BS(), OS)), document.createElement("vedurkort-weather-card-editor");
+    return await Promise.resolve().then(() => (DS(), VS)), document.createElement("vedurkort-weather-card-editor");
   }
   static getStubConfig(t, i) {
     return { ...r1 };
@@ -17736,7 +17782,7 @@ var e1 = class extends me {
     }), (t.has("_config") || t.has("hass")) && this.updateComplete.then(() => this._bindCardActions());
   }
   disconnectedCallback() {
-    super.disconnectedCallback(), this._teardownForecast(), this._destroyCharts(), this._destroyMetricChart(), this._unbindActions?.(), this._unbindActions = void 0, this._unbindFocusTrap?.(), this._unbindFocusTrap = void 0;
+    super.disconnectedCallback(), this._teardownForecast(), this._destroyCharts(), this._destroyMetricChart(), this._unbindActions?.(), this._unbindActions = void 0, this._unbindFocusTrap?.(), this._unbindFocusTrap = void 0, this._unlockScroll?.(), this._unlockScroll = void 0;
   }
   _bindCardActions() {
     if (this._unbindActions?.(), this._unbindActions = void 0, !this._config?.entity || !this.hass) return;
@@ -17759,12 +17805,12 @@ var e1 = class extends me {
       } catch {
         return;
       }
-      this._boundDialog !== t && (this._releaseDialog(), this._boundDialog = t, t.focus(), this._unbindFocusTrap = $S(t));
+      this._unlockScroll || (this._unlockScroll = GS(this)), this._boundDialog !== t && (this._releaseDialog(), this._boundDialog = t, t.focus(), this._unbindFocusTrap = $S(t));
     }
   }
   _closeDialogElements() {
     for (const t of this.renderRoot.querySelectorAll("dialog.vk-modal")) t.open && t.close();
-    this._releaseDialog();
+    this._unlockScroll?.(), this._unlockScroll = void 0, this._releaseDialog();
   }
   _teardownForecast() {
     this._unsubDaily?.(), this._unsubHourly?.(), this._unsubDaily = void 0, this._unsubHourly = void 0, this._forecastKey = "";
@@ -18157,7 +18203,7 @@ D([Y()], e1.prototype, "_uvLegendOpen", void 0);
 D([Y()], e1.prototype, "_humidityLegendOpen", void 0);
 e1 = D([wi("vedurkort-weather-card")], e1);
 va();
-function AS(e, t) {
+function WS(e, t) {
   return t.split(".")[0] !== "weather" || !e.states[t] ? null : { config: {
     type: "custom:vedurkort-weather-card",
     entity: t,
@@ -18173,7 +18219,7 @@ window.customCards.push({
   description: "Weather card with animated Meteocons icons, optional CSS backgrounds, and Chart.js forecasts",
   preview: !0,
   documentationURL: "https://github.com/tempi-marathon/vedurkort-weather-card",
-  getEntitySuggestion: AS
+  getEntitySuggestion: WS
 });
 
 //# sourceMappingURL=vedurkort-weather-card.js.map

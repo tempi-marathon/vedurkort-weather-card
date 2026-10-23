@@ -53,6 +53,7 @@ import {
 } from "./sections/forecast-section";
 import type { ForecastItem, HomeAssistant, LovelaceCardEditor } from "./types";
 import { trapFocus } from "./ui/focus-trap";
+import { lockScroll } from "./ui/scroll-lock";
 import { renderViewportDialog } from "./ui/viewport-dialog";
 import {
   formatNumber,
@@ -102,6 +103,7 @@ export class VedurkortWeatherCard extends LitElement {
   private _chartModLoading = false;
   private _unbindActions: (() => void) | undefined;
   private _unbindFocusTrap: (() => void) | undefined;
+  private _unlockScroll: (() => void) | undefined;
   private _alertsTrigger: HTMLElement | null = null;
   private _detailTrigger: HTMLElement | null = null;
   private _boundDialog: HTMLDialogElement | null = null;
@@ -200,6 +202,8 @@ export class VedurkortWeatherCard extends LitElement {
     this._unbindActions = undefined;
     this._unbindFocusTrap?.();
     this._unbindFocusTrap = undefined;
+    this._unlockScroll?.();
+    this._unlockScroll = undefined;
   }
 
   private _bindCardActions(): void {
@@ -245,6 +249,10 @@ export class VedurkortWeatherCard extends LitElement {
       }
     }
 
+    if (!this._unlockScroll) {
+      this._unlockScroll = lockScroll(this);
+    }
+
     if (this._boundDialog !== dlg) {
       this._releaseDialog();
       this._boundDialog = dlg;
@@ -259,6 +267,8 @@ export class VedurkortWeatherCard extends LitElement {
         (dlg as HTMLDialogElement).close();
       }
     }
+    this._unlockScroll?.();
+    this._unlockScroll = undefined;
     this._releaseDialog();
   }
 

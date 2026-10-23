@@ -36,10 +36,11 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 
 1. Open HACS → search for **Veðurkort Weather Card**, or use the button above
 2. Download / install the card
-3. Add a Lovelace card and search for **Veðurkort**
-4. If the card does not appear, refresh the Lovelace cache (or restart Home Assistant)
+3. Reload the browser (or refresh Lovelace resources), then **Add card** and search for **Veðurkort**
 
-Full guide: [1. Installation](docs/01-installation.md)
+On **Home Assistant 2026.11+**, install from **Settings → Marketplace**; the same button opens Marketplace after you upgrade.
+
+Full guide (including resource paths): [1. Installation](docs/01-installation.md)
 
 ## Documentation
 
