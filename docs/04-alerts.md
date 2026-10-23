@@ -15,7 +15,7 @@ Config keys: [`show_alerts`](02-configuration.md), [`alerts_device`](02-configur
 
 | Multiple warnings | Single warning | Detail dialog |
 | --- | --- | --- |
-| ![Multiple active warnings](../images/vedurkort-alerts-multi.png) | ![Single warning with timing](../images/vedurkort-alerts-single.png) | ![Weather alerts dialog](../images/vedurkort-alerts-modal.png) |
+| ![Multiple active warnings](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-alerts-multi.png) | ![Single warning with timing](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-alerts-single.png) | ![Weather alerts dialog](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-alerts-modal.png) |
 
 **Strip labels**
 
