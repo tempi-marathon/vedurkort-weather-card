@@ -13,7 +13,7 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 
 | Full | Current | Icon styles | Daily only |
 | --- | --- | --- | --- |
-| ![Full card](images/vedurkort-full.png) | ![Current](images/vedurkort-current.png) | ![Icon styles](images/vedurkort-styles.png) | ![Daily only](images/vedurkort-daily-only.png) |
+| ![Full card](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-full.png) | ![Current](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-current.png) | ![Icon styles](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-styles.png) | ![Daily only](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-daily-only.png) |
 
 ## Features
 
