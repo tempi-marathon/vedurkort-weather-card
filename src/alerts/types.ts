@@ -34,6 +34,10 @@ export interface WeatherAlert {
   onset?: string;
   expires?: string;
   entityId?: string;
+  /** Raw CAP `<identifier>` when present (for references collapse). */
+  identifier?: string;
+  /** CAP `<references>` supersession chain when present. */
+  references?: string;
 }
 
 export interface AlertAdapter {

@@ -1,7 +1,11 @@
 import { html, nothing, type TemplateResult } from "lit";
 import { sliceHourlyForecast } from "../charts/hourly-window";
 import { renderForecastRow } from "../charts/forecast-row";
-import type { VedurkortCardConfig } from "../config";
+import type { BackgroundScene } from "../backgrounds/scenes";
+import {
+  dailyShowsInline,
+  type VedurkortCardConfig,
+} from "../config";
 import {
   insertSunEventsIntoHourly,
   sunTimesFromSnapshot,
@@ -9,6 +13,7 @@ import {
 } from "../details/sun-events";
 import { localize } from "../localize";
 import type { ForecastItem, HomeAssistant } from "../types";
+import { renderViewportDialog } from "../ui/viewport-dialog";
 import type { WeatherSnapshot } from "../weather/adapter";
 
 export interface ForecastSectionState {
@@ -20,6 +25,22 @@ export interface ForecastSectionState {
   dailyPlotWidth: number;
   hourlyPlotLeft: number;
   hourlyPlotWidth: number;
+}
+
+export interface ForecastSectionOptions {
+  /** Render even when the block would normally be gated off (daily modal). */
+  force?: boolean;
+  /** Override canvas class (default `forecast-canvas-${mode}`). */
+  canvasClass?: string;
+  /** Override plot alignment (e.g. modal daily chart). */
+  plotLeft?: number;
+  plotWidth?: number;
+}
+
+export interface DailyDialogShellOptions {
+  animatedBackground?: boolean;
+  scene?: BackgroundScene;
+  cloudCoverage?: number | null;
 }
 
 function forecastErrorText(error: string, language?: string): string {
@@ -37,9 +58,14 @@ export function renderForecastSection(
   state: ForecastSectionState,
   language: string | undefined,
   onHourlyScroll?: () => void,
+  options?: ForecastSectionOptions,
 ): TemplateResult | typeof nothing {
   const block = mode === "daily" ? config.daily : config.hourly;
-  if (!block.enabled) return nothing;
+  if (mode === "daily") {
+    if (!options?.force && !dailyShowsInline(config.daily)) return nothing;
+  } else if (!block.enabled) {
+    return nothing;
+  }
 
   const items =
     mode === "daily" ? state.dailyForecast : state.hourlyForecast;
@@ -56,10 +82,13 @@ export function renderForecastSection(
       ? (slice as HourlySlotItem[]).map((item) => item.sunEvent ?? null)
       : undefined;
   const plotLeft =
-    mode === "daily" ? state.dailyPlotLeft : state.hourlyPlotLeft;
+    options?.plotLeft ??
+    (mode === "daily" ? state.dailyPlotLeft : state.hourlyPlotLeft);
   const plotWidth =
-    mode === "daily" ? state.dailyPlotWidth : state.hourlyPlotWidth;
+    options?.plotWidth ??
+    (mode === "daily" ? state.dailyPlotWidth : state.hourlyPlotWidth);
   const scrollable = mode === "hourly" && config.hourly.hours > 12;
+  const canvasClass = options?.canvasClass ?? `forecast-canvas-${mode}`;
 
   return html`
     <div
@@ -86,7 +115,7 @@ export function renderForecastSection(
               style=${scrollable ? `--cols: ${slice.length}` : ""}
             >
               <div class="chart-wrap">
-                <canvas class="forecast-canvas-${mode}"></canvas>
+                <canvas class=${canvasClass}></canvas>
               </div>
               <div
                 class="forecast-row-slot"
@@ -113,4 +142,67 @@ export function renderForecastSection(
         : nothing}
     </div>
   `;
+}
+
+/** Quiet text link under current chips that opens the daily forecast modal. */
+export function renderDailyLink(
+  language: string | undefined,
+  onOpen: () => void,
+): TemplateResult {
+  return html`
+    <button
+      type="button"
+      class="daily-link"
+      @click=${() => onOpen()}
+      aria-haspopup="dialog"
+    >
+      ${localize("legend_daily", language)}
+      <span class="daily-link-chevron" aria-hidden="true">›</span>
+    </button>
+  `;
+}
+
+export function renderDailyDialog(
+  open: boolean,
+  hass: HomeAssistant,
+  config: VedurkortCardConfig,
+  snap: WeatherSnapshot,
+  state: ForecastSectionState,
+  language: string | undefined,
+  onClose: () => void,
+  shell?: DailyDialogShellOptions,
+  plotLeft = 0,
+  plotWidth = 0,
+): TemplateResult | typeof nothing {
+  if (!open) return nothing;
+
+  return renderViewportDialog({
+    open: true,
+    title: localize("legend_daily", language),
+    titleId: "daily-modal-title",
+    language,
+    animatedBackground: shell?.animatedBackground,
+    scene: shell?.scene,
+    cloudCoverage: shell?.cloudCoverage,
+    onClose,
+    body: html`
+      <div class="daily-modal-body">
+        ${renderForecastSection(
+          "daily",
+          hass,
+          config,
+          snap,
+          state,
+          language,
+          undefined,
+          {
+            force: true,
+            canvasClass: "forecast-canvas-daily-modal",
+            plotLeft,
+            plotWidth,
+          },
+        )}
+      </div>
+    `,
+  });
 }

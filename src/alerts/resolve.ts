@@ -1,6 +1,7 @@
 import type { VedurkortCardConfig } from "../config";
 import type { HassEntity, HomeAssistant } from "../types";
 import {
+  collapseNearDuplicateAlerts,
   dedupeAlerts,
   parseEntityAlerts,
   sortAlerts,
@@ -27,7 +28,7 @@ export function resolveAlerts(
   for (const entity of entities) {
     alerts.push(...parseEntityAlerts(entity));
   }
-  return sortAlerts(dedupeAlerts(alerts));
+  return sortAlerts(collapseNearDuplicateAlerts(dedupeAlerts(alerts)));
 }
 
 function collectAlertEntities(

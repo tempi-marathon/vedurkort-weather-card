@@ -1,5 +1,5 @@
 import { resolveAlerts } from "./alerts/resolve";
-import type { VedurkortCardConfig } from "./config";
+import { dailyShowsInline, type VedurkortCardConfig } from "./config";
 import type { HomeAssistant } from "./types";
 
 /** Grid height estimate for Lovelace layout (sections + layout preset + alerts). */
@@ -8,7 +8,7 @@ export function computeCardSize(
   hass: HomeAssistant | undefined,
 ): number {
   let size = config.show_current ? 3 : 1;
-  if (config.daily.enabled) size += 3;
+  if (dailyShowsInline(config.daily)) size += 3;
   if (config.hourly.enabled) size += 3;
   if (config.layout === "compact") size = Math.max(2, size - 1);
   if (config.layout === "minimal") size = Math.max(1, size - 2);

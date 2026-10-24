@@ -27,6 +27,8 @@ Config keys: [`show_alerts`](02-configuration.md), [`alerts_device`](02-configur
 - Yellow, orange, and red MeteoAlarm / CAP warnings are shown.
 - **Green (level 1)** is filtered out — in Europe that means “no particular awareness needed”, not a real warning.
 - Cancelled / expired CAP phases are hidden.
+- CAP alerts marked `stale` are hidden.
+- Near-duplicate CAP messages (same phenomenon, same area, onset, and severity with different ids — common for overlapping MeteoAlarm updates) are collapsed to one card. Alerts without an area, or with different areas, are never soft-collapsed. An alert whose CAP `references` list cites another alert’s `identifier` supersedes that alert.
 
 When a **red / extreme** warning is **currently active**, the card switches to the exceptional animated background and shows the Meteocons extreme variant of the current weather condition icon. Yellow and orange alerts, and red alerts before their onset time, do not change the scene or main icon.
 

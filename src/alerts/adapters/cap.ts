@@ -30,6 +30,9 @@ export const capAdapter: AlertAdapter = {
     const id = str(attributes.id);
     if (!id) return [];
 
+    // Superseded leftovers marked by CAP Alerts.
+    if (attributes.stale === true) return [];
+
     // Terminal / inactive phases — hide from the card.
     const phase = str(attributes.phase).toLowerCase();
     if (phase === "cancel" || phase === "expired") return [];
@@ -67,6 +70,9 @@ export const capAdapter: AlertAdapter = {
     const expires =
       str(attributes.ends) || str(attributes.expires) || undefined;
 
+    const identifier = str(attributes.identifier) || undefined;
+    const references = str(attributes.references) || undefined;
+
     const alert: WeatherAlert = {
       id,
       provider: "cap",
@@ -85,6 +91,8 @@ export const capAdapter: AlertAdapter = {
       onset,
       expires,
       entityId,
+      identifier,
+      references,
     };
     return [alert];
   },

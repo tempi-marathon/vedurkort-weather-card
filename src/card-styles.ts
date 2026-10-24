@@ -128,6 +128,42 @@ export const cardStyles = [
     .section-current .alerts-strip + .details {
       margin-top: 12px;
     }
+    .daily-link-row,
+    .daily-link-wrap {
+      margin-top: 10px;
+    }
+    .daily-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.3;
+      opacity: 0.85;
+      cursor: pointer;
+      text-align: left;
+    }
+    .daily-link:hover,
+    .daily-link:focus-visible {
+      opacity: 1;
+      text-decoration: underline;
+      outline: none;
+    }
+    .daily-link-chevron {
+      opacity: 0.7;
+      font-size: 1.05em;
+      line-height: 1;
+      text-decoration: none;
+    }
+    .vk-modal .daily-modal-body .forecast {
+      margin: 0;
+    }
     .alerts-strip:hover,
     .alerts-strip:focus-visible {
       background: color-mix(
