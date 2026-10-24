@@ -2,7 +2,7 @@
 
 All options can be set in the visual editor. YAML details are below.
 
-Enable any combination of `show_current`, `daily.enabled`, and `hourly.enabled`. When both forecasts are on, daily is shown above hourly. If all three are off, the card shows a short configuration hint.
+Enable any combination of `show_current`, `daily.display` (not `off`), and `hourly.enabled`. When both forecasts are on, daily is shown above hourly. If all three are off, the card shows a short configuration hint.
 
 See also: [3. Usage](03-usage.md) · [4. Weather alerts](04-alerts.md) · [5. Pollen](05-pollen.md) · [6. Examples](06-examples.md)
 
@@ -61,12 +61,15 @@ See also: [3. Usage](03-usage.md) · [4. Weather alerts](04-alerts.md) · [5. Po
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| `enabled` | boolean | `false` | Show the daily forecast chart and icons. |
+| `display` | string | `off` | How daily appears: `off`, `inline` (section on the card), or `modal` (text link under current chips opens a dialog with the same chart). |
+| `enabled` | boolean | `false` | Legacy. If `display` is omitted, `true` maps to `inline` and `false` to `off`. After normalize, `enabled` is `true` whenever `display !== "off"`. |
 | `days` | number | `5` | Number of daily forecast points to show (2–7). |
 | `show_condition_icons` | boolean | `true` | Show Meteocons condition icons under the chart. |
 | `show_wind_speed` | boolean | `true` | Show Beaufort icon + speed under the chart. |
 | `show_wind_direction` | boolean | `true` | Show compass label + wind-direction icon under the chart. |
 | `precip_type` | string | `rainfall` | Precipitation series: `rainfall` or `probability`. |
+
+The daily modal uses the same viewport dialog shell as alerts and detail sheets (weather background/scene when `animated_background` is on, title, Close, backdrop dismiss).
 
 ## Hourly options (`hourly`)
 

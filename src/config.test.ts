@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { normalizeConfig, normalizeEditorConfig } from "./config";
+import {
+  dailyShowsInline,
+  dailyShowsModalTrigger,
+  dailyWantsData,
+  normalizeConfig,
+  normalizeEditorConfig,
+} from "./config";
 
 describe("alerts config compatibility", () => {
   it("defaults show_alerts to false for legacy configs", () => {
@@ -142,5 +148,50 @@ describe("config normalization", () => {
       daily: { enabled: true, days: 1 } as never,
     });
     expect(cfg.daily.days).toBe(2);
+  });
+
+  it("defaults daily.display to off", () => {
+    const cfg = normalizeConfig({ entity: "weather.home" });
+    expect(cfg.daily.display).toBe("off");
+    expect(cfg.daily.enabled).toBe(false);
+  });
+
+  it("migrates daily.enabled true to display inline", () => {
+    const cfg = normalizeConfig({
+      entity: "weather.home",
+      daily: { enabled: true } as never,
+    });
+    expect(cfg.daily.display).toBe("inline");
+    expect(cfg.daily.enabled).toBe(true);
+  });
+
+  it("prefers daily.display over enabled", () => {
+    const cfg = normalizeConfig({
+      entity: "weather.home",
+      daily: { enabled: false, display: "modal" } as never,
+    });
+    expect(cfg.daily.display).toBe("modal");
+    expect(cfg.daily.enabled).toBe(true);
+  });
+
+  it("maps pre-release daily.display both to inline", () => {
+    const cfg = normalizeEditorConfig({
+      entity: "weather.home",
+      daily: { display: "both" } as never,
+    });
+    expect(cfg.daily.display).toBe("inline");
+    expect(cfg.daily.enabled).toBe(true);
+  });
+
+  it("daily helpers match display modes", () => {
+    expect(dailyShowsInline({ display: "off" } as never)).toBe(false);
+    expect(dailyShowsInline({ display: "inline" } as never)).toBe(true);
+    expect(dailyShowsInline({ display: "modal" } as never)).toBe(false);
+    expect(dailyShowsModalTrigger({ display: "modal" } as never)).toBe(true);
+    expect(dailyShowsModalTrigger({ display: "inline" } as never)).toBe(
+      false,
+    );
+    expect(dailyWantsData({ display: "modal" } as never)).toBe(true);
+    expect(dailyWantsData({ display: "off" } as never)).toBe(false);
   });
 });

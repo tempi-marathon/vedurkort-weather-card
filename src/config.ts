@@ -8,6 +8,8 @@ import {
 export type PrecipType = "rainfall" | "probability";
 export type CardLayout = "default" | "compact" | "minimal";
 export const CARD_LAYOUTS: CardLayout[] = ["default", "compact", "minimal"];
+export type DailyDisplay = "off" | "inline" | "modal";
+export const DAILY_DISPLAYS: DailyDisplay[] = ["off", "inline", "modal"];
 export type { WindSpeedDisplayUnit };
 export { WIND_SPEED_DISPLAY_UNITS };
 
@@ -21,6 +23,26 @@ export interface ForecastBlockConfig {
 
 export interface DailyConfig extends ForecastBlockConfig {
   days: number;
+  /**
+   * How daily forecast appears: off, inline on the card, or dialog via link.
+   * `enabled` is derived (`display !== "off"`) for older YAML / call sites.
+   */
+  display: DailyDisplay;
+}
+
+/** Inline daily section on the card. */
+export function dailyShowsInline(daily: DailyConfig): boolean {
+  return daily.display === "inline";
+}
+
+/** Text link that opens the daily forecast dialog. */
+export function dailyShowsModalTrigger(daily: DailyConfig): boolean {
+  return daily.display === "modal";
+}
+
+/** Subscribe to daily forecast + render charts when needed. */
+export function dailyWantsData(daily: DailyConfig): boolean {
+  return daily.display !== "off";
 }
 
 export interface HourlyConfig extends ForecastBlockConfig {
@@ -126,6 +148,7 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   daily: {
     ...DEFAULT_FORECAST_BLOCK,
     days: 5,
+    display: "off",
   },
   hourly: {
     ...DEFAULT_FORECAST_BLOCK,
@@ -157,7 +180,12 @@ function mergeConfigFields(
 
   daily.days = clampInt(daily.days, 2, 7, DEFAULT_CONFIG.daily.days);
   hourly.hours = clampInt(hourly.hours, 2, 48, DEFAULT_CONFIG.hourly.hours);
-  daily.enabled = Boolean(daily.enabled);
+  daily.display = normalizeDailyDisplay(
+    (input.daily as { display?: unknown; enabled?: unknown } | undefined)
+      ?.display,
+    (input.daily as { enabled?: unknown } | undefined)?.enabled,
+  );
+  daily.enabled = daily.display !== "off";
   hourly.enabled = Boolean(hourly.enabled);
 
   const alertsEntities = normalizeAlertEntities(input);
@@ -245,6 +273,23 @@ function normalizeLayout(value: unknown): CardLayout {
   return CARD_LAYOUTS.includes(value as CardLayout)
     ? (value as CardLayout)
     : DEFAULT_CONFIG.layout;
+}
+
+/**
+ * Prefer explicit `display`; else migrate legacy `enabled` boolean
+ * (`true` → inline, `false`/missing → off).
+ * Pre-release `both` maps to `inline` (keeps the on-card chart).
+ */
+function normalizeDailyDisplay(
+  display: unknown,
+  enabled: unknown,
+): DailyDisplay {
+  if (display === "both") return "inline";
+  if (DAILY_DISPLAYS.includes(display as DailyDisplay)) {
+    return display as DailyDisplay;
+  }
+  if (enabled === true || enabled === "true") return "inline";
+  return "off";
 }
 
 function clampInt(

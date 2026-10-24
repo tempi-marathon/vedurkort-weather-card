@@ -29,6 +29,7 @@ import {
   renderAlertsStrip,
   type IconRenderer,
 } from "./alerts-section";
+import { renderDailyLink } from "./forecast-section";
 
 export interface CurrentWeatherContext {
   config: VedurkortCardConfig;
@@ -38,6 +39,8 @@ export interface CurrentWeatherContext {
   alerts: WeatherAlert[];
   showAlertsStrip: boolean;
   showDetails: boolean;
+  /** Quiet daily-forecast link under chips (`daily.display: modal`). */
+  showDailyLink: boolean;
   showNameInCurrent: boolean;
   feelsLikeText: string | null;
   conditionText: string;
@@ -82,6 +85,7 @@ export function renderCurrentWeatherSection(
   icon: IconRenderer,
   onOpenAlerts: (alerts: WeatherAlert[]) => void,
   onOpenDetail: (id: DetailMetricId) => void,
+  onOpenDaily?: () => void,
 ): TemplateResult {
   const { config, snap, language } = ctx;
 
@@ -315,6 +319,12 @@ export function renderCurrentWeatherSection(
                 : nothing}
             </div>
           `
+        : nothing}
+
+      ${ctx.showDailyLink && onOpenDaily
+        ? html`<div class="daily-link-row">
+            ${renderDailyLink(language, onOpenDaily)}
+          </div>`
         : nothing}
     </div>
   `;

@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { parseEntityAlerts, sortAlerts } from "./adapters";
+import {
+  collapseNearDuplicateAlerts,
+  parseEntityAlerts,
+  referencedIdentifiers,
+  sortAlerts,
+} from "./adapters";
 import { capAdapter } from "./adapters/cap";
 import { meteoalarmAdapter } from "./adapters/meteoalarm";
 import { resolveAlerts } from "./resolve";
 import { summaryLabel } from "./summary";
 import type { HassEntity, HomeAssistant } from "../types";
+import type { WeatherAlert } from "./types";
 
 function entity(
   entity_id: string,
@@ -160,6 +166,141 @@ describe("capAdapter", () => {
       icon: "hass:alert",
     });
     expect(alerts[0]!.providerIcon).toBeUndefined();
+  });
+
+  it("hides stale CAP alerts", () => {
+    expect(
+      capAdapter.parse("sensor.cap_alert_wind", "severe", {
+        ...attrs,
+        stale: true,
+      }),
+    ).toEqual([]);
+  });
+
+  it("parses identifier and references", () => {
+    const alerts = capAdapter.parse("sensor.cap_alert_wind", "severe", {
+      ...attrs,
+      identifier: "knmi.NL.wind.1",
+      references: "knmi.NL.wind.0",
+    });
+    expect(alerts[0]!.identifier).toBe("knmi.NL.wind.1");
+    expect(alerts[0]!.references).toBe("knmi.NL.wind.0");
+  });
+});
+
+describe("collapseNearDuplicateAlerts", () => {
+  function alert(partial: Partial<WeatherAlert> & Pick<WeatherAlert, "id">): WeatherAlert {
+    return {
+      provider: "cap",
+      event: "Moderate wind warning",
+      headline: "Moderate wind warning",
+      description: "Wind",
+      instruction: "",
+      severity: "moderate",
+      severityLabel: "Moderate",
+      areaDesc: "Zuid-Holland",
+      onset: "2026-10-23T19:00:00+00:00",
+      awarenessTypeCode: 1,
+      ...partial,
+    };
+  }
+
+  it("collapses same type+area+onset+severity with different ids", () => {
+    const a = alert({
+      id: "wind-a",
+      description: "In de kustgebieden windstoten van 75-90 km/u.",
+      phase: "new",
+    });
+    const b = alert({
+      id: "wind-b",
+      description: "In de kustgebieden zware windstoten van 75-90 km/u.",
+      phase: "update",
+    });
+    const out = collapseNearDuplicateAlerts([a, b]);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.id).toBe("wind-b");
+  });
+
+  it("keeps distinct phenomena for the same area", () => {
+    const wind = alert({ id: "wind-1", awarenessTypeCode: 1, event: "Wind" });
+    const rain = alert({
+      id: "rain-1",
+      awarenessTypeCode: 10,
+      event: "Rain",
+      description: "Heavy rain",
+    });
+    const out = collapseNearDuplicateAlerts([wind, rain]);
+    expect(out.map((x) => x.id).sort()).toEqual(["rain-1", "wind-1"]);
+  });
+
+  it("drops alerts superseded via CAP references triples", () => {
+    const older = alert({
+      id: "old",
+      identifier: "knmi.old",
+      description: "Short",
+      phase: "new",
+    });
+    const newer = alert({
+      id: "new",
+      identifier: "knmi.new",
+      references:
+        "knmi.nl,knmi.old,2026-10-23T17:00:00+00:00 knmi.nl,other,2026-10-23T16:00:00+00:00",
+      description: "Longer update text for the same warning",
+      phase: "update",
+      // Different onset so soft key would not collapse them alone
+      onset: "2026-10-23T18:00:00+00:00",
+    });
+    const out = collapseNearDuplicateAlerts([older, newer]);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.id).toBe("new");
+  });
+
+  it("does not soft-collapse different areas", () => {
+    const a = alert({ id: "a", areaDesc: "Zuid-Holland" });
+    const b = alert({
+      id: "b",
+      areaDesc: "Noord-Holland",
+      description: "Longer coastal wind text for a different province",
+      phase: "update",
+    });
+    const out = collapseNearDuplicateAlerts([a, b]);
+    expect(out.map((x) => x.id).sort()).toEqual(["a", "b"]);
+  });
+
+  it("does not soft-collapse when area is missing", () => {
+    const a = alert({ id: "a", areaDesc: undefined });
+    const b = alert({
+      id: "b",
+      areaDesc: undefined,
+      description: "Longer text that would otherwise win soft-dedupe",
+      phase: "update",
+    });
+    const out = collapseNearDuplicateAlerts([a, b]);
+    expect(out.map((x) => x.id).sort()).toEqual(["a", "b"]);
+  });
+});
+
+describe("referencedIdentifiers", () => {
+  it("extracts identifier fields from CAP triples", () => {
+    expect(
+      referencedIdentifiers(
+        "knmi.nl,knmi.old,2026-10-23T17:00:00+00:00 knmi.nl,knmi.other,2026-10-23T16:00:00+00:00",
+      ),
+    ).toEqual(new Set(["knmi.old", "knmi.other"]));
+  });
+
+  it("accepts bare identifiers", () => {
+    expect(referencedIdentifiers("knmi.old knmi.other")).toEqual(
+      new Set(["knmi.old", "knmi.other"]),
+    );
+  });
+
+  it("does not substring-match partial identifiers", () => {
+    const refs = referencedIdentifiers(
+      "knmi.nl,knmi.old.2,2026-10-23T17:00:00+00:00",
+    );
+    expect(refs.has("knmi.old")).toBe(false);
+    expect(refs.has("knmi.old.2")).toBe(true);
   });
 });
 

@@ -61,6 +61,7 @@ const baseConfig: VedurkortCardConfig = {
   show_pollen: false,
   daily: {
     enabled: false,
+    display: "off",
     days: 5,
     show_condition_icons: true,
     show_wind_speed: true,

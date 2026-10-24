@@ -768,16 +768,19 @@ export class VedurkortWeatherCardEditor extends LitElement {
 
         <fieldset>
           <legend>${this._t("legend_daily")}</legend>
-          <label class="row enable">
-            <input
-              type="checkbox"
-              .checked=${c.daily.enabled}
-              data-config="daily.enabled"
+          <label>
+            ${this._t("daily_display")}
+            <select
+              .value=${c.daily.display}
+              data-config="daily.display"
               @change=${this._value}
-            />
-            ${this._t("show_daily_forecast")}
+            >
+              <option value="off">${this._t("daily_display_off")}</option>
+              <option value="inline">${this._t("daily_display_inline")}</option>
+              <option value="modal">${this._t("daily_display_modal")}</option>
+            </select>
           </label>
-          ${c.daily.enabled
+          ${c.daily.display !== "off"
             ? html`
                 <label>
                   ${this._t("days")}

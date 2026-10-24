@@ -25,7 +25,18 @@ type: custom:vedurkort-weather-card
 entity: weather.forecast_thuis
 show_current: false
 daily:
-  enabled: true
+  display: inline
+  days: 5
+```
+
+## Daily forecast as modal
+
+```yaml
+type: custom:vedurkort-weather-card
+entity: weather.forecast_thuis
+show_current: true
+daily:
+  display: modal
   days: 5
 ```
 
@@ -54,7 +65,7 @@ type: custom:vedurkort-weather-card
 entity: weather.forecast_thuis
 show_current: true
 daily:
-  enabled: true
+  display: inline
   days: 7
   show_condition_icons: true
   show_wind_speed: true
@@ -69,7 +80,7 @@ type: custom:vedurkort-weather-card
 entity: weather.forecast_thuis
 show_current: true
 daily:
-  enabled: true
+  display: inline
   days: 5
 hourly:
   enabled: true

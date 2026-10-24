@@ -48,6 +48,7 @@ const baseConfig = (): VedurkortCardConfig => ({
   show_pollen: false,
   daily: {
     enabled: false,
+    display: "off",
     days: 5,
     show_condition_icons: true,
     show_wind_speed: true,
@@ -78,8 +79,16 @@ describe("computeCardSize", () => {
   it("adds 3 per forecast section", () => {
     const config = baseConfig();
     config.daily.enabled = true;
+    config.daily.display = "inline";
     config.hourly.enabled = true;
     expect(computeCardSize(config, undefined)).toBe(9);
+  });
+
+  it("does not add size for modal-only daily", () => {
+    const config = baseConfig();
+    config.daily.enabled = true;
+    config.daily.display = "modal";
+    expect(computeCardSize(config, undefined)).toBe(3);
   });
 
   it("compact layout reduces size by 1", () => {

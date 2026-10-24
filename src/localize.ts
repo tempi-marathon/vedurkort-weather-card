@@ -216,6 +216,10 @@ const STRINGS = {
     footnote_missing_attrs:
       "* Not on this weather entity — add a sensor under Optional sensors below.",
     show_daily_forecast: "Show daily forecast",
+    daily_display: "Daily forecast",
+    daily_display_off: "Off",
+    daily_display_inline: "On the card",
+    daily_display_modal: "In a dialog",
     days: "Days",
     condition_icons: "Condition icons",
     show_hourly_forecast: "Show hourly forecast",
@@ -466,6 +470,10 @@ const STRINGS = {
     footnote_missing_attrs:
       "* Ekki á þessari veðureiningu — bættu við skynjara hér fyrir neðan.",
     show_daily_forecast: "Sýna daglega spá",
+    daily_display: "Dagleg spá",
+    daily_display_off: "Slökkt",
+    daily_display_inline: "Á kortinu",
+    daily_display_modal: "Í glugga",
     days: "Dagar",
     condition_icons: "Veðurtákn",
     show_hourly_forecast: "Sýna klukkustundarspá",
@@ -717,6 +725,10 @@ const STRINGS = {
     footnote_missing_attrs:
       "* Niet op deze weerentiteit — voeg een sensor toe onder Optionele sensoren.",
     show_daily_forecast: "Dagelijkse prognose tonen",
+    daily_display: "Dagelijkse prognose",
+    daily_display_off: "Uit",
+    daily_display_inline: "Op de kaart",
+    daily_display_modal: "In een dialoog",
     days: "Dagen",
     condition_icons: "Weerpictogrammen",
     show_hourly_forecast: "Uurlijkse prognose tonen",

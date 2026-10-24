@@ -5,10 +5,10 @@
 Compose the card from independent sections:
 
 - **Current weather** — `show_current` (condition, temperature, icon, optional detail chips)
-- **Daily forecast** — `daily.enabled`
+- **Daily forecast** — `daily.display`: `off` | `inline` | `modal`
 - **Hourly forecast** — `hourly.enabled`
 
-When both forecasts are on, daily is shown above hourly. Subtle section dividers appear when more than one section is shown. If all three are off, the card shows a short configuration hint.
+When daily is `inline`, the chart sits on the card (above hourly when hourly is on). When `modal`, a text link under the current detail chips opens a dialog with the same daily chart and config. Subtle section dividers appear when more than one section is shown. If current, daily, and hourly are all off, the card shows a short configuration hint.
 
 Hourly charts scroll horizontally when showing more than 12 hours.
 

@@ -27,6 +27,9 @@ import type { DetailMetricId, DetailModel } from "./details/types";
 import { metricSeriesFingerprint } from "./details/series";
 import {
   DEFAULT_CONFIG,
+  dailyShowsInline,
+  dailyShowsModalTrigger,
+  dailyWantsData,
   normalizeConfig,
   normalizeEditorConfig,
   type VedurkortCardConfig,
@@ -48,6 +51,8 @@ import {
   renderNameHeader,
 } from "./sections/current-weather";
 import {
+  renderDailyDialog,
+  renderDailyLink,
   renderForecastSection,
   type ForecastSectionState,
 } from "./sections/forecast-section";
@@ -77,21 +82,27 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _detailPlotLeft = 0;
   @state() private _detailPlotWidth = 0;
   @state() private _alertsOpen = false;
+  @state() private _dailyOpen = false;
   @state() private _expandedAlertIds: string[] = [];
   @state() private _detailMetric: DetailMetricId | null = null;
   @state() private _beaufortLegendOpen = false;
   @state() private _pollenLegendOpen = false;
   @state() private _uvLegendOpen = false;
   @state() private _humidityLegendOpen = false;
+  @state() private _dailyModalPlotLeft = 0;
+  @state() private _dailyModalPlotWidth = 0;
 
   private _dailyChart: Chart | null = null;
+  private _dailyModalChart: Chart | null = null;
   private _hourlyChart: Chart | null = null;
   private _metricChart: Chart | null = null;
   private _metricChartFingerprint = "";
   private _metricChartModeKey = "";
   private _dailyChartFingerprint = "";
+  private _dailyModalChartFingerprint = "";
   private _hourlyChartFingerprint = "";
   private _dailyChartModeKey = "";
+  private _dailyModalChartModeKey = "";
   private _hourlyChartModeKey = "";
   private _forecastKey = "";
   private _unsubDaily: (() => void) | undefined;
@@ -105,6 +116,7 @@ export class VedurkortWeatherCard extends LitElement {
   private _unbindFocusTrap: (() => void) | undefined;
   private _unlockScroll: (() => void) | undefined;
   private _alertsTrigger: HTMLElement | null = null;
+  private _dailyTrigger: HTMLElement | null = null;
   private _detailTrigger: HTMLElement | null = null;
   private _boundDialog: HTMLDialogElement | null = null;
   private _hourlyScrollKey = "";
@@ -154,6 +166,10 @@ export class VedurkortWeatherCard extends LitElement {
       ) {
         this._alertsOpen = false;
       }
+      if (this._dailyOpen && !dailyShowsModalTrigger(this._config.daily)) {
+        this._dailyOpen = false;
+        this._destroyDailyModalChart();
+      }
     }
     if (
       changed.has("_dailyForecast") ||
@@ -166,16 +182,36 @@ export class VedurkortWeatherCard extends LitElement {
     if (changed.has("_hourlyForecast") || changed.has("_config")) {
       this.updateComplete.then(() => this._maybeScrollHourlyToNow());
     }
-    if (changed.has("_alertsOpen") || changed.has("_detailMetric")) {
-      if (!this._alertsOpen && this._detailMetric == null) {
+    if (
+      changed.has("_alertsOpen") ||
+      changed.has("_detailMetric") ||
+      changed.has("_dailyOpen")
+    ) {
+      if (
+        !this._alertsOpen &&
+        this._detailMetric == null &&
+        !this._dailyOpen
+      ) {
         this._releaseDialog();
-        (this._detailTrigger ?? this._alertsTrigger)?.focus();
+        (
+          this._detailTrigger ??
+          this._alertsTrigger ??
+          this._dailyTrigger
+        )?.focus();
         this._alertsTrigger = null;
         this._detailTrigger = null;
+        this._dailyTrigger = null;
       }
     }
-    if (this._alertsOpen || this._detailMetric != null) {
-      this.updateComplete.then(() => this._ensureDialogOpen());
+    if (
+      this._alertsOpen ||
+      this._detailMetric != null ||
+      this._dailyOpen
+    ) {
+      this.updateComplete.then(() => {
+        this._ensureDialogOpen();
+        if (this._dailyOpen) void this._renderCharts();
+      });
     }
     if (
       changed.has("_detailMetric") ||
@@ -234,7 +270,13 @@ export class VedurkortWeatherCard extends LitElement {
   }
 
   private _ensureDialogOpen(): void {
-    if (!this._alertsOpen && this._detailMetric == null) return;
+    if (
+      !this._alertsOpen &&
+      this._detailMetric == null &&
+      !this._dailyOpen
+    ) {
+      return;
+    }
 
     const dlg = this.renderRoot.querySelector(
       "dialog.vk-modal",
@@ -281,7 +323,7 @@ export class VedurkortWeatherCard extends LitElement {
   }
 
   private async _ensureForecastSubscription(): Promise<void> {
-    const wantDaily = this._config.daily.enabled;
+    const wantDaily = dailyWantsData(this._config.daily);
     const wantHourly =
       this._config.hourly.enabled || this._config.show_current;
     if (!wantDaily && !wantHourly) {
@@ -371,8 +413,18 @@ export class VedurkortWeatherCard extends LitElement {
     }
   }
 
+  private _destroyDailyModalChart(): void {
+    this._dailyModalChart?.destroy();
+    this._dailyModalChart = null;
+    this._dailyModalChartFingerprint = "";
+    this._dailyModalChartModeKey = "";
+    this._dailyModalPlotLeft = 0;
+    this._dailyModalPlotWidth = 0;
+  }
+
   private _destroyCharts(): void {
     this._destroyChart("daily");
+    this._destroyDailyModalChart();
     this._destroyChart("hourly");
   }
 
@@ -419,7 +471,9 @@ export class VedurkortWeatherCard extends LitElement {
       this._destroyCharts();
       return;
     }
-    if (!this._config.daily.enabled && !this._config.hourly.enabled) {
+    const wantDaily =
+      dailyShowsInline(this._config.daily) || this._dailyOpen;
+    if (!wantDaily && !this._config.hourly.enabled) {
       this._destroyCharts();
       this._chartMod = null;
       return;
@@ -438,10 +492,15 @@ export class VedurkortWeatherCard extends LitElement {
       }
     }
     if (!this._chartMod) return;
-    if (this._config.daily.enabled) {
+    if (dailyShowsInline(this._config.daily)) {
       this._renderOneChart("daily");
     } else {
       this._destroyChart("daily");
+    }
+    if (this._dailyOpen) {
+      this._renderDailyModalChart();
+    } else {
+      this._destroyDailyModalChart();
     }
     if (this._config.hourly.enabled) {
       this._renderOneChart("hourly");
@@ -730,6 +789,108 @@ export class VedurkortWeatherCard extends LitElement {
     requestAnimationFrame(() => this._syncPlotArea(mode));
   }
 
+  private _syncDailyModalPlotArea(): void {
+    const mod = this._chartMod;
+    if (!mod || !this._dailyModalChart) return;
+    const area = mod.getChartPlotArea(this._dailyModalChart);
+    if (!area) return;
+    if (
+      Math.abs(area.left - this._dailyModalPlotLeft) > 0.5 ||
+      Math.abs(area.width - this._dailyModalPlotWidth) > 0.5
+    ) {
+      this._dailyModalPlotLeft = area.left;
+      this._dailyModalPlotWidth = area.width;
+    }
+  }
+
+  private _renderDailyModalChart(): void {
+    const mod = this._chartMod;
+    if (!mod || !this._config) return;
+    const canvas = this.renderRoot.querySelector(
+      "canvas.forecast-canvas-daily-modal",
+    ) as HTMLCanvasElement | null;
+    if (!canvas) {
+      this._destroyDailyModalChart();
+      return;
+    }
+
+    const snap = getWeatherSnapshot(this.hass, this._config);
+    const escalate = this._shouldEscalateForAlerts();
+    const scene = conditionToScene(
+      snap?.condition,
+      snap?.isDay ?? true,
+      escalate,
+    );
+    const textColor = this._chartTextColor();
+    const chrome = mod.chartChromeForScene(
+      this._config.animated_background,
+      scene,
+      textColor,
+    );
+    const precipUnit =
+      (snap?.entity.attributes.precipitation_unit as string | undefined) ??
+      "mm";
+    const temperatureUnit = snap?.temperatureUnit ?? "°C";
+    const language = resolveLanguage(this.hass);
+    const precipType = this._config.daily.precip_type;
+    const series = mod.buildDailySeries(
+      this._dailyForecast,
+      this._config.daily.days,
+      precipType,
+      language,
+    );
+
+    if (!series.labels.length) {
+      this._destroyDailyModalChart();
+      return;
+    }
+
+    const modeKey = `daily-modal:${precipType}:${precipUnit}:${temperatureUnit}:${textColor}:${this._config.animated_background}:${scene}`;
+    const fingerprint = mod.seriesFingerprint(series);
+    const existing = this._dailyModalChart;
+
+    if (
+      existing &&
+      this._dailyModalChartModeKey === modeKey &&
+      this._dailyModalChartFingerprint === fingerprint
+    ) {
+      this._syncDailyModalPlotArea();
+      return;
+    }
+
+    if (existing) {
+      mod.syncForecastChart(
+        existing,
+        series,
+        "daily",
+        precipType,
+        chrome,
+        precipUnit,
+        temperatureUnit,
+        language,
+      );
+      this._dailyModalChartFingerprint = fingerprint;
+      this._dailyModalChartModeKey = modeKey;
+      this._syncDailyModalPlotArea();
+      return;
+    }
+
+    this._destroyDailyModalChart();
+    this._dailyModalChart = mod.createForecastChart(
+      canvas,
+      series,
+      "daily",
+      precipType,
+      chrome,
+      precipUnit,
+      temperatureUnit,
+      language,
+    );
+    this._dailyModalChartFingerprint = fingerprint;
+    this._dailyModalChartModeKey = modeKey;
+    requestAnimationFrame(() => this._syncDailyModalPlotArea());
+  }
+
   private _icon: IconRenderer = (name: MeteoconName): string => {
     return getMeteoconSvg(
       name,
@@ -866,6 +1027,8 @@ export class VedurkortWeatherCard extends LitElement {
     this._closeDialogElements();
     this._detailTrigger = document.activeElement as HTMLElement | null;
     this._alertsOpen = false;
+    this._dailyOpen = false;
+    this._destroyDailyModalChart();
     this._detailMetric = metricId;
     this._beaufortLegendOpen = false;
     this._pollenLegendOpen = false;
@@ -908,6 +1071,8 @@ export class VedurkortWeatherCard extends LitElement {
   private _openAlerts(alerts: WeatherAlert[], preferredId?: string): void {
     this._closeDialogElements();
     this._detailMetric = null;
+    this._dailyOpen = false;
+    this._destroyDailyModalChart();
     this._destroyMetricChart();
     this._alertsTrigger = document.activeElement as HTMLElement | null;
     this._expandedAlertIds = preferredId
@@ -916,12 +1081,27 @@ export class VedurkortWeatherCard extends LitElement {
         ? [alerts[0].id]
         : [];
     this._alertsOpen = true;
-  };
+  }
 
   private _closeAlerts(): void {
     this._closeDialogElements();
     this._alertsOpen = false;
     this._expandedAlertIds = [];
+  }
+
+  private _openDaily(): void {
+    this._closeDialogElements();
+    this._detailMetric = null;
+    this._alertsOpen = false;
+    this._destroyMetricChart();
+    this._dailyTrigger = document.activeElement as HTMLElement | null;
+    this._dailyOpen = true;
+  }
+
+  private _closeDaily(): void {
+    this._closeDialogElements();
+    this._dailyOpen = false;
+    this._destroyDailyModalChart();
   }
 
   private _closeDetailDialog(): void {
@@ -995,7 +1175,8 @@ export class VedurkortWeatherCard extends LitElement {
     const showName = this._config.show_name;
     const showNameInCurrent = showName && showCurrent;
     const showNameHeader = showName && !showCurrent;
-    const showDaily = this._config.daily.enabled;
+    const showDailyInline = dailyShowsInline(this._config.daily);
+    const showDailyModalTrigger = dailyShowsModalTrigger(this._config.daily);
     const showHourly = this._config.hourly.enabled;
     const showAlertsStrip = alerts.length > 0;
     const showDetails =
@@ -1020,7 +1201,13 @@ export class VedurkortWeatherCard extends LitElement {
       language,
     );
 
-    if (!showCurrent && !showDaily && !showHourly && !showAlertsStrip) {
+    if (
+      !showCurrent &&
+      !showDailyInline &&
+      !showDailyModalTrigger &&
+      !showHourly &&
+      !showAlertsStrip
+    ) {
       return html`
         <ha-card>
           <div class="pad empty">
@@ -1033,6 +1220,7 @@ export class VedurkortWeatherCard extends LitElement {
     const forecastState = this._forecastState();
     const onOpenAlerts = (a: WeatherAlert[]) => this._openAlerts(a);
     const onOpenDetail = (id: DetailMetricId) => this._openDetail(id);
+    const onOpenDaily = () => this._openDaily();
     const detailModel =
       this._detailMetric != null ? this._buildOpenDetailModel(snap) : null;
     const dialogShell = {
@@ -1065,6 +1253,7 @@ export class VedurkortWeatherCard extends LitElement {
                   alerts,
                   showAlertsStrip,
                   showDetails,
+                  showDailyLink: showDailyModalTrigger,
                   showNameInCurrent,
                   feelsLikeText,
                   conditionText,
@@ -1075,6 +1264,7 @@ export class VedurkortWeatherCard extends LitElement {
                 this._icon,
                 onOpenAlerts,
                 onOpenDetail,
+                onOpenDaily,
               )
             : showAlertsStrip
               ? renderAlertsOnlySection(
@@ -1085,7 +1275,15 @@ export class VedurkortWeatherCard extends LitElement {
                 )
               : nothing}
 
-          ${showDaily
+          ${!showCurrent && showDailyModalTrigger
+            ? html`
+                <div class="daily-link-wrap">
+                  ${renderDailyLink(language, onOpenDaily)}
+                </div>
+              `
+            : nothing}
+
+          ${showDailyInline
             ? html`
                 <div class="section section-daily">
                   ${renderForecastSection(
@@ -1127,6 +1325,18 @@ export class VedurkortWeatherCard extends LitElement {
           onToggleExpanded: (id) => this._toggleAlertExpanded(id),
         },
         dialogShell,
+      )}
+      ${renderDailyDialog(
+        this._dailyOpen,
+        this.hass,
+        this._config,
+        snap,
+        forecastState,
+        language,
+        () => this._closeDaily(),
+        dialogShell,
+        this._dailyModalPlotLeft,
+        this._dailyModalPlotWidth,
       )}
       ${detailModel
         ? renderViewportDialog({
