@@ -62,6 +62,11 @@ export interface VedurkortCardConfig {
   animated_background: boolean;
   /** Current conditions (condition, temp, icon, detail chips). */
   show_current: boolean;
+  /**
+   * When true, only noteworthy enabled detail chips sit in the primary row;
+   * the rest go behind a More menu. `show_*` remains the allowlist.
+   */
+  smart_chips: boolean;
   show_sun: boolean;
   /** Combined current-weather wind chip (speed, direction, gust). */
   show_wind: boolean;
@@ -130,6 +135,7 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   show_name: true,
   layout: "default",
   show_current: true,
+  smart_chips: false,
   show_sun: false,
   show_wind: false,
   wind_speed_unit: "native",
@@ -206,6 +212,7 @@ function mergeConfigFields(
     show_current: Boolean(
       input.show_current ?? DEFAULT_CONFIG.show_current,
     ),
+    smart_chips: Boolean(input.smart_chips ?? DEFAULT_CONFIG.smart_chips),
     show_wind: showWind,
     wind_speed_unit: normalizeWindSpeedUnit(input.wind_speed_unit),
     show_alerts: Boolean(input.show_alerts ?? DEFAULT_CONFIG.show_alerts),

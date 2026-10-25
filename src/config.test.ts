@@ -88,6 +88,19 @@ describe("config normalization", () => {
     expect(cfg.show_wind).toBe(false);
   });
 
+  it("defaults smart_chips to false", () => {
+    const cfg = normalizeConfig({ entity: "weather.home" });
+    expect(cfg.smart_chips).toBe(false);
+  });
+
+  it("preserves smart_chips true", () => {
+    const cfg = normalizeEditorConfig({
+      entity: "weather.home",
+      smart_chips: true,
+    });
+    expect(cfg.smart_chips).toBe(true);
+  });
+
   it("defaults wind_speed_unit to native", () => {
     const cfg = normalizeConfig({ entity: "weather.home" });
     expect(cfg.wind_speed_unit).toBe("native");

@@ -210,6 +210,10 @@ const STRINGS = {
     show_current_weather: "Show current weather",
     current_detail_hint:
       "Detail chips only appear on the card when the weather entity or an override sensor provides a value. Availability varies by integration.",
+    smart_chips: "Smart chips",
+    smart_chips_hint:
+      "Only show details that matter right now; the rest stay under More. Checked options below still decide what can appear.",
+    more_chips: "More",
     preset_available_details: "Available details",
     preset_all_details: "All details",
     preset_clear_all: "Clear all",
@@ -464,6 +468,10 @@ const STRINGS = {
     show_current_weather: "Sýna núverandi veður",
     current_detail_hint:
       "Smáatriðakubbar birtast aðeins þegar veðureining eða skynjarar hafa gildi.",
+    smart_chips: "Snjallir kubbar",
+    smart_chips_hint:
+      "Sýnir aðeins smáatriði sem skipta máli núna; restin er undir Meira. Merktir kubbar eru listinn.",
+    more_chips: "Meira",
     preset_available_details: "Tiltækar upplýsingar",
     preset_all_details: "Allar upplýsingar",
     preset_clear_all: "Hreinsa allt",
@@ -718,7 +726,11 @@ const STRINGS = {
     animated_background: "Geanimeerde achtergrond",
     show_current_weather: "Huidig weer tonen",
     current_detail_hint:
-      "Detailchips verschijnen alleen wanneer de weerentiteit of een sensor een waarde heeft.",
+      "Details verschijnen alleen op de kaart wanneer de weerentiteit of een sensor een waarde heeft.",
+    smart_chips: "Slimme details",
+    smart_chips_hint:
+      "Toon alleen details die nu ertoe doen; de rest staat onder Meer. Wat je hieronder aanvinkt, mag meedoen.",
+    more_chips: "Meer",
     preset_available_details: "Beschikbare details",
     preset_all_details: "Alle details",
     preset_clear_all: "Alles wissen",

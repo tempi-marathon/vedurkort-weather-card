@@ -87,10 +87,17 @@ export const cardStyles = [
       font-size: 0.95rem;
     }
     ha-card.layout-minimal .details {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px 8px;
       margin-top: 10px;
       font-size: 0.82rem;
+    }
+    ha-card.layout-minimal .details-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 8px;
+      row-gap: 6px;
+    }
+    ha-card.layout-minimal .details-smart {
+      column-gap: 10px;
+      row-gap: 6px;
     }
     ha-card.layout-minimal .detail-icon {
       width: 22px;
@@ -1070,18 +1077,37 @@ export const cardStyles = [
       height: 100%;
     }
     .details {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      column-gap: 12px;
-      row-gap: 10px;
       margin-top: 14px;
       font-size: 0.9rem;
       opacity: 0.95;
     }
+    /* Full chip list: equal columns (smart chips off). */
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 12px;
+      row-gap: 10px;
+      align-items: start;
+    }
     @container current (min-width: 380px) {
-      .details {
+      .details-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
+    }
+    /* Smart chips: pack left so More stays on the chip row. */
+    .details-smart {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      column-gap: 16px;
+      row-gap: 10px;
+    }
+    .details-smart > .tip,
+    .details-smart > .detail-more {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: 100%;
+      align-items: center;
     }
     .detail {
       display: inline-flex;
@@ -1109,7 +1135,12 @@ export const cardStyles = [
       height: 26px;
       display: inline-flex;
       flex-shrink: 0;
+    }
+    .details-grid .detail-icon {
       align-self: flex-start;
+    }
+    .details-smart .detail-icon {
+      align-self: center;
     }
     .detail-icon svg {
       width: 100%;
@@ -1130,6 +1161,128 @@ export const cardStyles = [
     .detail-sub {
       font-size: 0.8em;
       opacity: 0.75;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .detail-more {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+    }
+    .detail-more-trigger {
+      cursor: pointer;
+      gap: 4px;
+      min-height: 26px;
+    }
+    .detail-more-trigger:hover,
+    .detail-more-trigger:focus-visible {
+      text-decoration: none;
+    }
+    .detail-more-label {
+      opacity: 0.9;
+      line-height: 1.25;
+    }
+    .detail-more-trigger:hover .detail-more-label,
+    .detail-more-trigger:focus-visible .detail-more-label {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .detail-more-chevron {
+      display: inline-flex;
+      align-items: center;
+      opacity: 0.75;
+      font-size: 0.7em;
+      line-height: 1;
+    }
+    .detail-more-chevron::before {
+      content: "▾";
+    }
+    .detail-more-trigger[aria-expanded="true"] .detail-more-chevron::before {
+      content: "▴";
+    }
+    /* Top-layer popover — escapes ha-card overflow:hidden.
+       Do not set display when closed: author display overrides the UA
+       closed state and leaves the menu always visible. */
+    .detail-more-menu {
+      margin: 0;
+      position: fixed;
+      inset: unset;
+      width: max-content;
+      max-width: min(280px, calc(100vw - 16px));
+      max-height: min(70vh, 320px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 6px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(20, 20, 20, 0.94);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+      opacity: 0;
+      transform: translateY(-4px);
+      transition:
+        opacity 0.14s ease-out,
+        transform 0.14s ease-out,
+        overlay 0.14s allow-discrete,
+        display 0.14s allow-discrete;
+    }
+    .detail-more-menu:popover-open {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @starting-style {
+      .detail-more-menu:popover-open {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+    }
+    @starting-style {
+      .detail-more-menu[data-placement="above"]:popover-open {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+    }
+    .detail-more-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      padding: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .detail-more-item:hover,
+    .detail-more-item:focus-visible {
+      background: rgba(255, 255, 255, 0.12);
+      outline: none;
+    }
+    .detail-more-item .detail-icon {
+      width: 22px;
+      height: 22px;
+    }
+    .detail-more-item-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+      line-height: 1.25;
+    }
+    .detail-more-item-label {
+      font-size: 0.78rem;
+      opacity: 0.75;
+    }
+    .detail-more-item-value {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
