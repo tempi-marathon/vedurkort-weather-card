@@ -855,6 +855,8 @@ function detailLineLabel(
       return localize("pollen", language);
     case "sun":
       return localize("next_sun", language);
+    case "moon":
+      return localize("moon", language);
     case "precipitation":
       return localize("chart_precip", language);
     case "precipitation_probability":

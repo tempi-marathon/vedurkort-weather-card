@@ -9,6 +9,7 @@ import type { PollenLevelLabel } from "../pollen/types";
 /** Detail chips that can appear in the current-weather row. */
 export type SmartChipId =
   | "sun"
+  | "moon"
   | "humidity"
   | "wind"
   | "uv_index"
@@ -23,6 +24,7 @@ export type SmartChipId =
 /** Stable allowlist / overflow order (matches historical chip render order). */
 export const SMART_CHIP_ORDER: readonly SmartChipId[] = [
   "sun",
+  "moon",
   "humidity",
   "wind",
   "uv_index",
@@ -73,6 +75,7 @@ export function isChipNoteworthy(
 ): boolean {
   switch (id) {
     case "sun":
+    case "moon":
       return true;
     case "cloud_coverage":
       return false;
@@ -129,6 +132,7 @@ export function isChipNoteworthy(
 export function chipSeverity(id: SmartChipId, values: SmartChipValues): number {
   switch (id) {
     case "sun":
+    case "moon":
       return 0;
     case "precipitation": {
       const amount = values.precipitation ?? 0;
@@ -217,8 +221,9 @@ export function partitionSmartChips(
   }
 
   primary.sort((a, b) => {
-    if (a === "sun" && b !== "sun") return -1;
-    if (b === "sun" && a !== "sun") return 1;
+    const pinned = (id: SmartChipId) => id === "sun" || id === "moon";
+    if (pinned(a) !== pinned(b)) return pinned(a) ? -1 : 1;
+    if (pinned(a) && pinned(b)) return orderIndex(a) - orderIndex(b);
     const sev = chipSeverity(b, values) - chipSeverity(a, values);
     if (sev !== 0) return sev;
     return orderIndex(a) - orderIndex(b);
@@ -242,7 +247,7 @@ export function resolveDetailChips(
 }
 
 /**
- * Move lowest-priority primary chips (end of severity-sorted list, never sun)
+ * Move lowest-priority primary chips (end of severity-sorted list; never sun/moon)
  * into overflow so More can stay on the same row. `count` is how many to demote.
  * Demoted chips lead the More menu (row order preserved); quiet overflow follows.
  */
@@ -264,7 +269,9 @@ export function demotePrimaryChips(
 
   while (left > 0) {
     let idx = primary.length - 1;
-    while (idx >= 0 && primary[idx] === "sun") idx -= 1;
+    while (idx >= 0 && (primary[idx] === "sun" || primary[idx] === "moon")) {
+      idx -= 1;
+    }
     if (idx < 0) break;
     const [chip] = primary.splice(idx, 1);
     if (chip) demoted.push(chip);

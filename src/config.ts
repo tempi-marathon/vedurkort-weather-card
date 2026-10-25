@@ -68,6 +68,8 @@ export interface VedurkortCardConfig {
    */
   smart_chips: boolean;
   show_sun: boolean;
+  /** Show moon phase chip (computed on-device; no moon entity required). */
+  show_moon: boolean;
   /** Combined current-weather wind chip (speed, direction, gust). */
   show_wind: boolean;
   /** Display unit for current wind chip + wind detail sheet/chart. */
@@ -137,6 +139,7 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   show_current: true,
   smart_chips: false,
   show_sun: false,
+  show_moon: false,
   show_wind: false,
   wind_speed_unit: "native",
   show_humidity: false,
@@ -213,6 +216,7 @@ function mergeConfigFields(
       input.show_current ?? DEFAULT_CONFIG.show_current,
     ),
     smart_chips: Boolean(input.smart_chips ?? DEFAULT_CONFIG.smart_chips),
+    show_moon: Boolean(input.show_moon ?? DEFAULT_CONFIG.show_moon),
     show_wind: showWind,
     wind_speed_unit: normalizeWindSpeedUnit(input.wind_speed_unit),
     show_alerts: Boolean(input.show_alerts ?? DEFAULT_CONFIG.show_alerts),

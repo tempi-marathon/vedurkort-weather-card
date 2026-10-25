@@ -37,6 +37,10 @@ import {
   sunTimesFromSnapshot,
   type HourlySlotItem,
 } from "./sun-events";
+import {
+  buildLunationArcModel,
+} from "./lunation-arc-model";
+import { getMoonSnapshot, moonPhaseIcon, moonPhaseLocalizeKey } from "./moon-phase";
 import { buildSunArcModel } from "./sun-arc-model";
 import { buildUvBarModel } from "./uv-bar-model";
 import type { DetailMetricId, DetailModel, MetricSeries } from "./types";
@@ -91,6 +95,15 @@ function heroForMetric(ctx: BuildDetailContext): {
       };
     case "sun":
       return { value: "", icon: "sunrise" };
+    case "moon": {
+      const moon = getMoonSnapshot(
+        ctx.nowMs != null ? new Date(ctx.nowMs) : undefined,
+      );
+      return {
+        value: localize(moonPhaseLocalizeKey(moon.phase), ctx.language),
+        icon: moonPhaseIcon(moon.phase),
+      };
+    }
     case "humidity":
       return {
         value: formatNumber(snap.humidity, "%", 0) ?? "—",
@@ -310,6 +323,7 @@ function relatedStats(ctx: BuildDetailContext): DetailModel["related"] {
       push("condition", snap.conditionLabel);
       break;
     case "sun":
+    case "moon":
       break;
     default:
       break;
@@ -348,10 +362,11 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
     return buildPollenDetailModel(ctx);
   }
 
-  const group = metricGroup(ctx.metricId);
-  const hero = heroForMetric(ctx);
-  const seriesMetric = chartMetricId(ctx.metricId);
   const nowMs = ctx.nowMs ?? Date.now();
+  const ctxAt = { ...ctx, nowMs };
+  const group = metricGroup(ctx.metricId);
+  const hero = heroForMetric(ctxAt);
+  const seriesMetric = chartMetricId(ctx.metricId);
   const hourlySlice = sliceHourlyForecast(ctx.hourlyForecast, 24, nowMs);
   const currentHourlyRow: HourlySlotItem[] =
     group === "current"
@@ -394,6 +409,7 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
     low,
     hourly: hourlySlice,
     windSpeedUnit: ctx.windSpeedUnit,
+    nowMs,
   });
 
   const model: DetailModel = {
@@ -422,6 +438,11 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
 
   if (group === "sun") {
     model.sunArc = buildSunArcModel(ctx.snap, ctx.language);
+  }
+
+  if (group === "moon") {
+    model.lunationArc = buildLunationArcModel(ctx.language, new Date(nowMs));
+    model.series = null;
   }
 
   if (group === "uv_index") {
@@ -546,6 +567,7 @@ function pollenSeries(
 export function metricIdFromChip(
   config: {
     show_sun?: boolean;
+    show_moon?: boolean;
     show_humidity?: boolean;
     show_wind?: boolean;
     show_uv_index?: boolean;
@@ -562,6 +584,7 @@ export function metricIdFromChip(
   const map: Record<DetailMetricId, boolean | undefined> = {
     current: true,
     sun: config.show_sun,
+    moon: config.show_moon,
     humidity: config.show_humidity,
     dew_point: config.show_dew_point,
     wind_speed: config.show_wind,

@@ -2,15 +2,18 @@ import type { MeteoconName } from "../icons/allowlist";
 import type { PrecipType } from "../config";
 import type { ForecastItem } from "../types";
 import type { HourlySlotItem } from "./sun-events";
+import type { LunationArcModel } from "./lunation-arc-model";
 import type { SunArcModel } from "./sun-arc-model";
 import type { UvBarModel } from "./uv-bar-model";
 
+export type { LunationArcModel } from "./lunation-arc-model";
 export type { SunArcModel } from "./sun-arc-model";
 export type { UvBarModel } from "./uv-bar-model";
 
 export type DetailMetricId =
   | "current"
   | "sun"
+  | "moon"
   | "humidity"
   | "dew_point"
   | "wind_speed"
@@ -71,6 +74,8 @@ export interface DetailModel {
   related: DetailRelatedStat[];
   /** Sun sheet: arc replaces the standard hero. */
   sunArc?: SunArcModel | null;
+  /** Moon sheet: lunation (cycle) arc replaces the standard hero. */
+  lunationArc?: LunationArcModel | null;
   /** UV sheet: gradient bar replaces the standard hero. */
   uvBar?: UvBarModel | null;
   /** Hourly items for condition/wind rows under the chart. */

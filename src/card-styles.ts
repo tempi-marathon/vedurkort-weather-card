@@ -796,6 +796,95 @@ export const cardStyles = [
     .detail-sun-detail-row.is-summary dd {
       font-weight: 700;
     }
+    .detail-lunation-arc {
+      margin-bottom: 8px;
+    }
+    .detail-lunation-chart {
+      position: relative;
+      margin-top: var(--detail-section-gap);
+      margin-bottom: 8px;
+      overflow: visible;
+    }
+    .detail-lunation-arc-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+    .detail-lunation-baseline {
+      stroke: color-mix(in srgb, currentColor 22%, transparent);
+      stroke-width: 1.25;
+      opacity: 0.8;
+    }
+    .detail-lunation-path {
+      fill: none;
+      stroke: color-mix(in srgb, currentColor 50%, transparent);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .detail-lunation-now {
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 2;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(236, 239, 244, 0.95) 0%,
+        rgba(176, 190, 210, 0.7) 45%,
+        rgba(120, 144, 168, 0.18) 70%,
+        transparent 100%
+      );
+      box-shadow: 0 0 12px 3px rgba(176, 190, 210, 0.55);
+    }
+    .detail-lunation-marks {
+      position: relative;
+      height: 1.1em;
+      margin: -4px 0 4px;
+      font-size: 0.75rem;
+      opacity: 0.65;
+      pointer-events: none;
+    }
+    .detail-lunation-mark {
+      position: absolute;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      line-height: 1.1;
+    }
+    .detail-lunation-mark.is-start {
+      transform: translateX(0);
+    }
+    .detail-lunation-mark.is-end {
+      transform: translateX(-100%);
+    }
+    .detail-lunation-details {
+      margin: 12px 0 0;
+      display: grid;
+      gap: 0;
+    }
+    .detail-lunation-detail-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+      font-size: 0.92rem;
+    }
+    .detail-lunation-detail-row dt {
+      margin: 0;
+      opacity: 0.85;
+      font-weight: 500;
+    }
+    .detail-lunation-detail-row dd {
+      margin: 0;
+      font-weight: 650;
+    }
+    .detail-lunation-detail-row.is-summary dd {
+      font-weight: 700;
+    }
     .detail-uv-hero {
       margin-bottom: 14px;
     }

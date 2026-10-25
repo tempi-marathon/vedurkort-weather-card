@@ -47,8 +47,9 @@ Not every weather integration exposes every attribute. Veðurkort reads values f
 | Dew point | `dew_point` | Integration-dependent |
 | Visibility | `visibility` | Missing on some (e.g. Meteorologisk institutt) |
 | Sunrise / sunset | via `sun.sun` | Not from the weather entity |
+| Moon phase / illumination | computed on-device | No moon entity; no moonrise/moonset |
 
-On the card, detail chips are **hidden when there is no value**. In the visual editor, toggles stay available and show a small hint whether the selected weather entity currently has that attribute — use an override sensor when it does not.
+On the card, detail chips are **hidden when there is no value**. Moon is an exception: when `show_moon` is on, the chip is always available (phase and illumination are calculated locally). In the visual editor, other toggles stay available and show a small hint whether the selected weather entity currently has that attribute — use an override sensor when it does not.
 
 **Smart chips** keeps the row to what’s useful right now and puts the rest under **More**. Your chip toggles still decide what’s allowed.
 

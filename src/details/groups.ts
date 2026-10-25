@@ -4,6 +4,7 @@ import type { DetailMetricId } from "./types";
 export type DetailMetricGroup =
   | "current"
   | "sun"
+  | "moon"
   | "wind"
   | "humidity"
   | "dew_point"
@@ -40,6 +41,7 @@ export function groupTitleKey(group: DetailMetricGroup): LocalizeKey {
   const keys: Record<DetailMetricGroup, LocalizeKey> = {
     current: "forecast",
     sun: "next_sun",
+    moon: "moon",
     wind: "wind",
     humidity: "humidity",
     dew_point: "dew_point",

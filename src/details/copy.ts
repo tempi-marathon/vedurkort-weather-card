@@ -19,6 +19,7 @@ import {
   pressureBand,
   visibilityBand,
 } from "./metric-bands";
+import { moonInterpretationCopy } from "./lunation-arc-model";
 import { uvCategory } from "./uv-bar-model";
 import { metricGroup } from "./groups";
 
@@ -41,6 +42,8 @@ export interface CopyContext {
   low: number | null;
   hourly: ForecastItem[];
   windSpeedUnit?: WindSpeedDisplayUnit;
+  /** Shared clock for computed metrics (e.g. moon). */
+  nowMs?: number;
 }
 
 function uvCopyKey(uv: number | null): LocalizeKey {
@@ -331,6 +334,11 @@ export function buildInterpretationCopy(ctx: CopyContext): string {
       }
       return loc("copy_sun_night_unknown", language);
     }
+    case "moon":
+      return moonInterpretationCopy(
+        language,
+        ctx.nowMs != null ? new Date(ctx.nowMs) : undefined,
+      );
     default:
       return "";
   }

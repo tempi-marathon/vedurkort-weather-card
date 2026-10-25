@@ -38,8 +38,9 @@ describe("isPrecipCondition", () => {
 });
 
 describe("isChipNoteworthy", () => {
-  it("always keeps sun; never keeps cloud coverage", () => {
+  it("always keeps sun and moon; never keeps cloud coverage", () => {
     expect(isChipNoteworthy("sun", base)).toBe(true);
+    expect(isChipNoteworthy("moon", base)).toBe(true);
     expect(isChipNoteworthy("cloud_coverage", base)).toBe(false);
   });
 
@@ -137,6 +138,20 @@ describe("partitionSmartChips", () => {
     expect(overflow).toEqual(["humidity", "cloud_coverage"]);
   });
 
+  it("pins sun then moon ahead of severity-sorted chips", () => {
+    const values: SmartChipValues = {
+      ...base,
+      uvIndex: 9,
+      precipitation: 5,
+    };
+    const { primary } = partitionSmartChips(
+      ["precipitation", "moon", "uv_index", "sun"],
+      values,
+    );
+    expect(primary.slice(0, 2)).toEqual(["sun", "moon"]);
+    expect(primary.slice(2)).toEqual(["precipitation", "uv_index"]);
+  });
+
   it("ranks higher UV ahead of lower UV when both noteworthy", () => {
     const values: SmartChipValues = {
       ...base,
@@ -220,6 +235,18 @@ describe("demotePrimaryChips", () => {
       "humidity",
       "cloud_coverage",
     ]);
+  });
+
+  it("never demotes moon (same as sun)", () => {
+    const packed = demotePrimaryChips(
+      {
+        primary: ["sun", "moon", "wind", "uv_index"],
+        overflow: ["humidity"],
+      },
+      3,
+    );
+    expect(packed.primary).toEqual(["sun", "moon"]);
+    expect(packed.overflow).toEqual(["wind", "uv_index", "humidity"]);
   });
 
   it("no-ops when count is 0", () => {
