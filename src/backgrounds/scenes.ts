@@ -522,6 +522,20 @@ export function renderBackground(
 }
 
 export const backgroundStyles = css`
+  /* Pause scene animations when off-screen, tab hidden, or reduced motion. */
+  :host([data-effects-paused]) .vk-bg *,
+  :host([data-effects-paused]) .vk-bg *::before,
+  :host([data-effects-paused]) .vk-bg *::after {
+    animation-play-state: paused !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .vk-bg *,
+    .vk-bg *::before,
+    .vk-bg *::after {
+      animation-play-state: paused !important;
+    }
+  }
+
   .vk-bg {
     position: absolute;
     inset: 0;

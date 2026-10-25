@@ -2322,6 +2322,20 @@ function w8(e, t, i = null) {
   `;
 }
 var ll = Rt`
+  /* Pause scene animations when off-screen, tab hidden, or reduced motion. */
+  :host([data-effects-paused]) .vk-bg *,
+  :host([data-effects-paused]) .vk-bg *::before,
+  :host([data-effects-paused]) .vk-bg *::after {
+    animation-play-state: paused !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .vk-bg *,
+    .vk-bg *::before,
+    .vk-bg *::after {
+      animation-play-state: paused !important;
+    }
+  }
+
   .vk-bg {
     position: absolute;
     inset: 0;
@@ -16987,9 +17001,12 @@ function IS(e) {
     </div>
   `;
 }
-var FS = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-function jS(e) {
-  const t = () => Array.from(e.querySelectorAll(FS)).filter((a) => a.offsetParent !== null || a === document.activeElement), i = (a) => {
+function FS(e) {
+  return e.reducedMotion || !e.docVisible ? !0 : e.dialogOpen ? !1 : !e.intersecting;
+}
+var jS = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+function ZS(e) {
+  const t = () => Array.from(e.querySelectorAll(jS)).filter((a) => a.offsetParent !== null || a === document.activeElement), i = (a) => {
     if (a.key !== "Tab") return;
     const r = t();
     if (!r.length) return;
@@ -16998,32 +17015,32 @@ function jS(e) {
   };
   return e.addEventListener("keydown", i), () => e.removeEventListener("keydown", i);
 }
-var ZS = /* @__PURE__ */ new Set([
+var KS = /* @__PURE__ */ new Set([
   "auto",
   "scroll",
   "overlay"
 ]);
-function KS(e) {
+function YS(e) {
   const t = getComputedStyle(e);
-  return ZS.has(t.overflowY) ? e.scrollHeight > e.clientHeight : !1;
+  return KS.has(t.overflowY) ? e.scrollHeight > e.clientHeight : !1;
 }
-function* YS(e) {
+function* XS(e) {
   let t = e;
   for (; t; ) {
     const i = t.parentElement ?? t.getRootNode().host ?? null;
     i instanceof HTMLElement && (yield i), t = i;
   }
 }
-function XS(e) {
+function JS(e) {
   const t = /* @__PURE__ */ new Set(), i = [], a = (r) => {
     !r || t.has(r) || (t.add(r), i.push(r));
   };
   a(document.documentElement), a(document.body);
-  for (const r of YS(e)) KS(r) && a(r);
+  for (const r of XS(e)) YS(r) && a(r);
   return i;
 }
-function JS(e) {
-  const t = XS(e), i = [], a = window.scrollY;
+function QS(e) {
+  const t = JS(e), i = [], a = window.scrollY;
   for (const n of t) {
     const s = {
       el: n,
@@ -17049,7 +17066,7 @@ function R(e, t, i, a) {
   return r > 3 && n && Object.defineProperty(t, i, n), n;
 }
 var An = q((() => {
-})), QS = /* @__PURE__ */ F4({ VedurkortWeatherCardEditor: () => $1 }), $1, eP = q((() => {
+})), eP = /* @__PURE__ */ F4({ VedurkortWeatherCardEditor: () => $1 }), $1, tP = q((() => {
   n1(), _8(), u8(), Cn(), H0(), k8(), Y(), z1(), An(), $1 = class extends ve {
     constructor(...t) {
       super(...t), this._dailyHasProbability = null, this._hourlyHasProbability = null, this._alertsSource = "cap", this._probeKey = "", this._capEntityFilter = (i) => Xa(this.hass, i.entity_id), this._alertEntityFilter = (i) => ks(this.hass, i.entity_id) || Xa(this.hass, i.entity_id), this._pollenEntityFilter = (i) => this.hass.entities?.[i.entity_id]?.platform === "pollen" ? !0 : i.attributes?.provider === "open_meteo";
@@ -17918,10 +17935,14 @@ z1();
 An();
 var j = class extends ve {
   constructor(...t) {
-    super(...t), this._dailyForecast = [], this._hourlyForecast = [], this._dailyError = null, this._hourlyError = null, this._dailyPlotLeft = 0, this._dailyPlotWidth = 0, this._hourlyPlotLeft = 0, this._hourlyPlotWidth = 0, this._detailPlotLeft = 0, this._detailPlotWidth = 0, this._alertsOpen = !1, this._dailyOpen = !1, this._expandedAlertIds = [], this._detailMetric = null, this._beaufortLegendOpen = !1, this._pollenLegendOpen = !1, this._uvLegendOpen = !1, this._humidityLegendOpen = !1, this._dailyModalPlotLeft = 0, this._dailyModalPlotWidth = 0, this._dailyChart = null, this._dailyModalChart = null, this._hourlyChart = null, this._metricChart = null, this._metricChartFingerprint = "", this._metricChartModeKey = "", this._dailyChartFingerprint = "", this._dailyModalChartFingerprint = "", this._hourlyChartFingerprint = "", this._dailyChartModeKey = "", this._dailyModalChartModeKey = "", this._hourlyChartModeKey = "", this._forecastKey = "", this._forecastLoading = !1, this._chartMod = null, this._chartModLoading = !1, this._alertsTrigger = null, this._dailyTrigger = null, this._detailTrigger = null, this._boundDialog = null, this._hourlyScrollKey = "", this._hourlyScrollUserAdjusted = !1, this._hourlyScrollProgrammatic = !1, this._detailScrollKey = "", this._detailScrollUserAdjusted = !1, this._detailScrollProgrammatic = !1, this._detailWindowNowMs = 0, this._icon = (i) => w0(i, this._config.icon_style, this._config.animated_icons);
+    super(...t), this._dailyForecast = [], this._hourlyForecast = [], this._dailyError = null, this._hourlyError = null, this._dailyPlotLeft = 0, this._dailyPlotWidth = 0, this._hourlyPlotLeft = 0, this._hourlyPlotWidth = 0, this._detailPlotLeft = 0, this._detailPlotWidth = 0, this._alertsOpen = !1, this._dailyOpen = !1, this._expandedAlertIds = [], this._detailMetric = null, this._beaufortLegendOpen = !1, this._pollenLegendOpen = !1, this._uvLegendOpen = !1, this._humidityLegendOpen = !1, this._dailyModalPlotLeft = 0, this._dailyModalPlotWidth = 0, this._dailyChart = null, this._dailyModalChart = null, this._hourlyChart = null, this._metricChart = null, this._metricChartFingerprint = "", this._metricChartModeKey = "", this._dailyChartFingerprint = "", this._dailyModalChartFingerprint = "", this._hourlyChartFingerprint = "", this._dailyChartModeKey = "", this._dailyModalChartModeKey = "", this._hourlyChartModeKey = "", this._forecastKey = "", this._forecastLoading = !1, this._chartMod = null, this._chartModLoading = !1, this._alertsTrigger = null, this._dailyTrigger = null, this._detailTrigger = null, this._boundDialog = null, this._hourlyScrollKey = "", this._hourlyScrollUserAdjusted = !1, this._hourlyScrollProgrammatic = !1, this._detailScrollKey = "", this._detailScrollUserAdjusted = !1, this._detailScrollProgrammatic = !1, this._detailWindowNowMs = 0, this._effectsIntersecting = !0, this._effectsDocVisible = !0, this._effectsReducedMotion = !1, this._onEffectsVisibilityChange = () => {
+      this._effectsDocVisible = document.visibilityState === "visible", this._syncEffectsPaused();
+    }, this._onEffectsMotionChange = () => {
+      this._effectsReducedMotion = this._effectsMotionQuery?.matches ?? !1, this._syncEffectsPaused();
+    }, this._icon = (i) => w0(i, this._config.icon_style, this._config.animated_icons);
   }
   static async getConfigElement() {
-    return await Promise.resolve().then(() => (eP(), QS)), document.createElement("vedurkort-weather-card-editor");
+    return await Promise.resolve().then(() => (tP(), eP)), document.createElement("vedurkort-weather-card-editor");
   }
   static getStubConfig(t, i) {
     return { ...a1 };
@@ -17935,14 +17956,31 @@ var j = class extends ve {
   updated(t) {
     (t.has("hass") || t.has("_config")) && this._config && this.hass && (this._ensureForecastSubscription(), this._alertsOpen && kt(this.hass, this._config).length === 0 && (this._alertsOpen = !1), this._dailyOpen && !n3(this._config.daily) && (this._dailyOpen = !1, this._destroyDailyModalChart())), (t.has("_dailyForecast") || t.has("_hourlyForecast") || t.has("_config") || t.has("hass")) && this.updateComplete.then(() => {
       this._renderCharts();
-    }), (t.has("_hourlyForecast") || t.has("_config")) && this.updateComplete.then(() => this._maybeScrollHourlyToNow()), (t.has("_alertsOpen") || t.has("_detailMetric") || t.has("_dailyOpen")) && !this._alertsOpen && this._detailMetric == null && !this._dailyOpen && (this._releaseDialog(), (this._detailTrigger ?? this._alertsTrigger ?? this._dailyTrigger)?.focus(), this._alertsTrigger = null, this._detailTrigger = null, this._dailyTrigger = null), (this._alertsOpen || this._detailMetric != null || this._dailyOpen) && this.updateComplete.then(() => {
+    }), (t.has("_hourlyForecast") || t.has("_config")) && this.updateComplete.then(() => this._maybeScrollHourlyToNow()), (t.has("_alertsOpen") || t.has("_detailMetric") || t.has("_dailyOpen")) && (this._syncEffectsPaused(), !this._alertsOpen && this._detailMetric == null && !this._dailyOpen && (this._releaseDialog(), (this._detailTrigger ?? this._alertsTrigger ?? this._dailyTrigger)?.focus(), this._alertsTrigger = null, this._detailTrigger = null, this._dailyTrigger = null)), (this._alertsOpen || this._detailMetric != null || this._dailyOpen) && this.updateComplete.then(() => {
       this._ensureDialogOpen(), this._dailyOpen && this._renderCharts();
     }), (t.has("_detailMetric") || t.has("_hourlyForecast") || t.has("_config") || t.has("hass")) && this.updateComplete.then(() => {
       this._renderMetricChart(), this._maybeScrollDetailToNow();
     }), (t.has("_config") || t.has("hass")) && this.updateComplete.then(() => this._bindCardActions());
   }
+  connectedCallback() {
+    super.connectedCallback(), this._effectsIntersecting = !0, this._effectsDocVisible = document.visibilityState === "visible", document.addEventListener("visibilitychange", this._onEffectsVisibilityChange), typeof window.matchMedia == "function" ? (this._effectsMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)"), this._effectsReducedMotion = this._effectsMotionQuery.matches, this._effectsMotionQuery.addEventListener("change", this._onEffectsMotionChange)) : this._effectsReducedMotion = !1, this._effectsIntersectionObserver?.disconnect(), this._effectsIntersectionObserver = new IntersectionObserver((t) => {
+      const i = t[0];
+      i && (this._effectsIntersecting = i.isIntersecting, this._syncEffectsPaused());
+    }, { threshold: 0 }), this._effectsIntersectionObserver.observe(this), this._syncEffectsPaused();
+  }
   disconnectedCallback() {
-    super.disconnectedCallback(), this._teardownForecast(), this._destroyCharts(), this._destroyMetricChart(), this._unbindActions?.(), this._unbindActions = void 0, this._unbindFocusTrap?.(), this._unbindFocusTrap = void 0, this._unlockScroll?.(), this._unlockScroll = void 0;
+    super.disconnectedCallback(), document.removeEventListener("visibilitychange", this._onEffectsVisibilityChange), this._effectsMotionQuery?.removeEventListener("change", this._onEffectsMotionChange), this._effectsMotionQuery = void 0, this._effectsIntersectionObserver?.disconnect(), this._effectsIntersectionObserver = void 0, this._teardownForecast(), this._destroyCharts(), this._destroyMetricChart(), this._unbindActions?.(), this._unbindActions = void 0, this._unbindFocusTrap?.(), this._unbindFocusTrap = void 0, this._unlockScroll?.(), this._unlockScroll = void 0;
+  }
+  _effectsDialogOpen() {
+    return this._alertsOpen || this._detailMetric != null || this._dailyOpen;
+  }
+  _syncEffectsPaused() {
+    FS({
+      intersecting: this._effectsIntersecting,
+      docVisible: this._effectsDocVisible,
+      reducedMotion: this._effectsReducedMotion,
+      dialogOpen: this._effectsDialogOpen()
+    }) ? this.setAttribute("data-effects-paused", "") : this.removeAttribute("data-effects-paused");
   }
   _bindCardActions() {
     if (this._unbindActions?.(), this._unbindActions = void 0, !this._config?.entity || !this.hass) return;
@@ -17965,7 +18003,7 @@ var j = class extends ve {
       } catch {
         return;
       }
-      this._unlockScroll || (this._unlockScroll = JS(this)), this._boundDialog !== t && (this._releaseDialog(), this._boundDialog = t, t.focus(), this._unbindFocusTrap = jS(t));
+      this._unlockScroll || (this._unlockScroll = QS(this)), this._boundDialog !== t && (this._releaseDialog(), this._boundDialog = t, t.focus(), this._unbindFocusTrap = ZS(t));
     }
   }
   _closeDialogElements() {
@@ -18413,7 +18451,7 @@ R([W()], j.prototype, "_dailyModalPlotLeft", void 0);
 R([W()], j.prototype, "_dailyModalPlotWidth", void 0);
 j = R([Ci("vedurkort-weather-card")], j);
 H0();
-function tP(e, t) {
+function iP(e, t) {
   return t.split(".")[0] !== "weather" || !e.states[t] ? null : { config: {
     type: "custom:vedurkort-weather-card",
     entity: t,
@@ -18429,7 +18467,7 @@ window.customCards.push({
   description: "Weather card with animated Meteocons icons, optional CSS backgrounds, and Chart.js forecasts",
   preview: !0,
   documentationURL: "https://github.com/tempi-marathon/vedurkort-weather-card",
-  getEntitySuggestion: tP
+  getEntitySuggestion: iP
 });
 
 //# sourceMappingURL=vedurkort-weather-card.js.map

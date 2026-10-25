@@ -16,7 +16,7 @@ Full option reference: [2. Configuration](02-configuration.md)
 
 ## Detail sheets
 
-Tap the **current-weather block** (temperature + condition) or any **detail chip** to open a centered detail sheet. When `animated_background` is enabled, the sheet reuses the same CSS weather scene as the card.
+Tap the **current-weather block** (temperature + condition) or any **detail chip** to open a centered detail sheet. When `animated_background` is enabled, the sheet reuses the same CSS weather scene as the card. Scene animations pause per card when that card is scrolled off-screen, when the tab is in the background, or when `prefers-reduced-motion` is set — so phones and dashboards with many cards do not keep animating invisible rain/clouds. An open detail/alerts/daily dialog on a card keeps that card’s scene running even if the host is reported off-screen.
 
 Each sheet shows a large hero value, a short interpretation line, optional **24-hour forecast chart** (from hourly forecast data), and related stats. The current-conditions sheet also shows hourly condition icons under the chart. Charts are available for temperature, humidity, wind speed, precipitation, precipitation probability, and cloud coverage. UV, pressure, visibility, dew point, and gust show current values and copy without a chart when hourly forecast lacks that field.
 
