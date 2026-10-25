@@ -50,6 +50,8 @@ Not every weather integration exposes every attribute. Veðurkort reads values f
 
 On the card, detail chips are **hidden when there is no value**. In the visual editor, toggles stay available and show a small hint whether the selected weather entity currently has that attribute — use an override sensor when it does not.
 
+**Smart chips** keeps the row to what’s useful right now and puts the rest under **More**. Your chip toggles still decide what’s allowed.
+
 Example with overrides: [6. Examples](06-examples.md#sensor-overrides)
 
 ## Icons & backgrounds

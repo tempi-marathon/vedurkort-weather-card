@@ -678,6 +678,16 @@ export class VedurkortWeatherCardEditor extends LitElement {
           ${c.show_current
             ? html`
                 <p class="hint">${this._t("current_detail_hint")}</p>
+                <label class="row">
+                  <input
+                    type="checkbox"
+                    .checked=${c.smart_chips}
+                    data-config="smart_chips"
+                    @change=${this._value}
+                  />
+                  ${this._t("smart_chips")}
+                </label>
+                <p class="hint">${this._t("smart_chips_hint")}</p>
                 <div class="preset-row">
                   <button type="button" class="preset-btn" @click=${() => this._applyDetailPreset("available")}>
                     ${this._t("preset_available_details")}

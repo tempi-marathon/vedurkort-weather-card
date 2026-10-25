@@ -32,6 +32,7 @@ const baseConfig = (): VedurkortCardConfig => ({
   animated_icons: true,
   animated_background: false,
   show_current: true,
+  smart_chips: false,
   show_sun: false,
   show_wind: false,
   wind_speed_unit: "native",

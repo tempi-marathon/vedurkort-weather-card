@@ -19,6 +19,7 @@ See also: [3. Usage](03-usage.md) · [4. Weather alerts](04-alerts.md) · [5. Po
 | `animated_icons` | boolean | `true` | Use animated Meteocons (`true`) or static SVGs (`false`). |
 | `animated_background` | boolean | `false` | Enable CSS weather background by condition. Cloud layer opacity is lightly scaled from `cloud_coverage` when available. Animations pause automatically when the card is off-screen, the browser tab is hidden, or the user prefers reduced motion (dialog scenes included). |
 | `show_current` | boolean | `true` | Show the current weather section (condition, temperature, icon). Detail chips only appear when this is on. |
+| `smart_chips` | boolean | `false` | Keep the chip row focused on what matters right now. Everything else you enabled stays one tap away under **More**. |
 | `show_sun` | boolean | `false` | Show the next sunrise or sunset (sunset while the sun is up, sunrise while down). |
 | `show_humidity` | boolean | `false` | Show humidity. |
 | `show_wind` | boolean | `false` | Show a single current-wind chip (speed + direction, optional gust) with Beaufort icon. |

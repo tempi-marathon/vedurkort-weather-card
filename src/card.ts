@@ -56,6 +56,7 @@ import {
   renderForecastSection,
   type ForecastSectionState,
 } from "./sections/forecast-section";
+import { nextMorePackDemotions } from "./sections/smart-chips";
 import type { ForecastItem, HomeAssistant, LovelaceCardEditor } from "./types";
 import { shouldPauseEffects } from "./ui/effects-visibility";
 import { trapFocus } from "./ui/focus-trap";
@@ -92,6 +93,8 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _humidityLegendOpen = false;
   @state() private _dailyModalPlotLeft = 0;
   @state() private _dailyModalPlotWidth = 0;
+  /** Demote N lowest-priority primary chips into More to keep More on-row. */
+  @state() private _morePackDemotions = 0;
 
   private _dailyChart: Chart | null = null;
   private _dailyModalChart: Chart | null = null;
@@ -135,6 +138,8 @@ export class VedurkortWeatherCard extends LitElement {
   private _effectsReducedMotion = false;
   private _effectsIntersectionObserver: IntersectionObserver | undefined;
   private _effectsMotionQuery: MediaQueryList | undefined;
+  private _morePackObserver: ResizeObserver | undefined;
+  private _morePackRaf = 0;
   private readonly _onEffectsVisibilityChange = (): void => {
     this._effectsDocVisible = document.visibilityState === "visible";
     this._syncEffectsPaused();
@@ -159,9 +164,13 @@ export class VedurkortWeatherCard extends LitElement {
   }
 
   public setConfig(config: Partial<VedurkortCardConfig>): void {
+    const prevSmart = this._config?.smart_chips;
     this._config = config.entity
       ? normalizeConfig(config)
       : (normalizeEditorConfig(config) as VedurkortCardConfig);
+    if (prevSmart !== this._config.smart_chips) {
+      this._morePackDemotions = 0;
+    }
   }
 
   public getCardSize(): number {
@@ -197,6 +206,16 @@ export class VedurkortWeatherCard extends LitElement {
     }
     if (changed.has("_hourlyForecast") || changed.has("_config")) {
       this.updateComplete.then(() => this._maybeScrollHourlyToNow());
+    }
+    if (
+      changed.has("_config") ||
+      changed.has("hass") ||
+      changed.has("_morePackDemotions")
+    ) {
+      this.updateComplete.then(() => {
+        this._ensureMorePackObserver();
+        this._bindMorePackObserver();
+      });
     }
     if (
       changed.has("_alertsOpen") ||
@@ -281,6 +300,7 @@ export class VedurkortWeatherCard extends LitElement {
     );
     this._effectsIntersectionObserver.observe(this);
     this._syncEffectsPaused();
+    this._ensureMorePackObserver();
   }
 
   disconnectedCallback(): void {
@@ -296,6 +316,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._effectsMotionQuery = undefined;
     this._effectsIntersectionObserver?.disconnect();
     this._effectsIntersectionObserver = undefined;
+    this._teardownMorePackObserver();
     this._teardownForecast();
     this._destroyCharts();
     this._destroyMetricChart();
@@ -324,6 +345,77 @@ export class VedurkortWeatherCard extends LitElement {
     });
     if (pause) this.setAttribute("data-effects-paused", "");
     else this.removeAttribute("data-effects-paused");
+  }
+
+  private _ensureMorePackObserver(): void {
+    if (this._morePackObserver) return;
+    if (typeof ResizeObserver !== "function") return;
+    this._morePackObserver = new ResizeObserver(() => {
+      this._scheduleMorePackSync();
+    });
+    this.updateComplete.then(() => this._bindMorePackObserver());
+  }
+
+  private _teardownMorePackObserver(): void {
+    if (this._morePackRaf) {
+      cancelAnimationFrame(this._morePackRaf);
+      this._morePackRaf = 0;
+    }
+    this._morePackObserver?.disconnect();
+    this._morePackObserver = undefined;
+  }
+
+  private _bindMorePackObserver(): void {
+    const details = this.renderRoot.querySelector(
+      ".section-current .details",
+    );
+    if (!details || !this._morePackObserver) return;
+    this._morePackObserver.disconnect();
+    this._morePackObserver.observe(details);
+    this._scheduleMorePackSync();
+  }
+
+  private _scheduleMorePackSync(): void {
+    if (this._morePackRaf) cancelAnimationFrame(this._morePackRaf);
+    this._morePackRaf = requestAnimationFrame(() => {
+      this._morePackRaf = 0;
+      this._syncMorePackDemotions();
+    });
+  }
+
+  /** Keep More on the first chip row by demoting lowest-priority primaries. */
+  private _syncMorePackDemotions(): void {
+    const details = this.renderRoot.querySelector(
+      ".section-current .details",
+    ) as HTMLElement | null;
+    const more = details?.querySelector(".detail-more") as HTMLElement | null;
+    const chipEls = details
+      ? ([
+          ...details.querySelectorAll(":scope > .tip, :scope > .detail-more"),
+        ] as HTMLElement[])
+      : [];
+    const primaryEls = chipEls.filter(
+      (el) => !el.classList.contains("detail-more"),
+    );
+    const rowTop = primaryEls[0]?.offsetTop ?? 0;
+    const moreWrapped = !!more && more.offsetTop > rowTop + 4;
+    const spare =
+      details && more
+        ? details.clientWidth - (more.offsetLeft + more.offsetWidth)
+        : 0;
+
+    const next = nextMorePackDemotions({
+      smartChips: !!this._config?.smart_chips,
+      hasMore: !!more,
+      moreWrapped,
+      sparePx: spare,
+      primaryCount: primaryEls.length,
+      current: this._morePackDemotions,
+    });
+
+    if (next !== this._morePackDemotions) {
+      this._morePackDemotions = next;
+    }
   }
 
   private _bindCardActions(): void {
@@ -1344,6 +1436,7 @@ export class VedurkortWeatherCard extends LitElement {
                   bft,
                   gustBft,
                   pollen,
+                  morePackDemotions: this._morePackDemotions,
                 },
                 this._icon,
                 onOpenAlerts,
