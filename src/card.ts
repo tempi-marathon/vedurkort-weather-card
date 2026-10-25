@@ -1358,6 +1358,7 @@ export class VedurkortWeatherCard extends LitElement {
     const showDetails =
       showCurrent &&
       (this._config.show_sun ||
+        this._config.show_moon ||
         this._config.show_humidity ||
         this._config.show_wind ||
         this._config.show_uv_index ||

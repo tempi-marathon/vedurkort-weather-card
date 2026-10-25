@@ -31,6 +31,11 @@ import {
 } from "./alerts-section";
 import { renderDailyLink } from "./forecast-section";
 import {
+  getMoonSnapshot,
+  moonPhaseIcon,
+  moonPhaseLocalizeKey,
+} from "../details/moon-phase";
+import {
   demotePrimaryChips,
   resolveDetailChips,
   SMART_CHIP_ORDER,
@@ -74,6 +79,8 @@ function chipHasValue(
     case "sun":
       // Match pre-smart behavior: show when enabled (missing times → "—").
       return config.show_sun;
+    case "moon":
+      return config.show_moon;
     case "humidity":
       return config.show_humidity && snap.humidity != null;
     case "wind":
@@ -176,6 +183,17 @@ function sunChipParts(
   };
 }
 
+function moonChipParts(
+  ctx: CurrentWeatherContext,
+): { iconName: MeteoconName; text: string; label: string } {
+  const moon = getMoonSnapshot();
+  return {
+    iconName: moonPhaseIcon(moon.phase),
+    text: localize(moonPhaseLocalizeKey(moon.phase), ctx.language),
+    label: localize("moon", ctx.language),
+  };
+}
+
 function windChipParts(ctx: CurrentWeatherContext): {
   heading: string | null;
   tip: string;
@@ -242,6 +260,8 @@ function chipLabel(
   switch (id) {
     case "sun":
       return sunChipParts(ctx).label;
+    case "moon":
+      return localize("moon", language);
     case "wind":
       return localize("wind", language);
     case "uv_index":
@@ -265,6 +285,8 @@ function chipDisplayText(
   switch (id) {
     case "sun":
       return sunChipParts(ctx).text;
+    case "moon":
+      return moonChipParts(ctx).text;
     case "humidity":
       return formatNumber(snap.humidity, "%", 0);
     case "wind":
@@ -307,6 +329,17 @@ function renderChip(
         parts.text,
         parts.label,
         "sun",
+        onOpenDetail,
+      );
+    }
+    case "moon": {
+      const parts = moonChipParts(ctx);
+      return renderDetailButton(
+        icon,
+        parts.iconName,
+        parts.text,
+        parts.label,
+        "moon",
         onOpenDetail,
       );
     }
@@ -439,6 +472,8 @@ function chipIconName(
   switch (id) {
     case "sun":
       return sunChipParts(ctx).iconName;
+    case "moon":
+      return moonChipParts(ctx).iconName;
     case "humidity":
       return "humidity";
     case "wind":

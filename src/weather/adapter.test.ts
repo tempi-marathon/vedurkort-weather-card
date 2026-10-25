@@ -47,6 +47,7 @@ const baseConfig: VedurkortCardConfig = {
   show_current: true,
   smart_chips: false,
   show_sun: false,
+  show_moon: false,
   show_wind: true,
   wind_speed_unit: "native",
   show_humidity: false,

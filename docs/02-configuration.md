@@ -21,6 +21,7 @@ See also: [3. Usage](03-usage.md) · [4. Weather alerts](04-alerts.md) · [5. Po
 | `show_current` | boolean | `true` | Show the current weather section (condition, temperature, icon). Detail chips only appear when this is on. |
 | `smart_chips` | boolean | `false` | Keep the chip row focused on what matters right now. Everything else you enabled stays one tap away under **More**. |
 | `show_sun` | boolean | `false` | Show the next sunrise or sunset (sunset while the sun is up, sunrise while down). |
+| `show_moon` | boolean | `false` | Show the moon phase chip (computed on-device; no moon entity required). Tap opens phase, illumination, and lunation progress. |
 | `show_humidity` | boolean | `false` | Show humidity. |
 | `show_wind` | boolean | `false` | Show a single current-wind chip (speed + direction, optional gust) with Beaufort icon. |
 | `wind_speed_unit` | string | `native` | Display unit for the current wind chip and wind detail sheet/chart: `native` (Home Assistant), `km/h`, `beaufort`, `m/s`, or `mph`. |

@@ -34,6 +34,7 @@ import { fetchForecastOnce } from "./weather/adapter";
 
 type DetailToggleKey =
   | "show_sun"
+  | "show_moon"
   | "show_humidity"
   | "show_wind"
   | "show_uv_index"
@@ -277,9 +278,11 @@ export class VedurkortWeatherCardEditor extends LitElement {
     key: DetailToggleKey;
     attrs: string[];
     sun?: boolean;
+    moon?: boolean;
   }> {
     return [
       { key: "show_sun", attrs: ["next_rising"], sun: true },
+      { key: "show_moon", attrs: [], moon: true },
       { key: "show_humidity", attrs: ["humidity"] },
       {
         key: "show_wind",
@@ -327,6 +330,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
     const next = structuredClone(this._config);
     const off: Record<DetailToggleKey, boolean> = {
       show_sun: false,
+      show_moon: false,
       show_humidity: false,
       show_wind: false,
       show_uv_index: false,
@@ -340,8 +344,8 @@ export class VedurkortWeatherCardEditor extends LitElement {
     };
     Object.assign(next, off);
     if (preset === "available") {
-      for (const { key, attrs, sun } of this._detailFields()) {
-        next[key] = this._detailAvail(attrs, sun) === true;
+      for (const { key, attrs, sun, moon } of this._detailFields()) {
+        next[key] = this._detailAvail(attrs, sun, moon) === true;
       }
     } else if (preset === "full") {
       for (const k of Object.keys(off) as DetailToggleKey[]) {
@@ -544,7 +548,12 @@ export class VedurkortWeatherCardEditor extends LitElement {
     return attrs.some((a) => entity.attributes[a] != null);
   }
 
-  private _detailAvail(attrs: string[], sunSpecial = false): boolean | null {
+  private _detailAvail(
+    attrs: string[],
+    sunSpecial = false,
+    moonSpecial = false,
+  ): boolean | null {
+    if (moonSpecial) return true;
     if (sunSpecial) {
       const sunId = this._config?.sun_entity ?? "sun.sun";
       const sun = this.hass?.states[sunId];
@@ -558,7 +567,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
 
   private _anyDetailMissing(): boolean {
     return this._detailFields().some(
-      ({ attrs, sun }) => this._detailAvail(attrs, sun) === false,
+      ({ attrs, sun, moon }) => this._detailAvail(attrs, sun, moon) === false,
     );
   }
 
@@ -567,9 +576,10 @@ export class VedurkortWeatherCardEditor extends LitElement {
     label: string,
     attrs: string[],
     sunSpecial = false,
+    moonSpecial = false,
   ) {
     const checked = Boolean(this._config[key]);
-    const missing = this._detailAvail(attrs, sunSpecial) === false;
+    const missing = this._detailAvail(attrs, sunSpecial, moonSpecial) === false;
 
     return html`
       <label class="row">
@@ -703,6 +713,13 @@ export class VedurkortWeatherCardEditor extends LitElement {
                   "show_sun",
                   this._t("next_sun"),
                   ["next_rising"],
+                  true,
+                )}
+                ${this._detailToggle(
+                  "show_moon",
+                  this._t("moon"),
+                  [],
+                  false,
                   true,
                 )}
                 ${this._detailToggle("show_humidity", this._t("humidity"), [

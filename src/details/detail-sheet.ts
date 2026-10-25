@@ -8,6 +8,7 @@ import { renderHumidityLegend } from "./humidity-legend";
 import { metricGroup } from "./groups";
 import { renderDetailHero } from "./hero";
 import { renderPollenLegend } from "./pollen-legend";
+import { renderLunationArcHero } from "./lunation-arc";
 import { renderSunArcHero } from "./sun-arc";
 import { renderUvBarHero } from "./uv-bar";
 import { renderUvLegend } from "./uv-legend";
@@ -82,16 +83,18 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
   return html`
     ${model.sunArc
       ? renderSunArcHero(model.sunArc, icon, model.copy)
-      : model.uvBar
-        ? renderUvBarHero(model.uvBar, icon, language)
-        : renderDetailHero(icon, {
-            icon: model.heroIcon,
-            value: model.heroValue,
-            copy: model.copy || undefined,
-          }, {
-            valueClass: model.heroValueClass,
-            valueTone: model.id === "pollen" ? "text" : "numeric",
-          })}
+      : model.lunationArc
+        ? renderLunationArcHero(model.lunationArc, icon, model.copy)
+        : model.uvBar
+          ? renderUvBarHero(model.uvBar, icon, language)
+          : renderDetailHero(icon, {
+              icon: model.heroIcon,
+              value: model.heroValue,
+              copy: model.copy || undefined,
+            }, {
+              valueClass: model.heroValueClass,
+              valueTone: model.id === "pollen" ? "text" : "numeric",
+            })}
     ${model.series
       ? html`
           <div
@@ -136,7 +139,7 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
             </div>
           </div>
         `
-      : !model.sunArc && !model.uvBar
+      : !model.sunArc && !model.lunationArc && !model.uvBar
         ? html`<p class="detail-no-chart">${noChartText}</p>`
         : nothing}
     ${model.related.length
