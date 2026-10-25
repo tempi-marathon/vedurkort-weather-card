@@ -57,6 +57,7 @@ import {
   type ForecastSectionState,
 } from "./sections/forecast-section";
 import type { ForecastItem, HomeAssistant, LovelaceCardEditor } from "./types";
+import { shouldPauseEffects } from "./ui/effects-visibility";
 import { trapFocus } from "./ui/focus-trap";
 import { lockScroll } from "./ui/scroll-lock";
 import { renderViewportDialog } from "./ui/viewport-dialog";
@@ -128,6 +129,21 @@ export class VedurkortWeatherCard extends LitElement {
   /** Stable anchor while the detail modal is open (chart + icon row). */
   private _detailWindowNowMs = 0;
 
+  /** Optimistic until the first IntersectionObserver callback. */
+  private _effectsIntersecting = true;
+  private _effectsDocVisible = true;
+  private _effectsReducedMotion = false;
+  private _effectsIntersectionObserver: IntersectionObserver | undefined;
+  private _effectsMotionQuery: MediaQueryList | undefined;
+  private readonly _onEffectsVisibilityChange = (): void => {
+    this._effectsDocVisible = document.visibilityState === "visible";
+    this._syncEffectsPaused();
+  };
+  private readonly _onEffectsMotionChange = (): void => {
+    this._effectsReducedMotion = this._effectsMotionQuery?.matches ?? false;
+    this._syncEffectsPaused();
+  };
+
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
     await import("./editor");
     return document.createElement(
@@ -187,6 +203,7 @@ export class VedurkortWeatherCard extends LitElement {
       changed.has("_detailMetric") ||
       changed.has("_dailyOpen")
     ) {
+      this._syncEffectsPaused();
       if (
         !this._alertsOpen &&
         this._detailMetric == null &&
@@ -229,8 +246,56 @@ export class VedurkortWeatherCard extends LitElement {
     }
   }
 
+  connectedCallback(): void {
+    super.connectedCallback();
+    // Fresh defaults — avoid stale off-screen state after reconnect.
+    this._effectsIntersecting = true;
+    this._effectsDocVisible = document.visibilityState === "visible";
+    document.addEventListener(
+      "visibilitychange",
+      this._onEffectsVisibilityChange,
+    );
+
+    if (typeof window.matchMedia === "function") {
+      this._effectsMotionQuery = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      );
+      this._effectsReducedMotion = this._effectsMotionQuery.matches;
+      this._effectsMotionQuery.addEventListener(
+        "change",
+        this._onEffectsMotionChange,
+      );
+    } else {
+      this._effectsReducedMotion = false;
+    }
+
+    this._effectsIntersectionObserver?.disconnect();
+    this._effectsIntersectionObserver = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        this._effectsIntersecting = entry.isIntersecting;
+        this._syncEffectsPaused();
+      },
+      { threshold: 0 },
+    );
+    this._effectsIntersectionObserver.observe(this);
+    this._syncEffectsPaused();
+  }
+
   disconnectedCallback(): void {
     super.disconnectedCallback();
+    document.removeEventListener(
+      "visibilitychange",
+      this._onEffectsVisibilityChange,
+    );
+    this._effectsMotionQuery?.removeEventListener(
+      "change",
+      this._onEffectsMotionChange,
+    );
+    this._effectsMotionQuery = undefined;
+    this._effectsIntersectionObserver?.disconnect();
+    this._effectsIntersectionObserver = undefined;
     this._teardownForecast();
     this._destroyCharts();
     this._destroyMetricChart();
@@ -240,6 +305,25 @@ export class VedurkortWeatherCard extends LitElement {
     this._unbindFocusTrap = undefined;
     this._unlockScroll?.();
     this._unlockScroll = undefined;
+  }
+
+  private _effectsDialogOpen(): boolean {
+    return (
+      this._alertsOpen ||
+      this._detailMetric != null ||
+      this._dailyOpen
+    );
+  }
+
+  private _syncEffectsPaused(): void {
+    const pause = shouldPauseEffects({
+      intersecting: this._effectsIntersecting,
+      docVisible: this._effectsDocVisible,
+      reducedMotion: this._effectsReducedMotion,
+      dialogOpen: this._effectsDialogOpen(),
+    });
+    if (pause) this.setAttribute("data-effects-paused", "");
+    else this.removeAttribute("data-effects-paused");
   }
 
   private _bindCardActions(): void {
