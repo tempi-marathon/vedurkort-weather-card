@@ -10,8 +10,23 @@ export type CardLayout = "default" | "compact" | "minimal";
 export const CARD_LAYOUTS: CardLayout[] = ["default", "compact", "minimal"];
 export type DailyDisplay = "off" | "inline" | "modal";
 export const DAILY_DISPLAYS: DailyDisplay[] = ["off", "inline", "modal"];
+/** Condition scene: off, frozen still, or full CSS animation. */
+export type BackgroundMode = "off" | "static" | "animated";
+export const BACKGROUND_MODES: BackgroundMode[] = [
+  "off",
+  "static",
+  "animated",
+];
 export type { WindSpeedDisplayUnit };
 export { WIND_SPEED_DISPLAY_UNITS };
+
+export function hasBackground(mode: BackgroundMode): boolean {
+  return mode !== "off";
+}
+
+export function isBackgroundAnimated(mode: BackgroundMode): boolean {
+  return mode === "animated";
+}
 
 export interface ForecastBlockConfig {
   enabled: boolean;
@@ -59,7 +74,11 @@ export interface VedurkortCardConfig {
   layout: CardLayout;
   icon_style: IconStyle;
   animated_icons: boolean;
-  animated_background: boolean;
+  /**
+   * Condition CSS scene: off, static (frozen still), or animated.
+   * Legacy `animated_background` boolean migrates on load.
+   */
+  background: BackgroundMode;
   /** Current conditions (condition, temp, icon, detail chips). */
   show_current: boolean;
   /**
@@ -133,7 +152,7 @@ const DEFAULT_FORECAST_BLOCK: ForecastBlockConfig = {
 export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   icon_style: "fill",
   animated_icons: true,
-  animated_background: false,
+  background: "off",
   show_name: true,
   layout: "default",
   show_current: true,
@@ -176,6 +195,8 @@ function mergeConfigFields(
     show_wind_speed?: boolean;
     show_wind_direction?: boolean;
     show_wind_gust?: boolean;
+    /** @deprecated Prefer `background`. */
+    animated_background?: boolean;
   },
 ): VedurkortEditorConfig {
   const daily = {
@@ -199,11 +220,16 @@ function mergeConfigFields(
 
   const alertsEntities = normalizeAlertEntities(input);
   const showWind = migrateShowWind(input);
+  const background = normalizeBackgroundMode(
+    input.background,
+    input.animated_background,
+  );
 
   const {
     show_wind_speed: _legacySpeed,
     show_wind_direction: _legacyDir,
     show_wind_gust: _legacyGust,
+    animated_background: _legacyBg,
     ...rest
   } = input;
 
@@ -229,8 +255,7 @@ function mergeConfigFields(
     icon_style: normalizeIconStyle(input.icon_style),
     layout: normalizeLayout(input.layout),
     animated_icons: input.animated_icons ?? DEFAULT_CONFIG.animated_icons,
-    animated_background:
-      input.animated_background ?? DEFAULT_CONFIG.animated_background,
+    background,
     tap_action: input.tap_action,
     hold_action: input.hold_action,
     double_tap_action: input.double_tap_action,
@@ -284,6 +309,23 @@ function normalizeLayout(value: unknown): CardLayout {
   return CARD_LAYOUTS.includes(value as CardLayout)
     ? (value as CardLayout)
     : DEFAULT_CONFIG.layout;
+}
+
+/**
+ * Prefer explicit `background`; else migrate legacy `animated_background`
+ * (`true` → animated, `false`/missing → off).
+ */
+function normalizeBackgroundMode(
+  background: unknown,
+  animatedBackground: unknown,
+): BackgroundMode {
+  if (BACKGROUND_MODES.includes(background as BackgroundMode)) {
+    return background as BackgroundMode;
+  }
+  if (animatedBackground === true || animatedBackground === "true") {
+    return "animated";
+  }
+  return "off";
 }
 
 /**

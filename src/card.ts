@@ -30,6 +30,7 @@ import {
   dailyShowsInline,
   dailyShowsModalTrigger,
   dailyWantsData,
+  hasBackground,
   normalizeConfig,
   normalizeEditorConfig,
   type VedurkortCardConfig,
@@ -866,7 +867,7 @@ export class VedurkortWeatherCard extends LitElement {
     );
     const textColor = this._chartTextColor();
     const chrome = mod.chartChromeForScene(
-      this._config.animated_background,
+      hasBackground(this._config.background),
       scene,
       textColor,
     );
@@ -906,7 +907,7 @@ export class VedurkortWeatherCard extends LitElement {
       return;
     }
 
-    const modeKey = `${mode}:${precipType}:${precipUnit}:${temperatureUnit}:${textColor}:${this._config.animated_background}:${scene}:${mode === "hourly" ? `${snap?.sunrise ?? ""}|${snap?.sunset ?? ""}` : ""}`;
+    const modeKey = `${mode}:${precipType}:${precipUnit}:${temperatureUnit}:${textColor}:${hasBackground(this._config.background)}:${scene}:${mode === "hourly" ? `${snap?.sunrise ?? ""}|${snap?.sunset ?? ""}` : ""}`;
     const fingerprint = mod.seriesFingerprint(series);
     const existing = mode === "daily" ? this._dailyChart : this._hourlyChart;
     const existingKey =
@@ -1000,7 +1001,7 @@ export class VedurkortWeatherCard extends LitElement {
     );
     const textColor = this._chartTextColor();
     const chrome = mod.chartChromeForScene(
-      this._config.animated_background,
+      hasBackground(this._config.background),
       scene,
       textColor,
     );
@@ -1022,7 +1023,7 @@ export class VedurkortWeatherCard extends LitElement {
       return;
     }
 
-    const modeKey = `daily-modal:${precipType}:${precipUnit}:${temperatureUnit}:${textColor}:${this._config.animated_background}:${scene}`;
+    const modeKey = `daily-modal:${precipType}:${precipUnit}:${temperatureUnit}:${textColor}:${hasBackground(this._config.background)}:${scene}`;
     const fingerprint = mod.seriesFingerprint(series);
     const existing = this._dailyModalChart;
 
@@ -1155,7 +1156,7 @@ export class VedurkortWeatherCard extends LitElement {
     const scene = conditionToScene(snap.condition, snap.isDay, escalate);
     const textColor = this._modalTextColor();
     const chrome = mod.chartChromeForScene(
-      this._config.animated_background,
+      hasBackground(this._config.background),
       scene,
       textColor,
     );
@@ -1168,7 +1169,7 @@ export class VedurkortWeatherCard extends LitElement {
         : "";
     const colCount = series.points.length;
     const sunColCount = series.points.filter((p) => p.sunEvent).length;
-    const modeKey = `${series.id}:${colCount}:${sunColCount}:${textColor}:${this._config.animated_background}:${scene}:${sunKey}`;
+    const modeKey = `${series.id}:${colCount}:${sunColCount}:${textColor}:${hasBackground(this._config.background)}:${scene}:${sunKey}`;
     const fingerprint = metricSeriesFingerprint(series);
     const prevColCount = this._metricChart?.data.labels?.length ?? 0;
 
@@ -1413,20 +1414,20 @@ export class VedurkortWeatherCard extends LitElement {
     const detailModel =
       this._detailMetric != null ? this._buildOpenDetailModel(snap) : null;
     const dialogShell = {
-      animatedBackground: this._config.animated_background,
+      background: this._config.background,
       scene,
       cloudCoverage: snap.cloudCoverage,
     };
 
     return html`
       <ha-card class="${[
-        this._config.animated_background ? "has-bg" : "",
+        hasBackground(this._config.background) ? "has-bg" : "",
         `layout-${layout}`,
       ]
         .filter(Boolean)
         .join(" ")}">
         ${renderBackground(
-          this._config.animated_background,
+          this._config.background,
           scene,
           snap.cloudCoverage,
         )}
@@ -1534,7 +1535,7 @@ export class VedurkortWeatherCard extends LitElement {
             title: detailModel.title,
             titleId: "detail-modal-title",
             language,
-            animatedBackground: dialogShell.animatedBackground,
+            background: dialogShell.background,
             scene: dialogShell.scene,
             cloudCoverage: dialogShell.cloudCoverage,
             onClose: () => this._closeDetailDialog(),

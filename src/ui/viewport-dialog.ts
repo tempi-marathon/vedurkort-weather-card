@@ -1,6 +1,8 @@
 import { html, nothing, type TemplateResult } from "lit";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import { renderBackground } from "../backgrounds/scenes";
+import type { BackgroundMode } from "../config";
+import { hasBackground } from "../config";
 import { localize } from "../localize";
 
 export interface ViewportDialogOptions {
@@ -8,7 +10,7 @@ export interface ViewportDialogOptions {
   title: string;
   titleId: string;
   language: string | undefined;
-  animatedBackground?: boolean;
+  background?: BackgroundMode;
   scene?: BackgroundScene;
   cloudCoverage?: number | null;
   onClose: () => void;
@@ -20,7 +22,8 @@ export function renderViewportDialog(
 ): TemplateResult | typeof nothing {
   if (!opts.open) return nothing;
 
-  const hasBg = Boolean(opts.animatedBackground && opts.scene);
+  const mode = opts.background ?? "off";
+  const hasBg = hasBackground(mode) && !!opts.scene;
 
   return html`
     <dialog
@@ -36,7 +39,7 @@ export function renderViewportDialog(
       }}
     >
       ${hasBg && opts.scene
-        ? renderBackground(true, opts.scene, opts.cloudCoverage ?? null)
+        ? renderBackground(mode, opts.scene, opts.cloudCoverage ?? null)
         : nothing}
       <div class="vk-modal-inner">
         <div class="vk-modal-header">

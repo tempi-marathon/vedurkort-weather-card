@@ -23,7 +23,7 @@ export function getWeatherEntitySuggestion(
       type: "custom:vedurkort-weather-card",
       entity: entityId,
       ...DEFAULT_CONFIG,
-      animated_background: true,
+      background: "animated",
     },
   };
 }

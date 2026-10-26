@@ -48,7 +48,7 @@ entity: weather.forecast_thuis
 show_current: true
 icon_style: fill
 animated_icons: true
-animated_background: true
+background: animated
 show_sun: true
 show_humidity: true
 show_wind: true
@@ -144,6 +144,6 @@ Create an `input_select` whose options are HA condition strings (`sunny`, `rainy
 ```yaml
 type: custom:vedurkort-weather-card
 entity: weather.forecast_thuis
-animated_background: true
+background: animated
 condition_entity: input_select.weather_scene_test
 ```

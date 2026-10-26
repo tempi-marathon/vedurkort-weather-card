@@ -17,6 +17,7 @@ import {
 import type { WeatherAlert } from "../alerts/types";
 import { phaseLabel } from "../alerts/utils";
 import type { BackgroundScene } from "../backgrounds/scenes";
+import type { BackgroundMode } from "../config";
 import type { MeteoconName } from "../icons/allowlist";
 import { localize } from "../localize";
 import { renderDetailHero } from "../details/hero";
@@ -40,7 +41,7 @@ export interface AlertsSectionCallbacks {
 }
 
 export interface AlertsDialogShellOptions {
-  animatedBackground?: boolean;
+  background?: BackgroundMode;
   scene?: BackgroundScene;
   cloudCoverage?: number | null;
 }
@@ -252,7 +253,7 @@ export function renderAlertsDialog(
     title: localize("weather_alerts", language),
     titleId: "alerts-modal-title",
     language,
-    animatedBackground: shell?.animatedBackground,
+    background: shell?.background,
     scene: shell?.scene,
     cloudCoverage: shell?.cloudCoverage,
     onClose: callbacks.onClose,

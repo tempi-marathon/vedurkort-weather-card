@@ -16,8 +16,9 @@ See also: [3. Usage](03-usage.md) · [4. Weather alerts](04-alerts.md) · [5. Po
 | `show_name` | boolean | `true` | Show the location/title header at the top of the card. |
 | `layout` | string | `default` | Visual density: `default`, `compact` (smaller hero), or `minimal` (smaller temp + icon; denser detail chips). |
 | `icon_style` | string | `fill` | Meteocons style: `fill`, `flat`, `line`, or `monochrome`. |
-| `animated_icons` | boolean | `true` | Use animated Meteocons (`true`) or static SVGs (`false`). |
-| `animated_background` | boolean | `false` | Enable CSS weather background by condition. Cloud layer opacity is lightly scaled from `cloud_coverage` when available. Animations pause automatically when the card is off-screen, the browser tab is hidden, or the user prefers reduced motion (dialog scenes included). |
+| `animated_icons` | boolean | `true` | Use animated Meteocons (`true`) or static SVGs (`false`). Independent of the card background. |
+| `background` | string | `off` | Condition CSS scene: `off` (none), `static` (full scene frozen, including rain/hail/wind), or `animated` (full motion). Cloud layer opacity is lightly scaled from `cloud_coverage` when available. Animated scenes pause when the card is off-screen, the tab is hidden, or the user prefers reduced motion (dialog scenes included). |
+| `animated_background` | boolean | — | **Deprecated.** Prefer `background`. `true` migrates to `animated`, `false`/absent to `off`. |
 | `show_current` | boolean | `true` | Show the current weather section (condition, temperature, icon). Detail chips only appear when this is on. |
 | `smart_chips` | boolean | `false` | Keep the chip row focused on what matters right now. Everything else you enabled stays one tap away under **More**. |
 | `show_sun` | boolean | `false` | Show the next sunrise or sunset (sunset while the sun is up, sunrise while down). |
@@ -71,7 +72,7 @@ See also: [3. Usage](03-usage.md) · [4. Weather alerts](04-alerts.md) · [5. Po
 | `show_wind_direction` | boolean | `true` | Show compass label + wind-direction icon under the chart. |
 | `precip_type` | string | `rainfall` | Precipitation series: `rainfall` or `probability`. |
 
-The daily modal uses the same viewport dialog shell as alerts and detail sheets (weather background/scene when `animated_background` is on, title, Close, backdrop dismiss).
+The daily modal uses the same viewport dialog shell as alerts and detail sheets (weather background/scene when `background` is `static` or `animated`, title, Close, backdrop dismiss).
 
 ## Hourly options (`hourly`)
 

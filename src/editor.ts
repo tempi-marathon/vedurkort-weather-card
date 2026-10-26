@@ -17,6 +17,7 @@ import {
   DEFAULT_CONFIG,
   normalizeConfig,
   normalizeEditorConfig,
+  BACKGROUND_MODES,
   CARD_LAYOUTS,
   WIND_SPEED_DISPLAY_UNITS,
   type VedurkortEditorConfig,
@@ -654,25 +655,33 @@ export class VedurkortWeatherCardEditor extends LitElement {
               )}
             </select>
           </label>
-          <label class="row">
-            <input
-              type="checkbox"
-              .checked=${c.animated_icons}
-              data-config="animated_icons"
-              @change=${this._value}
-            />
-            ${this._t("animated_icons")}
-          </label>
-          <label class="row">
-            <input
-              type="checkbox"
-              .checked=${c.animated_background}
-              data-config="animated_background"
-              @change=${this._value}
-            />
-            ${this._t("animated_background")}
-          </label>
-        </fieldset>
+            <label class="row">
+              <input
+                type="checkbox"
+                .checked=${c.animated_icons}
+                data-config="animated_icons"
+                @change=${this._value}
+              />
+              ${this._t("animated_icons")}
+            </label>
+            <p class="hint">${this._t("animated_icons_hint")}</p>
+            <label>
+              ${this._t("background")}
+              <select
+                .value=${c.background ?? "off"}
+                data-config="background"
+                @change=${this._value}
+              >
+                ${BACKGROUND_MODES.map(
+                  (m) =>
+                    html`<option value=${m}>
+                      ${this._t(`background_${m}` as LocalizeKey)}
+                    </option>`,
+                )}
+              </select>
+            </label>
+            <p class="hint">${this._t("background_hint")}</p>
+          </fieldset>
 
         <fieldset>
           <legend>${this._t("legend_current")}</legend>
