@@ -32,7 +32,10 @@ describe("buildLunationArcModel", () => {
   it("returns hero + details for a fixed instant", () => {
     const model = buildLunationArcModel("en", new Date("2026-10-25T12:00:00Z"));
     expect(model.heroIcon).toMatch(/^moon-/);
-    expect(model.heroValue).toMatch(/%$/);
+    expect(model.heroLabel).toBe("");
+    expect(model.heroValue.length).toBeGreaterThan(0);
+    expect(model.heroValue).not.toMatch(/%$/);
+    expect(model.details.some((d) => d.value.endsWith("%"))).toBe(true);
     expect(model.markers).toHaveLength(3);
     expect(model.details.length).toBeGreaterThanOrEqual(4);
     expect(model.dotX).toBeGreaterThanOrEqual(0);

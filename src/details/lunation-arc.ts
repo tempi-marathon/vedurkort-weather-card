@@ -8,18 +8,22 @@ export function renderLunationArcHero(
   icon: IconRenderer,
   copy: string,
 ): TemplateResult {
-  const ariaLabel = `${arc.heroLabel} ${arc.heroValue}`;
+  const ariaLabel = [arc.heroLabel, arc.heroValue].filter(Boolean).join(" ");
   const leftPct = (arc.dotX / arc.viewWidth) * 100;
   const topPct = (arc.dotY / arc.viewHeight) * 100;
 
   return html`
     <div class="detail-lunation-arc">
-      ${renderDetailHero(icon, {
-        icon: arc.heroIcon,
-        label: arc.heroLabel,
-        value: arc.heroValue,
-        copy: copy || undefined,
-      })}
+      ${renderDetailHero(
+        icon,
+        {
+          icon: arc.heroIcon,
+          label: arc.heroLabel,
+          value: arc.heroValue,
+          copy: copy || undefined,
+        },
+        { valueTone: "text" },
+      )}
 
       <div class="detail-lunation-chart" role="img" aria-label=${ariaLabel}>
         <svg

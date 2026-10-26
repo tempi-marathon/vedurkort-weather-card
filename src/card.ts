@@ -461,6 +461,7 @@ export class VedurkortWeatherCard extends LitElement {
 
     if (!dlg.open) {
       try {
+        // Native modal dialog: top layer + inert background (same as HA more-info).
         dlg.showModal();
       } catch {
         return;
@@ -468,7 +469,7 @@ export class VedurkortWeatherCard extends LitElement {
     }
 
     if (!this._unlockScroll) {
-      this._unlockScroll = lockScroll(this);
+      this._unlockScroll = lockScroll(this, dlg);
     }
 
     if (this._boundDialog !== dlg) {
@@ -1072,6 +1073,17 @@ export class VedurkortWeatherCard extends LitElement {
       name,
       this._config.icon_style,
       this._config.animated_icons,
+      "main",
+    );
+  };
+
+  /** Separate id scope from card/More icons so fill paint servers stay valid. */
+  private _iconModal: IconRenderer = (name: MeteoconName): string => {
+    return getMeteoconSvg(
+      name,
+      this._config.icon_style,
+      this._config.animated_icons,
+      "modal",
     );
   };
 
@@ -1496,7 +1508,7 @@ export class VedurkortWeatherCard extends LitElement {
         alerts,
         this._alertsOpen,
         this._expandedAlertIds,
-        this._icon,
+        this._iconModal,
         language,
         {
           onClose: () => this._closeAlerts(),
@@ -1528,7 +1540,7 @@ export class VedurkortWeatherCard extends LitElement {
             onClose: () => this._closeDetailDialog(),
             body: renderDetailSheetBody({
               model: detailModel,
-              icon: this._icon,
+              icon: this._iconModal,
               noChartText: localize("detail_no_chart", language),
               hass: this.hass,
               config: this._config,

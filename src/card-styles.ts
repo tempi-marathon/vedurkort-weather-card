@@ -168,6 +168,9 @@ export const cardStyles = [
       line-height: 1;
       text-decoration: none;
     }
+    .vk-modal .daily-modal-body {
+      overflow-x: hidden;
+    }
     .vk-modal .daily-modal-body .forecast {
       margin: 0;
     }

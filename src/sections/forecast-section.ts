@@ -120,7 +120,7 @@ export function renderForecastSection(
               <div
                 class="forecast-row-slot"
                 style=${plotWidth
-                  ? `margin-left:${plotLeft}px;width:${plotWidth}px`
+                  ? `margin-left:${plotLeft}px;width:${plotWidth}px;max-width:calc(100% - ${plotLeft}px)`
                   : ""}
               >
                 ${renderForecastRow(hass, slice, {

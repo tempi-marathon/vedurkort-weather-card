@@ -122,6 +122,7 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
                         showWindDirection: showWindRow,
                         iconStyle: config!.icon_style,
                         animated: config!.animated_icons,
+                        iconScope: "modal",
                         windSpeedUnit: windSpeedUnit!,
                         windDisplayUnit: showWindRow
                           ? config!.wind_speed_unit
