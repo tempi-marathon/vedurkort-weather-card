@@ -29,7 +29,7 @@ describe("getWeatherEntitySuggestion", () => {
       type: "custom:vedurkort-weather-card",
       entity: "weather.home",
       show_current: true,
-      animated_background: true,
+      background: "animated",
     });
   });
 

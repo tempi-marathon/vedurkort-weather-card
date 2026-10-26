@@ -1,4 +1,6 @@
 import { css, html, nothing, type TemplateResult } from "lit";
+import type { BackgroundMode } from "../config";
+import { hasBackground } from "../config";
 import type { HaWeatherCondition } from "../types";
 
 export type BackgroundScene =
@@ -496,17 +498,18 @@ function renderClouds(scene: BackgroundScene): TemplateResult | typeof nothing {
 }
 
 export function renderBackground(
-  enabled: boolean,
+  mode: BackgroundMode,
   scene: BackgroundScene,
   cloudCoverage: number | null = null,
 ): TemplateResult | typeof nothing {
-  if (!enabled) return nothing;
+  if (!hasBackground(mode)) return nothing;
   const cloudOpacity =
     cloudCoverage == null || Number.isNaN(cloudCoverage)
       ? undefined
       : Math.max(0.2, Math.min(1, cloudCoverage / 100));
+  const staticClass = mode === "static" ? " vk-bg--static" : "";
   return html`
-    <div class="vk-bg vk-bg--${scene}" aria-hidden="true">
+    <div class="vk-bg vk-bg--${scene}${staticClass}" aria-hidden="true">
       <div class="vk-bg__layer vk-bg__sky"></div>
       <div
         class="vk-bg__layer vk-bg__clouds"
@@ -526,6 +529,12 @@ export const backgroundStyles = css`
   :host([data-effects-paused]) .vk-bg *,
   :host([data-effects-paused]) .vk-bg *::before,
   :host([data-effects-paused]) .vk-bg *::after {
+    animation-play-state: paused !important;
+  }
+  /* Static mode: full scene frozen (still of the animation). */
+  .vk-bg--static *,
+  .vk-bg--static *::before,
+  .vk-bg--static *::after {
     animation-play-state: paused !important;
   }
   @media (prefers-reduced-motion: reduce) {

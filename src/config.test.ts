@@ -3,6 +3,8 @@ import {
   dailyShowsInline,
   dailyShowsModalTrigger,
   dailyWantsData,
+  hasBackground,
+  isBackgroundAnimated,
   normalizeConfig,
   normalizeEditorConfig,
 } from "./config";
@@ -91,6 +93,36 @@ describe("config normalization", () => {
   it("defaults smart_chips to false", () => {
     const cfg = normalizeConfig({ entity: "weather.home" });
     expect(cfg.smart_chips).toBe(false);
+  });
+
+  it("defaults background to off", () => {
+    const cfg = normalizeConfig({ entity: "weather.home" });
+    expect(cfg.background).toBe("off");
+    expect(hasBackground(cfg.background)).toBe(false);
+    expect(isBackgroundAnimated(cfg.background)).toBe(false);
+  });
+
+  it("migrates animated_background true to animated", () => {
+    const cfg = normalizeEditorConfig({
+      entity: "weather.home",
+      animated_background: true,
+    } as never);
+    expect(cfg.background).toBe("animated");
+    expect(
+      (cfg as Record<string, unknown>).animated_background,
+    ).toBeUndefined();
+    expect(isBackgroundAnimated(cfg.background)).toBe(true);
+  });
+
+  it("prefers explicit background over animated_background", () => {
+    const cfg = normalizeEditorConfig({
+      entity: "weather.home",
+      background: "static",
+      animated_background: true,
+    } as never);
+    expect(cfg.background).toBe("static");
+    expect(hasBackground(cfg.background)).toBe(true);
+    expect(isBackgroundAnimated(cfg.background)).toBe(false);
   });
 
   it("preserves smart_chips true", () => {

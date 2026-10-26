@@ -43,7 +43,7 @@ const baseConfig: VedurkortCardConfig = {
   layout: "default",
   icon_style: "fill",
   animated_icons: true,
-  animated_background: false,
+  background: "off",
   show_current: true,
   smart_chips: false,
   show_sun: false,

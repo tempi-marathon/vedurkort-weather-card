@@ -20,7 +20,7 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - Compose sections independently: current weather, daily forecast, hourly forecast (any combination)
 - **Meteocons** — styles `fill` / `flat` / `line` / `monochrome`, animated or static
 - Day/night condition icons; cloudy / precip / storm icons follow `cloud_coverage`
-- Optional CSS animated backgrounds
+- Optional CSS condition backgrounds (`off` / `static` / `animated`)
 - Detail chips (sun, humidity, wind, UV, pressure, and more) with tap-to-open detail sheets
 - Layout presets: `default`, `compact`, or `minimal`
 - Full visual editor — configure everything in the UI, no YAML required

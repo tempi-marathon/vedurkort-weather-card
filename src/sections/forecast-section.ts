@@ -4,6 +4,7 @@ import { renderForecastRow } from "../charts/forecast-row";
 import type { BackgroundScene } from "../backgrounds/scenes";
 import {
   dailyShowsInline,
+  type BackgroundMode,
   type VedurkortCardConfig,
 } from "../config";
 import {
@@ -38,7 +39,7 @@ export interface ForecastSectionOptions {
 }
 
 export interface DailyDialogShellOptions {
-  animatedBackground?: boolean;
+  background?: BackgroundMode;
   scene?: BackgroundScene;
   cloudCoverage?: number | null;
 }
@@ -181,7 +182,7 @@ export function renderDailyDialog(
     title: localize("legend_daily", language),
     titleId: "daily-modal-title",
     language,
-    animatedBackground: shell?.animatedBackground,
+    background: shell?.background,
     scene: shell?.scene,
     cloudCoverage: shell?.cloudCoverage,
     onClose,

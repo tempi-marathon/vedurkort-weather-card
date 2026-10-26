@@ -227,7 +227,13 @@ const STRINGS = {
     name_placeholder: "Name (empty = entity label)",
     icon_style: "Icon style",
     animated_icons: "Animated icons",
-    animated_background: "Animated background",
+    animated_icons_hint: "Meteocon weather icons can be animated or static.",
+    background: "Background",
+    background_off: "Off",
+    background_static: "Static",
+    background_animated: "Animated",
+    background_hint:
+      "Condition scene behind the card. Static freezes rain, clouds, and effects in place.",
     show_current_weather: "Show current weather",
     current_detail_hint:
       "Detail chips only appear on the card when the weather entity or an override sensor provides a value. Availability varies by integration.",
@@ -506,7 +512,13 @@ const STRINGS = {
     name_placeholder: "Nafn (autt = heiti einingar)",
     icon_style: "Táknstíll",
     animated_icons: "Hreyfð tákn",
-    animated_background: "Hreyfður bakgrunnur",
+    animated_icons_hint: "Meteocon veðurtákn geta verið hreyfð eða kyrr.",
+    background: "Bakgrunnur",
+    background_off: "Slökkt",
+    background_static: "Kyrr",
+    background_animated: "Hreyfður",
+    background_hint:
+      "Ástandsbakgrunnur á bak við kortið. Kyrr frystir rigningu, ský og áhrif.",
     show_current_weather: "Sýna núverandi veður",
     current_detail_hint:
       "Smáatriðakubbar birtast aðeins þegar veðureining eða skynjarar hafa gildi.",
@@ -786,7 +798,14 @@ const STRINGS = {
     name_placeholder: "Naam (leeg = entiteitslabel)",
     icon_style: "Pictogramstijl",
     animated_icons: "Geanimeerde pictogrammen",
-    animated_background: "Geanimeerde achtergrond",
+    animated_icons_hint:
+      "Meteocon-weerpictogrammen kunnen geanimeerd of stil zijn.",
+    background: "Achtergrond",
+    background_off: "Uit",
+    background_static: "Statisch",
+    background_animated: "Geanimeerd",
+    background_hint:
+      "Weerscène achter de kaart. Statisch bevriest regen, wolken en effecten.",
     show_current_weather: "Huidig weer tonen",
     current_detail_hint:
       "Details verschijnen alleen op de kaart wanneer de weerentiteit of een sensor een waarde heeft.",

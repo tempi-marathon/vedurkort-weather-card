@@ -126,7 +126,7 @@ function withAlpha(color: string, alpha: number): string {
  * match the rest of the card; fall back to scene-based contrast.
  */
 export function chartChromeForScene(
-  animatedBackground: boolean,
+  hasSceneBackground: boolean,
   scene: BackgroundScene,
   textColor?: string,
 ): ChartChrome {
@@ -137,7 +137,7 @@ export function chartChromeForScene(
       grid: withAlpha(resolved, 0.08),
     };
   }
-  if (!animatedBackground) {
+  if (!hasSceneBackground) {
     return {
       tick: "rgba(120, 120, 120, 0.95)",
       grid: "rgba(120, 120, 120, 0.08)",
