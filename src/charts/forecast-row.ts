@@ -32,6 +32,8 @@ export function renderForecastRow(
     showWindDirection: boolean;
     iconStyle: IconStyle;
     animated: boolean;
+    /** Paint-id scope for `getMeteoconSvg` (e.g. `"modal"` vs card `"main"`). */
+    iconScope?: string;
     /** Native HA wind speed unit of the forecast values. */
     windSpeedUnit: string;
     /** Optional display preference (modal under-chart row). */
@@ -57,6 +59,7 @@ export function renderForecastRow(
 
   const weatherEntity = hass.states[opts.weatherEntityId];
   const sunEntity = opts.sunEntity ?? "sun.sun";
+  const iconScope = opts.iconScope ?? "main";
 
   const cols = opts.columnCount ?? items.length;
 
@@ -68,7 +71,12 @@ export function renderForecastRow(
           opts.sunEvents?.[index] ?? slot.sunEvent ?? null;
         if (sunEvent) {
           const iconName = sunEvent === "sunrise" ? "sunrise" : "sunset";
-          const svg = getMeteoconSvg(iconName, opts.iconStyle, opts.animated);
+          const svg = getMeteoconSvg(
+            iconName,
+            opts.iconStyle,
+            opts.animated,
+            iconScope,
+          );
           const tip = localize(
             sunEvent === "sunrise" ? "sunrise" : "sunset",
             opts.language,
@@ -98,7 +106,12 @@ export function renderForecastRow(
           isDay,
           item.cloud_coverage,
         );
-        const svg = getMeteoconSvg(icon, opts.iconStyle, opts.animated);
+        const svg = getMeteoconSvg(
+          icon,
+          opts.iconStyle,
+          opts.animated,
+          iconScope,
+        );
         const conditionLabel = formatConditionLabel(
           hass,
           weatherEntity,
@@ -110,12 +123,14 @@ export function renderForecastRow(
           windDirIcon,
           opts.iconStyle,
           opts.animated,
+          iconScope,
         );
         const bft = windSpeedToBeaufort(item.wind_speed, opts.windSpeedUnit);
         const bftSvg = getMeteoconSvg(
           beaufortIcon(bft),
           opts.iconStyle,
           opts.animated,
+          iconScope,
         );
         const display = opts.windDisplayUnit ?? "native";
         const speedFmt = formatWindSpeed(

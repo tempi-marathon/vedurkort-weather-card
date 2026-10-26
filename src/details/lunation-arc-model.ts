@@ -140,8 +140,8 @@ export function buildLunationArcModel(
 
   return {
     heroIcon: moonPhaseIcon(snap.phase),
-    heroLabel: phaseName,
-    heroValue: illumination,
+    heroLabel: "",
+    heroValue: phaseName,
     path: buildLunationPath(),
     viewWidth: LUNATION_ARC_WIDTH,
     viewHeight: LUNATION_ARC_HEIGHT,

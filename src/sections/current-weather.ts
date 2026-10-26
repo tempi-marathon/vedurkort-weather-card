@@ -529,6 +529,41 @@ function positionMoreMenu(menu: HTMLElement, anchor: HTMLElement): void {
   anchor.setAttribute("data-placement", placement);
 }
 
+/** Keep the fixed popover glued to the trigger while the dashboard scrolls. */
+function bindMoreMenuFollow(
+  menu: HTMLElement,
+  anchor: HTMLElement,
+): () => void {
+  let raf = 0;
+  const reposition = () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      if (!menu.matches(":popover-open")) return;
+      positionMoreMenu(menu, anchor);
+    });
+  };
+
+  document.addEventListener("scroll", reposition, {
+    capture: true,
+    passive: true,
+  });
+  window.addEventListener("resize", reposition);
+  const vv = window.visualViewport;
+  vv?.addEventListener("resize", reposition);
+  vv?.addEventListener("scroll", reposition);
+
+  return () => {
+    if (raf) cancelAnimationFrame(raf);
+    document.removeEventListener("scroll", reposition, { capture: true });
+    window.removeEventListener("resize", reposition);
+    vv?.removeEventListener("resize", reposition);
+    vv?.removeEventListener("scroll", reposition);
+  };
+}
+
+const moreMenuFollowCleanups = new WeakMap<HTMLElement, () => void>();
+
 function renderMoreMenu(
   overflow: SmartChipId[],
   ctx: CurrentWeatherContext,
@@ -566,12 +601,16 @@ function renderMoreMenu(
           // Set via DOM only — a Lit-bound aria-expanded would reset on every re-render.
           btn.setAttribute("aria-expanded", open ? "true" : "false");
           if (!open) {
+            moreMenuFollowCleanups.get(menu)?.();
+            moreMenuFollowCleanups.delete(menu);
             btn.removeAttribute("data-placement");
             menu.removeAttribute("data-placement");
             return;
           }
           positionMoreMenu(menu, btn);
           requestAnimationFrame(() => positionMoreMenu(menu, btn));
+          moreMenuFollowCleanups.get(menu)?.();
+          moreMenuFollowCleanups.set(menu, bindMoreMenuFollow(menu, btn));
         }}
         @beforetoggle=${(ev: Event) => {
           const tev = ev as ToggleEvent;
