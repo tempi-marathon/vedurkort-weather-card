@@ -4,6 +4,7 @@ import {
   illuminationFromAge,
   lunarAgeDays,
   moonPhaseIcon,
+  nearMajorMoonPhase,
   nextFullMoon,
   nextNewMoon,
   phaseFromAge,
@@ -105,5 +106,41 @@ describe("getMoonSnapshot", () => {
     expect(snap.illuminationPct).toBe(illuminationFromAge(snap.ageDays));
     expect(snap.progress).toBeCloseTo(snap.ageDays / SYNODIC_MONTH_DAYS, 10);
     expect(moonPhaseIcon(snap.phase)).toMatch(/^moon-/);
+  });
+});
+
+describe("nearMajorMoonPhase", () => {
+  const S = SYNODIC_MONTH_DAYS;
+  const phases = [0, S / 4, S / 2, (3 * S) / 4];
+
+  it("is true at each major phase and within ±23h", () => {
+    for (const p of phases) {
+      expect(nearMajorMoonPhase(p)).toBe(true);
+      expect(nearMajorMoonPhase(p + 23 / 24)).toBe(true);
+      expect(nearMajorMoonPhase(p - 23 / 24)).toBe(true);
+    }
+  });
+
+  it("is false at ±25h from each major phase", () => {
+    for (const p of phases) {
+      expect(nearMajorMoonPhase(p + 25 / 24)).toBe(false);
+      expect(nearMajorMoonPhase(p - 25 / 24)).toBe(false);
+    }
+  });
+
+  it("wraps around the new moon at the end of the lunation", () => {
+    expect(nearMajorMoonPhase(S - 0.5)).toBe(true);
+    expect(nearMajorMoonPhase(S - 1.1)).toBe(false);
+  });
+
+  it("normalizes ages outside [0, S)", () => {
+    expect(nearMajorMoonPhase(S + S / 2)).toBe(true);
+    expect(nearMajorMoonPhase(-0.25)).toBe(true);
+    expect(nearMajorMoonPhase(-3)).toBe(false);
+  });
+
+  it("honors a custom window", () => {
+    expect(nearMajorMoonPhase(S / 2 + 2, 3)).toBe(true);
+    expect(nearMajorMoonPhase(S / 2 + 2, 1)).toBe(false);
   });
 });

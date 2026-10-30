@@ -87,6 +87,17 @@ export function nextNewMoon(now: Date, ageDays: number): Date {
   return addDays(now, days);
 }
 
+/**
+ * True within `windowDays` of a major phase (new, first quarter, full, last
+ * quarter). Ages outside [0, S) are normalized.
+ */
+export function nearMajorMoonPhase(ageDays: number, windowDays = 1): boolean {
+  const syn = SYNODIC_MONTH_DAYS;
+  const a = ((ageDays % syn) + syn) % syn;
+  const majors = [0, syn / 4, syn / 2, (3 * syn) / 4, syn];
+  return Math.min(...majors.map((p) => Math.abs(a - p))) <= windowDays;
+}
+
 export function getMoonSnapshot(now?: Date): MoonSnapshot {
   const at = now ?? new Date();
   const ageDays = lunarAgeDays(at);

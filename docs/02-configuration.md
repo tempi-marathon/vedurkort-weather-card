@@ -20,9 +20,10 @@ See also: [3. Usage](03-usage.md) · [4. Weather alerts](04-alerts.md) · [5. Po
 | `background` | string | `off` | Condition CSS scene: `off` (none), `static` (full scene frozen, including rain/hail/wind), or `animated` (full motion). Cloud layer opacity is lightly scaled from `cloud_coverage` when available. Animated scenes pause when the card is off-screen, the tab is hidden, or the user prefers reduced motion (dialog scenes included). |
 | `animated_background` | boolean | — | **Deprecated.** Prefer `background`. `true` migrates to `animated`, `false`/absent to `off`. |
 | `show_current` | boolean | `true` | Show the current weather section (condition, temperature, icon). Detail chips only appear when this is on. |
-| `smart_chips` | boolean | `false` | Keep the chip row focused on what matters right now. Everything else you enabled stays one tap away under **More**. |
-| `show_sun` | boolean | `false` | Show the next sunrise or sunset (sunset while the sun is up, sunrise while down). |
-| `show_moon` | boolean | `false` | Show the moon phase chip (computed on-device; no moon entity required). Tap opens phase, illumination, and lunation progress. |
+| `smart_chips` | boolean | `false` | Keep the chip row focused on what matters right now. Everything else you enabled stays one tap away under **More**. Spare room on the row is filled with your other chips; sun and moon lead only near a change (see [Smart chips](#smart-chips)). |
+| `chip_order` | list | omitted (built-in order) | Order of the detail chips. Allowed ids: `sun`, `moon`, `humidity`, `wind`, `uv_index`, `pressure`, `cloud_coverage`, `dew_point`, `visibility`, `precipitation`, `precipitation_probability`, `pollen`. Unknown ids are ignored, duplicates count once, and ids you leave out follow in the built-in order. With `smart_chips: false` chips show in this order; with `smart_chips: true` it orders **More** and breaks ties between equally important chips. It does not turn chips on — the `show_*` options still do. Set it by dragging or with the ▲/▼ buttons in the editor; **Reset order** removes it. |
+| `show_sun` | boolean | `false` | Show the next sunrise or sunset (sunset while the sun is up, sunrise while down). With `smart_chips`, it leads the row in the 60 minutes before sunrise/sunset; otherwise it only uses spare room. |
+| `show_moon` | boolean | `false` | Show the moon phase chip (computed on-device; no moon entity required). Tap opens phase, illumination, and lunation progress. With `smart_chips`, it is noteworthy within 24 hours of a new moon, first quarter, full moon, or last quarter; otherwise it only uses spare room. |
 | `show_humidity` | boolean | `false` | Show humidity. |
 | `show_wind` | boolean | `false` | Show a single current-wind chip (speed + direction, optional gust) with Beaufort icon. |
 | `wind_speed_unit` | string | `native` | Display unit for the current wind chip and wind detail sheet/chart: `native` (Home Assistant), `km/h`, `beaufort`, `m/s`, or `mph`. |
@@ -59,6 +60,36 @@ See also: [3. Usage](03-usage.md) · [4. Weather alerts](04-alerts.md) · [5. Po
 | `precipitation_entity` | string | none | Optional sensor override for precipitation amount. |
 | `precipitation_probability_entity` | string | none | Optional sensor override for precipitation probability. |
 | `sun_entity` | string | `sun.sun` | Entity used for sunrise/sunset times and hourly day/night icon picking. |
+
+## Smart chips
+
+With `smart_chips: true` the row is one line: chips that matter right now come first, the rest of your enabled chips fill any spare room in `chip_order`, and whatever doesn't fit sits under **More**.
+
+- **Sun**: noteworthy during the 60 minutes before the next sunrise or sunset, and then ranked first. Otherwise it is a quiet chip that only uses spare room.
+- **Moon**: noteworthy within 24 hours of a new moon, first quarter, full moon, or last quarter, ranked last among noteworthy chips. Otherwise a quiet chip.
+- **Quiet chips** never push out a noteworthy chip. Turning off the noteworthy chips lets the next chips in your order move up from **More**.
+- **Weather chips** (wind, UV, precipitation, fog, pollen, …) join the row when their value is noteworthy and are ranked by severity; `chip_order` breaks ties.
+- If the last chip and **More** don't both fit on one line, the least important chip moves into **More** so **More** stays on the first line. The row then holds that layout until the card width or the data changes.
+
+## Chip order
+
+Without smart chips, the detail chips show in `chip_order`. In the visual editor, the chip list sets both which chips appear and their order (drag the handle or use ▲/▼). **Reset order** goes back to the built-in order.
+
+<img src="https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-editor-chips.png" alt="Editor: reorderable detail chip list" width="420">
+
+```yaml
+type: custom:vedurkort-weather-card
+entity: weather.home
+show_sun: true
+show_wind: true
+show_humidity: true
+chip_order:
+  - wind
+  - humidity
+  - sun
+```
+
+With `smart_chips: true` the row is ordered automatically (see [Smart chips](#smart-chips)); `chip_order` then only orders **More** and breaks ties between equally important chips.
 
 ## Daily options (`daily`)
 

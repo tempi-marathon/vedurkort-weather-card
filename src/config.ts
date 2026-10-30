@@ -1,4 +1,8 @@
 import { ICON_STYLES, type IconStyle } from "./icons/allowlist";
+import {
+  resolveChipOrder,
+  type SmartChipId,
+} from "./sections/smart-chips";
 import type { ActionConfig } from "./types";
 import {
   WIND_SPEED_DISPLAY_UNITS,
@@ -86,6 +90,8 @@ export interface VedurkortCardConfig {
    * the rest go behind a More menu. `show_*` remains the allowlist.
    */
   smart_chips: boolean;
+  /** Optional user chip order; omitted = default order. Normalized on load. */
+  chip_order?: SmartChipId[];
   show_sun: boolean;
   /** Show moon phase chip (computed on-device; no moon entity required). */
   show_moon: boolean;
@@ -230,10 +236,14 @@ function mergeConfigFields(
     show_wind_direction: _legacyDir,
     show_wind_gust: _legacyGust,
     animated_background: _legacyBg,
+    chip_order: rawChipOrder,
     ...rest
   } = input;
 
   return {
+    ...(rawChipOrder === undefined
+      ? {}
+      : { chip_order: resolveChipOrder(rawChipOrder) }),
     ...DEFAULT_CONFIG,
     ...rest,
     entity: input.entity ?? "",
@@ -287,6 +297,23 @@ export function normalizeEditorConfig(
   input: Partial<VedurkortEditorConfig>,
 ): VedurkortEditorConfig {
   return mergeConfigFields(input);
+}
+
+/**
+ * Editor entry point for a raw (possibly legacy) config. Do NOT pre-spread
+ * `DEFAULT_CONFIG`: explicit defaults would mask legacy keys such as
+ * `animated_background` or `show_wind_speed`. `mergeConfigFields` fills defaults.
+ */
+export function editorConfigFromRaw(
+  raw: Partial<VedurkortEditorConfig> & {
+    /** @deprecated Prefer `background`. */
+    animated_background?: boolean;
+    show_wind_speed?: boolean;
+    show_wind_direction?: boolean;
+    show_wind_gust?: boolean;
+  },
+): VedurkortEditorConfig {
+  return mergeConfigFields(raw);
 }
 
 export function normalizeConfig(

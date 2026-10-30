@@ -1,5 +1,6 @@
 import { LitElement, css, html, nothing } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { repeat } from "lit/directives/repeat.js";
 import {
   anchorEntityForDevice,
   deviceIdFromEntity,
@@ -14,7 +15,7 @@ import {
 } from "./pollen/discovery";
 import { forecastHasPrecipProbability } from "./charts/forecast-chart";
 import {
-  DEFAULT_CONFIG,
+  editorConfigFromRaw,
   normalizeConfig,
   normalizeEditorConfig,
   BACKGROUND_MODES,
@@ -30,6 +31,11 @@ import {
   resolveLanguage,
   type LocalizeKey,
 } from "./localize";
+import {
+  dropChip,
+  resolveChipOrder,
+  type SmartChipId,
+} from "./sections/smart-chips";
 import type { HassEntity, HomeAssistant } from "./types";
 import { fetchForecastOnce } from "./weather/adapter";
 
@@ -49,6 +55,51 @@ type DetailToggleKey =
 
 type AlertsSource = "cap" | "entity";
 
+/** Editor metadata per detail chip (pollen is enabled in its own section). */
+const CHIP_EDITOR: Record<
+  SmartChipId,
+  {
+    key: DetailToggleKey | null;
+    label: LocalizeKey;
+    attrs: string[];
+    sun?: boolean;
+    moon?: boolean;
+  }
+> = {
+  sun: { key: "show_sun", label: "next_sun", attrs: ["next_rising"], sun: true },
+  moon: { key: "show_moon", label: "moon", attrs: [], moon: true },
+  humidity: { key: "show_humidity", label: "humidity", attrs: ["humidity"] },
+  wind: {
+    key: "show_wind",
+    label: "show_wind",
+    attrs: ["wind_speed", "wind_bearing", "wind_gust"],
+  },
+  uv_index: { key: "show_uv_index", label: "uv_index", attrs: ["uv_index"] },
+  pressure: { key: "show_pressure", label: "pressure", attrs: ["pressure"] },
+  cloud_coverage: {
+    key: "show_cloud_coverage",
+    label: "cloud_coverage",
+    attrs: ["cloud_coverage"],
+  },
+  dew_point: { key: "show_dew_point", label: "dew_point", attrs: ["dew_point"] },
+  visibility: {
+    key: "show_visibility",
+    label: "visibility",
+    attrs: ["visibility"],
+  },
+  precipitation: {
+    key: "show_precipitation",
+    label: "precipitation",
+    attrs: ["precipitation"],
+  },
+  precipitation_probability: {
+    key: "show_precipitation_probability",
+    label: "precipitation_probability",
+    attrs: ["precipitation_probability"],
+  },
+  pollen: { key: null, label: "pollen", attrs: [] },
+};
+
 @customElement("vedurkort-weather-card-editor")
 export class VedurkortWeatherCardEditor extends LitElement {
   @property({ attribute: false }) public hass!: HomeAssistant;
@@ -60,15 +111,17 @@ export class VedurkortWeatherCardEditor extends LitElement {
 
   private _probeKey = "";
 
+  @state() private _dragId: SmartChipId | undefined;
+  @state() private _dropTarget:
+    | { id: SmartChipId; after: boolean }
+    | undefined;
+
   private _t(key: LocalizeKey, vars?: Record<string, string>): string {
     return localize(key, resolveLanguage(this.hass), vars);
   }
 
   public setConfig(config: Partial<VedurkortEditorConfig>): void {
-    this._config = normalizeEditorConfig({
-      ...DEFAULT_CONFIG,
-      ...config,
-    });
+    this._config = editorConfigFromRaw(config);
     this._alertsSource = this._inferAlertsSource(this._config);
   }
 
@@ -599,6 +652,203 @@ export class VedurkortWeatherCardEditor extends LitElement {
     `;
   }
 
+  /** Visible rows of the chip list (pollen only when enabled). */
+  private _visibleChips(c: VedurkortEditorConfig): SmartChipId[] {
+    return resolveChipOrder(c.chip_order).filter(
+      (id) => id !== "pollen" || c.show_pollen,
+    );
+  }
+
+  private _renderChipList(c: VedurkortEditorConfig) {
+    const visible = this._visibleChips(c);
+    const last = visible.length - 1;
+    return html`
+      <p class="hint">${this._t("chip_order_hint")}</p>
+      <ul class="chip-list" role="list">
+        ${repeat(
+          visible,
+          (id) => id,
+          (id, i) => {
+            const meta = CHIP_EDITOR[id];
+            const name = this._t(meta.label);
+            const drop =
+              this._dropTarget?.id === id
+                ? this._dropTarget.after
+                  ? "drop-after"
+                  : "drop-before"
+                : "";
+            return html`
+              <li
+                class="chip-row ${drop} ${this._dragId === id ? "dragging" : ""}"
+                role="listitem"
+                data-chip-row=${id}
+              >
+                <div class="chip-row-main">
+                  <button
+                    type="button"
+                    class="chip-handle"
+                    aria-label=${this._t("chip_drag_handle", { name })}
+                    @pointerdown=${(ev: PointerEvent) =>
+                      this._dragStart(ev, id)}
+                    @pointermove=${this._dragMove}
+                    @pointerup=${this._dragEnd}
+                    @pointercancel=${this._dragCancel}
+                    @keydown=${(ev: KeyboardEvent) => {
+                      if (ev.key === "Escape") this._dragCancel();
+                    }}
+                  >
+                    <span aria-hidden="true">⠿</span>
+                  </button>
+                  ${meta.key
+                    ? this._detailToggle(
+                        meta.key,
+                        name,
+                        meta.attrs,
+                        meta.sun,
+                        meta.moon,
+                      )
+                    : html`<span class="row chip-static">
+                        <span class="row-text">${name}</span>
+                        <span class="hint"
+                          >${this._t("chip_pollen_set_in_section")}</span
+                        >
+                      </span>`}
+                  <span class="chip-moves">
+                    <button
+                      type="button"
+                      class="chip-move up"
+                      aria-label=${this._t("chip_move_up", { name })}
+                      ?disabled=${i === 0}
+                      @click=${() => this._moveChipStep(id, -1)}
+                    >
+                      <span aria-hidden="true">▲</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="chip-move down"
+                      aria-label=${this._t("chip_move_down", { name })}
+                      ?disabled=${i === last}
+                      @click=${() => this._moveChipStep(id, 1)}
+                    >
+                      <span aria-hidden="true">▼</span>
+                    </button>
+                  </span>
+                </div>
+                ${id === "wind" && c.show_wind
+                  ? this._renderWindUnit(c)
+                  : nothing}
+              </li>
+            `;
+          },
+        )}
+      </ul>
+    `;
+  }
+
+  private _renderWindUnit(c: VedurkortEditorConfig) {
+    return html`
+      <label class="chip-sub">
+        ${this._t("wind_speed_unit")}
+        <select data-config="wind_speed_unit" @change=${this._value}>
+          ${WIND_SPEED_DISPLAY_UNITS.map(
+            (u) =>
+              html`<option
+                value=${u}
+                ?selected=${(c.wind_speed_unit ?? "native") === u}
+              >
+                ${this._windUnitOptionLabel(u)}
+              </option>`,
+          )}
+        </select>
+      </label>
+    `;
+  }
+
+  private _fireChipOrder(order: SmartChipId[] | undefined): void {
+    if (!this._config) return;
+    const next = structuredClone(this._config);
+    if (order) next.chip_order = order;
+    else delete next.chip_order;
+    this._fire(
+      next.entity ? normalizeConfig(next) : normalizeEditorConfig(next),
+    );
+  }
+
+  /** ▲/▼: swap with the visible neighbour; keep keyboard focus on the row. */
+  private _moveChipStep(id: SmartChipId, dir: -1 | 1): void {
+    if (!this._config) return;
+    const visible = this._visibleChips(this._config);
+    const target = visible[visible.indexOf(id) + dir];
+    if (!target) return;
+    this._fireChipOrder(
+      dropChip(resolveChipOrder(this._config.chip_order), id, target, dir > 0),
+    );
+    void this.updateComplete.then(() => {
+      const row = this.renderRoot.querySelector(`[data-chip-row="${id}"]`);
+      const same = row?.querySelector(
+        `.chip-move.${dir < 0 ? "up" : "down"}`,
+      ) as HTMLButtonElement | null;
+      const other = row?.querySelector(
+        `.chip-move.${dir < 0 ? "down" : "up"}`,
+      ) as HTMLButtonElement | null;
+      (same && !same.disabled ? same : other)?.focus();
+    });
+  }
+
+  private _resetChipOrder = (): void => {
+    this._fireChipOrder(undefined);
+  };
+
+  private _dragStart(ev: PointerEvent, id: SmartChipId): void {
+    if (ev.button !== 0) return;
+    (ev.currentTarget as HTMLElement).setPointerCapture(ev.pointerId);
+    this._dragId = id;
+    this._dropTarget = undefined;
+  }
+
+  private _dragMove = (ev: PointerEvent): void => {
+    if (!this._dragId) return;
+    const rows = [
+      ...this.renderRoot.querySelectorAll<HTMLElement>("[data-chip-row]"),
+    ];
+    let target: { id: SmartChipId; after: boolean } | undefined;
+    for (const row of rows) {
+      const r = row.getBoundingClientRect();
+      if (ev.clientY < r.top + r.height / 2) {
+        target = { id: row.dataset.chipRow as SmartChipId, after: false };
+        break;
+      }
+    }
+    if (!target && rows.length) {
+      target = {
+        id: rows[rows.length - 1]!.dataset.chipRow as SmartChipId,
+        after: true,
+      };
+    }
+    if (target?.id === this._dragId) target = undefined;
+    this._dropTarget = target;
+  };
+
+  private _dragEnd = (): void => {
+    const id = this._dragId;
+    const target = this._dropTarget;
+    this._dragCancel();
+    if (!id || !target || !this._config) return;
+    this._fireChipOrder(
+      dropChip(
+        resolveChipOrder(this._config.chip_order),
+        id,
+        target.id,
+        target.after,
+      ),
+    );
+  };
+
+  private _dragCancel = (): void => {
+    this._dragId = undefined;
+    this._dropTarget = undefined;
+  };
+
   protected render() {
     if (!this._config || !this.hass) return nothing;
     const c = this._config;
@@ -617,7 +867,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
             >
               ${CARD_LAYOUTS.map(
                 (l) =>
-                  html`<option value=${l}>${layoutLabel(l, resolveLanguage(this.hass))}</option>`,
+                  html`<option value=${l} ?selected=${(c.layout ?? "default") === l}>${layoutLabel(l, resolveLanguage(this.hass))}</option>`,
               )}
             </select>
           </label>
@@ -651,7 +901,7 @@ export class VedurkortWeatherCardEditor extends LitElement {
               @change=${this._value}
             >
               ${ICON_STYLES.map(
-                (s) => html`<option value=${s}>${s}</option>`,
+                (s) => html`<option value=${s} ?selected=${c.icon_style === s}>${s}</option>`,
               )}
             </select>
           </label>
@@ -674,7 +924,10 @@ export class VedurkortWeatherCardEditor extends LitElement {
               >
                 ${BACKGROUND_MODES.map(
                   (m) =>
-                    html`<option value=${m}>
+                    html`<option
+                      value=${m}
+                      ?selected=${(c.background ?? "off") === m}
+                    >
                       ${this._t(`background_${m}` as LocalizeKey)}
                     </option>`,
                 )}
@@ -697,6 +950,12 @@ export class VedurkortWeatherCardEditor extends LitElement {
           ${c.show_current
             ? html`
                 <p class="hint">${this._t("current_detail_hint")}</p>
+                ${this._detailToggle(
+                  "show_feels_like",
+                  this._t("feels_like"),
+                  ["apparent_temperature"],
+                )}
+                <p class="hint">${this._t("feels_like_hint")}</p>
                 <label class="row">
                   <input
                     type="checkbox"
@@ -717,82 +976,16 @@ export class VedurkortWeatherCardEditor extends LitElement {
                   <button type="button" class="preset-btn" @click=${() => this._applyDetailPreset("clear")}>
                     ${this._t("preset_clear_all")}
                   </button>
+                  <button
+                    type="button"
+                    class="preset-btn"
+                    ?disabled=${!c.chip_order}
+                    @click=${this._resetChipOrder}
+                  >
+                    ${this._t("chip_reset_order")}
+                  </button>
                 </div>
-                ${this._detailToggle(
-                  "show_sun",
-                  this._t("next_sun"),
-                  ["next_rising"],
-                  true,
-                )}
-                ${this._detailToggle(
-                  "show_moon",
-                  this._t("moon"),
-                  [],
-                  false,
-                  true,
-                )}
-                ${this._detailToggle("show_humidity", this._t("humidity"), [
-                  "humidity",
-                ])}
-                ${this._detailToggle("show_wind", this._t("show_wind"), [
-                  "wind_speed",
-                  "wind_bearing",
-                  "wind_gust",
-                ])}
-                ${c.show_wind
-                  ? html`
-                      <label>
-                        ${this._t("wind_speed_unit")}
-                        <select
-                          data-config="wind_speed_unit"
-                          @change=${this._value}
-                        >
-                          ${WIND_SPEED_DISPLAY_UNITS.map(
-                            (u) =>
-                              html`<option
-                                value=${u}
-                                ?selected=${(c.wind_speed_unit ?? "native") ===
-                                u}
-                              >
-                                ${this._windUnitOptionLabel(u)}
-                              </option>`,
-                          )}
-                        </select>
-                      </label>
-                    `
-                  : nothing}
-                ${this._detailToggle("show_uv_index", this._t("uv_index"), [
-                  "uv_index",
-                ])}
-                ${this._detailToggle("show_pressure", this._t("pressure"), [
-                  "pressure",
-                ])}
-                ${this._detailToggle(
-                  "show_cloud_coverage",
-                  this._t("cloud_coverage"),
-                  ["cloud_coverage"],
-                )}
-                ${this._detailToggle(
-                  "show_feels_like",
-                  this._t("feels_like"),
-                  ["apparent_temperature"],
-                )}
-                ${this._detailToggle("show_dew_point", this._t("dew_point"), [
-                  "dew_point",
-                ])}
-                ${this._detailToggle("show_visibility", this._t("visibility"), [
-                  "visibility",
-                ])}
-                ${this._detailToggle(
-                  "show_precipitation",
-                  this._t("precipitation"),
-                  ["precipitation"],
-                )}
-                ${this._detailToggle(
-                  "show_precipitation_probability",
-                  this._t("precipitation_probability"),
-                  ["precipitation_probability"],
-                )}
+                ${this._renderChipList(c)}
                 ${this._anyDetailMissing()
                   ? html`<p class="hint footnote">
                       ${this._t("footnote_missing_attrs")}
@@ -811,9 +1004,9 @@ export class VedurkortWeatherCardEditor extends LitElement {
               data-config="daily.display"
               @change=${this._value}
             >
-              <option value="off">${this._t("daily_display_off")}</option>
-              <option value="inline">${this._t("daily_display_inline")}</option>
-              <option value="modal">${this._t("daily_display_modal")}</option>
+              <option value="off" ?selected=${c.daily.display === "off"}>${this._t("daily_display_off")}</option>
+              <option value="inline" ?selected=${c.daily.display === "inline"}>${this._t("daily_display_inline")}</option>
+              <option value="modal" ?selected=${c.daily.display === "modal"}>${this._t("daily_display_modal")}</option>
             </select>
           </label>
           ${c.daily.display !== "off"
@@ -876,8 +1069,8 @@ export class VedurkortWeatherCardEditor extends LitElement {
                     data-config="daily.precip_type"
                     @change=${this._value}
                   >
-                    <option value="rainfall">${this._t("rainfall")}</option>
-                    <option value="probability">${this._t("probability")}</option>
+                    <option value="rainfall" ?selected=${c.daily.precip_type === "rainfall"}>${this._t("rainfall")}</option>
+                    <option value="probability" ?selected=${c.daily.precip_type === "probability"}>${this._t("probability")}</option>
                   </select>
                 </label>
               `
@@ -955,8 +1148,8 @@ export class VedurkortWeatherCardEditor extends LitElement {
                     data-config="hourly.precip_type"
                     @change=${this._value}
                   >
-                    <option value="rainfall">${this._t("rainfall")}</option>
-                    <option value="probability">${this._t("probability")}</option>
+                    <option value="rainfall" ?selected=${c.hourly.precip_type === "rainfall"}>${this._t("rainfall")}</option>
+                    <option value="probability" ?selected=${c.hourly.precip_type === "probability"}>${this._t("probability")}</option>
                   </select>
                 </label>
               `
@@ -1177,6 +1370,86 @@ export class VedurkortWeatherCardEditor extends LitElement {
     .preset-btn.small {
       padding: 4px 8px;
       font-size: 0.78rem;
+    }
+    .chip-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 2px;
+    }
+    .chip-row {
+      display: grid;
+      gap: 6px;
+      padding: 4px 4px;
+      border-radius: 8px;
+      border-top: 2px solid transparent;
+      border-bottom: 2px solid transparent;
+    }
+    .chip-row.dragging {
+      background: color-mix(in srgb, var(--primary-color, #03a9f4) 10%, transparent);
+    }
+    .chip-row.drop-before {
+      border-top-color: var(--primary-color, #03a9f4);
+    }
+    .chip-row.drop-after {
+      border-bottom-color: var(--primary-color, #03a9f4);
+    }
+    .chip-row-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chip-row-main > label.row,
+    .chip-row-main > .chip-static {
+      flex: 1;
+      min-width: 0;
+    }
+    .chip-static {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+    .chip-handle,
+    .chip-move {
+      appearance: none;
+      border: 1px solid var(--divider-color, #ccc);
+      background: var(--card-background-color, #fff);
+      color: var(--primary-text-color, inherit);
+      border-radius: 8px;
+      font: inherit;
+      font-size: 0.75rem;
+      line-height: 1;
+      padding: 4px 6px;
+      cursor: pointer;
+    }
+    .chip-handle {
+      cursor: grab;
+      touch-action: none;
+      border-color: transparent;
+      background: transparent;
+      font-size: 1rem;
+    }
+    .chip-move:hover:not(:disabled),
+    .chip-handle:hover {
+      background: color-mix(in srgb, var(--primary-color, #03a9f4) 12%, transparent);
+    }
+    .chip-move:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+    .chip-moves {
+      display: inline-flex;
+      gap: 4px;
+    }
+    .chip-sub {
+      margin-left: 36px;
+    }
+    .preset-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
     }
     .alert-entity-list {
       list-style: none;
