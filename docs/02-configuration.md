@@ -71,24 +71,25 @@ With `smart_chips: true` the row is one line: chips that matter right now come f
 - **Weather chips** (wind, UV, precipitation, fog, pollen, …) join the row when their value is noteworthy and are ranked by severity; `chip_order` breaks ties.
 - If the last chip and **More** don't both fit on one line, the least important chip moves into **More** so **More** stays on the first line. The row then holds that layout until the card width or the data changes.
 
-In the visual editor, the chip list sets both which chips can appear and their order (drag the handle or use ▲/▼):
+## Chip order
+
+Without smart chips, the detail chips show in `chip_order`. In the visual editor, the chip list sets both which chips appear and their order (drag the handle or use ▲/▼). **Reset order** goes back to the built-in order.
 
 <img src="https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-editor-chips.png" alt="Editor: reorderable detail chip list" width="420">
-
-> **Behavior change:** earlier versions always kept sun and moon at the front of the smart row. They now lead only near a change, and otherwise fill spare room like any other quiet chip. With `smart_chips: false` nothing changes.
 
 ```yaml
 type: custom:vedurkort-weather-card
 entity: weather.home
-smart_chips: true
 show_sun: true
-show_moon: true
 show_wind: true
+show_humidity: true
 chip_order:
   - wind
-  - precipitation
+  - humidity
   - sun
 ```
+
+With `smart_chips: true` the row is ordered automatically (see [Smart chips](#smart-chips)); `chip_order` then only orders **More** and breaks ties between equally important chips.
 
 ## Daily options (`daily`)
 
