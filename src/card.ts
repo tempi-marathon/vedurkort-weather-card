@@ -47,9 +47,11 @@ import {
   type IconRenderer,
 } from "./sections/alerts-section";
 import {
+  currentChipLayout,
   renderAlertsOnlySection,
   renderCurrentWeatherSection,
   renderNameHeader,
+  type CurrentWeatherContext,
 } from "./sections/current-weather";
 import {
   renderDailyDialog,
@@ -57,7 +59,10 @@ import {
   renderForecastSection,
   type ForecastSectionState,
 } from "./sections/forecast-section";
-import { nextMorePackDemotions } from "./sections/smart-chips";
+import {
+  nextMorePackDemotions,
+  type MorePackLatch,
+} from "./sections/smart-chips";
 import type { ForecastItem, HomeAssistant, LovelaceCardEditor } from "./types";
 import { shouldPauseEffects } from "./ui/effects-visibility";
 import { trapFocus } from "./ui/focus-trap";
@@ -96,6 +101,15 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _dailyModalPlotWidth = 0;
   /** Demote N lowest-priority primary chips into More to keep More on-row. */
   @state() private _morePackDemotions = 0;
+  /** Latch that stops the More row flipping at a fixed width. */
+  private _morePackLatch: MorePackLatch | null = null;
+  /** Last measured on-row width per chip (for fit-aware undemote). */
+  private _chipWidths = new Map<string, number>();
+  /** Minute clock for time-based smart chips (sun/moon near a change). */
+  @state() private _nowMs = Date.now();
+  private _clockTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Context of the last rendered current-weather section. */
+  private _lastCurrentCtx: CurrentWeatherContext | undefined;
 
   private _dailyChart: Chart | null = null;
   private _dailyModalChart: Chart | null = null;
@@ -171,7 +185,29 @@ export class VedurkortWeatherCard extends LitElement {
       : (normalizeEditorConfig(config) as VedurkortCardConfig);
     if (prevSmart !== this._config.smart_chips) {
       this._morePackDemotions = 0;
+      this._morePackLatch = null;
+      this._chipWidths.clear();
     }
+    this._syncClock();
+  }
+
+  /** Tick `_nowMs` on each minute while smart sun/moon chips can change. */
+  private _syncClock(): void {
+    const c = this._config;
+    const wanted =
+      this.isConnected && !!c?.smart_chips && (c.show_sun || c.show_moon);
+    if (!wanted) {
+      if (this._clockTimer !== undefined) clearTimeout(this._clockTimer);
+      this._clockTimer = undefined;
+      return;
+    }
+    if (this._clockTimer !== undefined) return;
+    const tick = () => {
+      this._nowMs = Date.now();
+      this._clockTimer = setTimeout(tick, 60_000 - (Date.now() % 60_000));
+    };
+    this._nowMs = Date.now();
+    this._clockTimer = setTimeout(tick, 60_000 - (Date.now() % 60_000));
   }
 
   public getCardSize(): number {
@@ -211,6 +247,7 @@ export class VedurkortWeatherCard extends LitElement {
     if (
       changed.has("_config") ||
       changed.has("hass") ||
+      changed.has("_nowMs") ||
       changed.has("_morePackDemotions")
     ) {
       this.updateComplete.then(() => {
@@ -302,6 +339,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._effectsIntersectionObserver.observe(this);
     this._syncEffectsPaused();
     this._ensureMorePackObserver();
+    this._syncClock();
   }
 
   disconnectedCallback(): void {
@@ -318,6 +356,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._effectsIntersectionObserver?.disconnect();
     this._effectsIntersectionObserver = undefined;
     this._teardownMorePackObserver();
+    this._syncClock();
     this._teardownForecast();
     this._destroyCharts();
     this._destroyMetricChart();
@@ -400,10 +439,24 @@ export class VedurkortWeatherCard extends LitElement {
     );
     const rowTop = primaryEls[0]?.offsetTop ?? 0;
     const moreWrapped = !!more && more.offsetTop > rowTop + 4;
+    const wrappedChips = primaryEls.filter(
+      (el) => el.offsetTop > rowTop + 4,
+    ).length;
     const spare =
       details && more
         ? details.clientWidth - (more.offsetLeft + more.offsetWidth)
         : 0;
+
+    for (const el of primaryEls) {
+      const id = el.dataset.chip;
+      if (id) this._chipWidths.set(id, el.offsetWidth);
+    }
+
+    const layout = this._lastCurrentCtx
+      ? currentChipLayout(this._lastCurrentCtx)
+      : undefined;
+    const returning = layout?.returning;
+    const gap = details ? parseFloat(getComputedStyle(details).columnGap) : 0;
 
     const next = nextMorePackDemotions({
       smartChips: !!this._config?.smart_chips,
@@ -412,10 +465,21 @@ export class VedurkortWeatherCard extends LitElement {
       sparePx: spare,
       primaryCount: primaryEls.length,
       current: this._morePackDemotions,
+      preCount: layout?.pre.primary.length,
+      wrappedChips,
+      moreWidthPx: more?.offsetWidth,
+      nextReturnWidthPx: returning
+        ? (this._chipWidths.get(returning) ?? null)
+        : null,
+      columnGapPx: Number.isNaN(gap) ? 0 : gap,
+      containerWidthPx: details?.clientWidth ?? 0,
+      key: layout?.pre.primary.join(",") ?? "",
+      latch: this._morePackLatch,
     });
 
-    if (next !== this._morePackDemotions) {
-      this._morePackDemotions = next;
+    this._morePackLatch = next.latch;
+    if (next.demotions !== this._morePackDemotions) {
+      this._morePackDemotions = next.demotions;
     }
   }
 
@@ -1413,6 +1477,25 @@ export class VedurkortWeatherCard extends LitElement {
     const onOpenDaily = () => this._openDaily();
     const detailModel =
       this._detailMetric != null ? this._buildOpenDetailModel(snap) : null;
+    const currentCtx: CurrentWeatherContext = {
+      config: this._config,
+      snap,
+      iconName,
+      language,
+      alerts,
+      showAlertsStrip,
+      showDetails,
+      showDailyLink: showDailyModalTrigger,
+      showNameInCurrent,
+      feelsLikeText,
+      conditionText,
+      bft,
+      gustBft,
+      pollen,
+      morePackDemotions: this._morePackDemotions,
+      nowMs: this._nowMs,
+    };
+    this._lastCurrentCtx = showCurrent ? currentCtx : undefined;
     const dialogShell = {
       background: this._config.background,
       scene,
@@ -1435,23 +1518,7 @@ export class VedurkortWeatherCard extends LitElement {
           ${showNameHeader ? renderNameHeader(snap.name) : nothing}
           ${showCurrent
             ? renderCurrentWeatherSection(
-                {
-                  config: this._config,
-                  snap,
-                  iconName,
-                  language,
-                  alerts,
-                  showAlertsStrip,
-                  showDetails,
-                  showDailyLink: showDailyModalTrigger,
-                  showNameInCurrent,
-                  feelsLikeText,
-                  conditionText,
-                  bft,
-                  gustBft,
-                  pollen,
-                  morePackDemotions: this._morePackDemotions,
-                },
+                currentCtx,
                 this._icon,
                 onOpenAlerts,
                 onOpenDetail,

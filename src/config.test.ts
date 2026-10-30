@@ -3,6 +3,8 @@ import {
   dailyShowsInline,
   dailyShowsModalTrigger,
   dailyWantsData,
+  DEFAULT_CONFIG,
+  editorConfigFromRaw,
   hasBackground,
   isBackgroundAnimated,
   normalizeConfig,
@@ -238,5 +240,82 @@ describe("config normalization", () => {
     );
     expect(dailyWantsData({ display: "modal" } as never)).toBe(true);
     expect(dailyWantsData({ display: "off" } as never)).toBe(false);
+  });
+});
+
+describe("editor background migration", () => {
+  it("old pre-spread path loses the legacy flag (regression guard)", () => {
+    const cfg = normalizeEditorConfig({
+      ...DEFAULT_CONFIG,
+      animated_background: true,
+    } as Parameters<typeof normalizeEditorConfig>[0]);
+    expect(cfg.background).toBe("off");
+  });
+
+  it("migrates animated_background true to animated", () => {
+    const cfg = editorConfigFromRaw({
+      entity: "weather.home",
+      animated_background: true,
+    });
+    expect(cfg.background).toBe("animated");
+    expect(
+      (cfg as Record<string, unknown>).animated_background,
+    ).toBeUndefined();
+  });
+
+  it("legacy false or missing stays off", () => {
+    expect(
+      editorConfigFromRaw({ animated_background: false }).background,
+    ).toBe("off");
+    expect(editorConfigFromRaw({}).background).toBe("off");
+  });
+
+  it("explicit background wins over the legacy flag", () => {
+    expect(
+      editorConfigFromRaw({ background: "static", animated_background: true })
+        .background,
+    ).toBe("static");
+  });
+
+  it("invalid background falls back to the legacy flag", () => {
+    expect(
+      editorConfigFromRaw({
+        background: "bogus" as never,
+        animated_background: true,
+      }).background,
+    ).toBe("animated");
+  });
+
+  it("keeps legacy current-wind flags migrating in the editor", () => {
+    expect(editorConfigFromRaw({ show_wind_speed: true }).show_wind).toBe(true);
+  });
+
+  it("fills defaults without a pre-spread", () => {
+    const cfg = editorConfigFromRaw({});
+    expect(cfg.daily).toEqual(DEFAULT_CONFIG.daily);
+    expect(cfg.smart_chips).toBe(DEFAULT_CONFIG.smart_chips);
+  });
+});
+
+describe("chip_order", () => {
+  it("stays undefined when omitted", () => {
+    const cfg = normalizeConfig({ entity: "weather.home" });
+    expect(cfg.chip_order).toBeUndefined();
+    expect("chip_order" in cfg).toBe(false);
+  });
+
+  it("normalizes to a full permutation starting with the user's choice", () => {
+    const cfg = normalizeConfig({
+      entity: "weather.home",
+      chip_order: ["wind", "x", "wind"] as never,
+    });
+    expect(cfg.chip_order?.[0]).toBe("wind");
+    expect(cfg.chip_order).toHaveLength(12);
+    expect(new Set(cfg.chip_order).size).toBe(12);
+  });
+
+  it("is kept by the editor path", () => {
+    const cfg = editorConfigFromRaw({ chip_order: ["pollen"] as never });
+    expect(cfg.chip_order?.[0]).toBe("pollen");
   });
 });

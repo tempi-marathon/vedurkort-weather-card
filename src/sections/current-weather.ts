@@ -32,13 +32,14 @@ import {
 import { renderDailyLink } from "./forecast-section";
 import {
   getMoonSnapshot,
+  lunarAgeDays,
   moonPhaseIcon,
   moonPhaseLocalizeKey,
 } from "../details/moon-phase";
 import {
-  demotePrimaryChips,
-  resolveDetailChips,
-  SMART_CHIP_ORDER,
+  computeChipLayout,
+  resolveChipOrder,
+  type ChipLayout,
   type SmartChipId,
   type SmartChipValues,
 } from "./smart-chips";
@@ -64,6 +65,8 @@ export interface CurrentWeatherContext {
    * More control stays on the chip row (set by the card via measure).
    */
   morePackDemotions?: number;
+  /** Card minute clock; defaults to `Date.now()`. */
+  nowMs?: number;
 }
 
 function metricForChip(id: SmartChipId): DetailMetricId {
@@ -120,6 +123,9 @@ function chipHasValue(
 
 function smartValues(ctx: CurrentWeatherContext): SmartChipValues {
   const { snap, pollen } = ctx;
+  const nowMs = ctx.nowMs ?? Date.now();
+  const nextSun = nextSunEvent(snap);
+  const sunMs = nextSun ? new Date(nextSun.at).getTime() : NaN;
   return {
     condition: snap.condition,
     humidity: snap.humidity,
@@ -135,6 +141,10 @@ function smartValues(ctx: CurrentWeatherContext): SmartChipValues {
     precipitation: snap.precipitation,
     precipitationProbability: snap.precipitationProbability,
     pollenLevel: pollen?.overallLevelLabel ?? null,
+    nowMs,
+    sunNextEventMs: Number.isNaN(sunMs) ? null : sunMs,
+    moonAgeDays: lunarAgeDays(new Date(nowMs)),
+    order: resolveChipOrder(ctx.config.chip_order),
   };
 }
 
@@ -166,6 +176,7 @@ function renderDetailButton(
       </button>
     `,
     "detail",
+    metricId,
   );
 }
 
@@ -186,7 +197,7 @@ function sunChipParts(
 function moonChipParts(
   ctx: CurrentWeatherContext,
 ): { iconName: MeteoconName; text: string; label: string } {
-  const moon = getMoonSnapshot();
+  const moon = getMoonSnapshot(new Date(ctx.nowMs ?? Date.now()));
   return {
     iconName: moonPhaseIcon(moon.phase),
     text: localize(moonPhaseLocalizeKey(moon.phase), ctx.language),
@@ -379,6 +390,7 @@ function renderChip(
           </button>
         `,
         "detail",
+        "wind",
       );
     }
     case "uv_index":
@@ -663,6 +675,18 @@ function renderMoreMenu(
   `;
 }
 
+/** Chip layout for this context; shared by rendering and the card's More-pack measure. */
+export function currentChipLayout(ctx: CurrentWeatherContext): ChipLayout {
+  const values = smartValues(ctx);
+  const available = values.order.filter((id) => chipHasValue(id, ctx));
+  return computeChipLayout(
+    ctx.config.smart_chips,
+    available,
+    values,
+    ctx.morePackDemotions ?? 0,
+  );
+}
+
 export function renderCurrentWeatherSection(
   ctx: CurrentWeatherContext,
   icon: IconRenderer,
@@ -670,15 +694,7 @@ export function renderCurrentWeatherSection(
   onOpenDetail: (id: DetailMetricId) => void,
   onOpenDaily?: () => void,
 ): TemplateResult {
-  const available = SMART_CHIP_ORDER.filter((id) => chipHasValue(id, ctx));
-  const resolved = resolveDetailChips(
-    ctx.config.smart_chips,
-    available,
-    smartValues(ctx),
-  );
-  const { primary, overflow } = ctx.config.smart_chips
-    ? demotePrimaryChips(resolved, ctx.morePackDemotions ?? 0)
-    : resolved;
+  const { primary, overflow } = currentChipLayout(ctx).final;
 
   return html`
     <div class="section section-current">

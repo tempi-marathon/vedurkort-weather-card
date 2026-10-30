@@ -22,6 +22,7 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - Day/night condition icons; cloudy / precip / storm icons follow `cloud_coverage`
 - Optional CSS condition backgrounds (`off` / `static` / `animated`)
 - Detail chips (sun, humidity, wind, UV, pressure, and more) with tap-to-open detail sheets
+- Reorder detail chips in the visual editor (drag or ▲/▼); smart chips show sun and moon only near sunrise/sunset or a major moon phase
 - Layout presets: `default`, `compact`, or `minimal`
 - Full visual editor — configure everything in the UI, no YAML required
 - Optional **weather alerts** via [CAP Alerts](https://github.com/seevee/cap_alerts) or core [MeteoAlarm](https://www.home-assistant.io/integrations/meteoalarm/)
