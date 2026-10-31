@@ -401,6 +401,12 @@ export interface MorePackMeasure {
   /** Pre-demotion primary ids joined with "," (stable across demotions). */
   key?: string;
   latch?: MorePackLatch | null;
+  /**
+   * The More menu popover is open. While true the partition is frozen:
+   * `nextMorePackDemotions` returns `{ demotions: m.current, latch: m.latch ?? null }`
+   * so opening/closing the menu can never demote a chip or strand one in More.
+   */
+  menuOpen?: boolean;
 }
 
 export interface MorePackResult {
@@ -416,6 +422,10 @@ export interface MorePackResult {
  */
 export function nextMorePackDemotions(m: MorePackMeasure): MorePackResult {
   if (!m.smartChips) return { demotions: 0, latch: null };
+  // Freeze the partition while the menu is open: opening/closing must not
+  // change which chips are on the row (the menu's own width shift would
+  // otherwise demote a chip and latch it there). See data-model invariant.
+  if (m.menuOpen) return { demotions: m.current, latch: m.latch ?? null };
   const wrappedChips = m.wrappedChips ?? 0;
   const wrapped = m.moreWrapped || wrappedChips > 0;
   if (!m.hasMore && !wrapped) return { demotions: 0, latch: null };

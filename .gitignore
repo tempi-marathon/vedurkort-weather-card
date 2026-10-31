@@ -9,3 +9,4 @@ coverage/
 *.local
 .idea/
 src/assets/meteocons/
+specs/

@@ -409,6 +409,64 @@ describe("nextMorePackDemotions", () => {
   });
 });
 
+describe("nextMorePackDemotions (menuOpen freeze)", () => {
+  const base = {
+    smartChips: true,
+    hasMore: true,
+    moreWrapped: false,
+    sparePx: 0,
+    primaryCount: 3,
+    current: 0,
+  };
+
+  it("never demotes while the menu is open, even when More wraps", () => {
+    // Opening the menu must not push a chip (e.g. sun) off the row.
+    expect(
+      nextMorePackDemotions({ ...base, menuOpen: true, moreWrapped: true, current: 0 })
+        .demotions,
+    ).toBe(0);
+  });
+
+  it("freezes the current demotion count and latch while the menu is open", () => {
+    const latch: MorePackLatch = { widthPx: 585, minStable: 1, key: "a,b" };
+    const r = nextMorePackDemotions({
+      ...base,
+      menuOpen: true,
+      wrappedChips: 2,
+      current: 1,
+      containerWidthPx: 585,
+      key: "a,b",
+      latch,
+    });
+    expect(r.demotions).toBe(1);
+    expect(r.latch).toBe(latch);
+  });
+
+  it("never undemotes while the menu is open, even with ample spare", () => {
+    // Closing/opening the menu must not change the partition; only a real
+    // (menu-closed) width change may re-pack the row.
+    expect(
+      nextMorePackDemotions({
+        ...base,
+        menuOpen: true,
+        moreWrapped: false,
+        current: 2,
+        sparePx: 9999,
+      }).demotions,
+    ).toBe(2);
+  });
+
+  it("applies existing behaviour when menuOpen is omitted or false", () => {
+    expect(
+      nextMorePackDemotions({ ...base, moreWrapped: true, current: 0 }).demotions,
+    ).toBe(1);
+    expect(
+      nextMorePackDemotions({ ...base, menuOpen: false, moreWrapped: true, current: 0 })
+        .demotions,
+    ).toBe(1);
+  });
+});
+
 describe("nextMorePackDemotions (fit-aware + latch)", () => {
   const m: MorePackMeasure = {
     smartChips: true,

@@ -429,6 +429,13 @@ export class VedurkortWeatherCard extends LitElement {
       ".section-current .details",
     ) as HTMLElement | null;
     const more = details?.querySelector(".detail-more") as HTMLElement | null;
+    const moreMenu = more?.querySelector(
+      ".detail-more-menu",
+    ) as HTMLElement | null;
+    const menuOpen =
+      !!moreMenu &&
+      typeof moreMenu.matches === "function" &&
+      moreMenu.matches(":popover-open");
     const chipEls = details
       ? ([
           ...details.querySelectorAll(":scope > .tip, :scope > .detail-more"),
@@ -475,6 +482,7 @@ export class VedurkortWeatherCard extends LitElement {
       containerWidthPx: details?.clientWidth ?? 0,
       key: layout?.pre.primary.join(",") ?? "",
       latch: this._morePackLatch,
+      menuOpen,
     });
 
     this._morePackLatch = next.latch;
