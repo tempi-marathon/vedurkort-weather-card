@@ -4,6 +4,7 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Lovelace-18BCF2?style=for-the-badge&logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Buy me a coffee](https://img.shields.io/badge/Donate-Buy%20me%20a%20coffee-red?style=for-the-badge&logo=kofi)]([https://www.buymeacoffee.com/clooos](https://ko-fi.com/tempi_marathon/tip))
 
 **Veðurkort** is Icelandic for “weather card” / “weather map”. Pronounced roughly *VEH-thur-kort* (ð like the *th* in *weather*).
 
@@ -55,6 +56,10 @@ Full guide (including resource paths): [1. Installation](docs/01-installation.md
 [8. Credits](docs/08-credits.md)
 
 Development: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## Donate
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z6A229BZSN)
 
 ## License
 
