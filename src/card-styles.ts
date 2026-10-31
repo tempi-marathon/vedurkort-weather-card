@@ -1281,9 +1281,14 @@ export const cardStyles = [
       text-decoration: underline;
       text-underline-offset: 2px;
     }
+    /* Fixed box + single glyph: collapsed/expanded share one footprint (SC-003);
+       only the rotation in the aria-expanded rule differs. */
     .detail-more-chevron {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
+      width: 1em;
+      height: 1em;
       opacity: 0.75;
       font-size: 0.7em;
       line-height: 1;
@@ -1291,8 +1296,8 @@ export const cardStyles = [
     .detail-more-chevron::before {
       content: "▾";
     }
-    .detail-more-trigger[aria-expanded="true"] .detail-more-chevron::before {
-      content: "▴";
+    .detail-more-trigger[aria-expanded="true"] .detail-more-chevron {
+      transform: rotate(180deg);
     }
     /* Top-layer popover — escapes ha-card overflow:hidden.
        Do not set display when closed: author display overrides the UA
