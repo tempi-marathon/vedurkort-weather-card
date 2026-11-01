@@ -22,7 +22,7 @@
   "author": "tempi-marathon",
   "license": "MIT",
   "dependencies": {
-    "chart.js": "^4.4.8",
+    "chart.js": "^4.6.1",
     "chartjs-plugin-datalabels": "^2.2.0",
     "lit": "^3.2.1"
   },
