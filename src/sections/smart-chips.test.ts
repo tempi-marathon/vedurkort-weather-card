@@ -744,6 +744,95 @@ describe("computeChipLayout", () => {
     expect(l.final.overflow).toEqual(["dew_point"]);
   });
 
+  describe("sun and moon outside their windows", () => {
+    const midday: SmartChipValues = {
+      ...base,
+      nowMs: 0,
+      sunNextEventMs: 5 * HOUR,
+      moonAgeDays: 25,
+    };
+
+    it("hold a quiet sun in More while other quiet chips still fill the row", () => {
+      const l = computeChipLayout(true, ["sun", "humidity"], midday, 0);
+      expect(l.final.primary).toEqual(["humidity"]);
+      expect(l.final.overflow).toEqual(["sun"]);
+    });
+
+    it("hold a sun with an unknown next event in More", () => {
+      const l = computeChipLayout(
+        true,
+        ["sun", "humidity"],
+        { ...midday, sunNextEventMs: null },
+        0,
+      );
+      expect(l.final.primary).toEqual(["humidity"]);
+      expect(l.final.overflow).toEqual(["sun"]);
+    });
+
+    it("lead the row with a sun inside its 60 minute window", () => {
+      const l = computeChipLayout(
+        true,
+        ["humidity", "sun"],
+        { ...midday, sunNextEventMs: HOUR / 2 },
+        0,
+      );
+      expect(l.final.primary).toEqual(["sun", "humidity"]);
+      expect(l.final.overflow).toEqual([]);
+    });
+
+    it("hold a mid-cycle moon in More", () => {
+      const l = computeChipLayout(true, ["moon", "humidity"], midday, 0);
+      expect(l.final.primary).toEqual(["humidity"]);
+      expect(l.final.overflow).toEqual(["moon"]);
+    });
+
+    it("put a near moon on the row after other noteworthy chips", () => {
+      const l = computeChipLayout(
+        true,
+        ["moon", "wind"],
+        { ...midday, moonAgeDays: S / 2, windBft: 5 },
+        0,
+      );
+      expect(l.final.primary).toEqual(["wind", "moon"]);
+      expect(l.final.overflow).toEqual([]);
+    });
+
+    it("leave the row empty when only sun and moon are enabled and both are quiet", () => {
+      const l = computeChipLayout(true, ["sun", "moon"], midday, 0);
+      expect(l.final.primary).toEqual([]);
+      expect(l.final.overflow).toEqual(["sun", "moon"]);
+    });
+
+    it("keep the midday screenshot case off the row", () => {
+      const l = computeChipLayout(
+        true,
+        ["sun", "moon", "humidity"],
+        { ...midday, sunNextEventMs: 4 * HOUR + 23 * 60_000, humidity: 53 },
+        0,
+      );
+      expect(l.final.primary).toEqual(["humidity"]);
+      expect(l.final.overflow).toEqual(["sun", "moon"]);
+    });
+
+    it("list demoted chips first, then held ones; returning is a demoted chip", () => {
+      const l = computeChipLayout(
+        true,
+        ["sun", "moon", "precipitation", "wind"],
+        { ...midday, windBft: 4, precipitation: 1.4 },
+        1,
+      );
+      expect(l.final.primary).toEqual(["precipitation"]);
+      expect(l.final.overflow).toEqual(["wind", "sun", "moon"]);
+      expect(l.returning).toBe("wind");
+    });
+
+    it("are untouched with smart chips off", () => {
+      const l = computeChipLayout(false, ["sun", "moon", "humidity"], midday, 0);
+      expect(l.final.primary).toEqual(["sun", "moon", "humidity"]);
+      expect(l.final.overflow).toEqual([]);
+    });
+  });
+
   it("no demotions → returning null; smart off → everything primary", () => {
     expect(computeChipLayout(true, available, values, 0).returning).toBeNull();
     const off = computeChipLayout(false, available, values, 2);
