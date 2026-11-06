@@ -136,6 +136,7 @@ function smartValues(ctx: CurrentWeatherContext): SmartChipValues {
     pressureUnit: snap.pressureUnit,
     cloudCoverage: snap.cloudCoverage,
     dewPoint: snap.dewPoint,
+    dewPointUnit: snap.temperatureUnit,
     visibility: snap.visibility,
     visibilityUnit: snap.visibilityUnit,
     precipitation: snap.precipitation,

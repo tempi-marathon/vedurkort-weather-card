@@ -97,6 +97,7 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _pollenLegendOpen = false;
   @state() private _uvLegendOpen = false;
   @state() private _humidityLegendOpen = false;
+  @state() private _pressureLegendOpen = false;
   @state() private _dailyModalPlotLeft = 0;
   @state() private _dailyModalPlotWidth = 0;
   /** Demote N lowest-priority primary chips into More to keep More on-row. */
@@ -108,6 +109,8 @@ export class VedurkortWeatherCard extends LitElement {
   /** Minute clock for time-based smart chips (sun/moon near a change). */
   @state() private _nowMs = Date.now();
   private _clockTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Hourly re-render so the clear-night moon icon follows the lunar phase. */
+  private _moonIconTimer: ReturnType<typeof setInterval> | undefined;
   /** Context of the last rendered current-weather section. */
   private _lastCurrentCtx: CurrentWeatherContext | undefined;
 
@@ -193,6 +196,12 @@ export class VedurkortWeatherCard extends LitElement {
 
   /** Tick `_nowMs` on each minute while smart sun/moon chips can change. */
   private _syncClock(): void {
+    if (!this.isConnected) {
+      if (this._moonIconTimer !== undefined) clearInterval(this._moonIconTimer);
+      this._moonIconTimer = undefined;
+    } else if (this._moonIconTimer === undefined) {
+      this._moonIconTimer = setInterval(() => this.requestUpdate(), 3_600_000);
+    }
     const c = this._config;
     const wanted =
       this.isConnected && !!c?.smart_chips && (c.show_sun || c.show_moon);
@@ -836,6 +845,7 @@ export class VedurkortWeatherCard extends LitElement {
         snap.isDay,
         snap.cloudCoverage,
         escalate,
+        this._detailWindowNowMs || Date.now(),
       ),
       hourlyForecast: this._hourlyForecast,
       language: resolveLanguage(this.hass),
@@ -1295,6 +1305,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._pollenLegendOpen = false;
     this._uvLegendOpen = false;
     this._humidityLegendOpen = false;
+    this._pressureLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
     this._detailWindowNowMs = Date.now();
@@ -1307,6 +1318,7 @@ export class VedurkortWeatherCard extends LitElement {
     this._pollenLegendOpen = false;
     this._uvLegendOpen = false;
     this._humidityLegendOpen = false;
+    this._pressureLegendOpen = false;
     this._detailScrollKey = "";
     this._detailScrollUserAdjusted = false;
     this._detailWindowNowMs = 0;
@@ -1327,6 +1339,10 @@ export class VedurkortWeatherCard extends LitElement {
 
   private _toggleHumidityLegend(): void {
     this._humidityLegendOpen = !this._humidityLegendOpen;
+  }
+
+  private _togglePressureLegend(): void {
+    this._pressureLegendOpen = !this._pressureLegendOpen;
   }
 
   private _openAlerts(alerts: WeatherAlert[], preferredId?: string): void {
@@ -1426,6 +1442,7 @@ export class VedurkortWeatherCard extends LitElement {
       snap.isDay,
       snap.cloudCoverage,
       escalate,
+      Date.now(),
     );
     const scene = conditionToScene(snap.condition, snap.isDay, escalate);
 
@@ -1634,6 +1651,8 @@ export class VedurkortWeatherCard extends LitElement {
               onToggleUvLegend: () => this._toggleUvLegend(),
               humidityLegendOpen: this._humidityLegendOpen,
               onToggleHumidityLegend: () => this._toggleHumidityLegend(),
+              pressureLegendOpen: this._pressureLegendOpen,
+              onTogglePressureLegend: () => this._togglePressureLegend(),
             }),
           })
         : nothing}

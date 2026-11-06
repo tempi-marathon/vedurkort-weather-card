@@ -58,8 +58,32 @@ describe("seriesFromHourly", () => {
   });
 
   it("returns null for metrics without forecast field", () => {
-    expect(seriesFromHourly(hourly, "pressure", "hPa", 24)).toBeNull();
     expect(seriesFromHourly(hourly, "dew_point", "°C", 24)).toBeNull();
+  });
+
+  it("returns null for pressure when the forecast has no pressure values", () => {
+    expect(seriesFromHourly(hourly, "pressure", "hPa", 24)).toBeNull();
+  });
+
+  it("extracts a pressure line series with its unit, keeping gaps as null", () => {
+    const withPressure = [
+      { datetime: "2026-08-23T10:00:00+00:00", pressure: 1012 },
+      { datetime: "2026-08-23T11:00:00+00:00" },
+      { datetime: "2026-08-23T12:00:00+00:00", pressure: 1010.5 },
+    ];
+    const s = seriesFromHourly(
+      withPressure,
+      "pressure",
+      "hPa",
+      24,
+      Date.parse("2026-08-23T10:30:00+00:00"),
+    );
+    expect(s).not.toBeNull();
+    expect(s!.id).toBe("pressure");
+    expect(s!.unit).toBe("hPa");
+    expect(s!.chartType).toBe("line");
+    expect(s!.points.map((p) => p.value)).toContain(null);
+    expect(s!.points.some((p) => p.value === 1010.5)).toBe(true);
   });
 
   it("uses bar chart for precipitation", () => {

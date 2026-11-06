@@ -124,17 +124,46 @@ describe("isChipNoteworthy", () => {
   it("humidity / dew / pressure / visibility extremes only", () => {
     expect(isChipNoteworthy("humidity", base)).toBe(false);
     expect(isChipNoteworthy("humidity", { ...base, humidity: 25 })).toBe(true);
-    expect(isChipNoteworthy("humidity", { ...base, humidity: 75 })).toBe(true);
+    expect(isChipNoteworthy("humidity", { ...base, humidity: 80 })).toBe(true);
+    expect(isChipNoteworthy("humidity", { ...base, humidity: 75 })).toBe(false);
+    expect(isChipNoteworthy("humidity", { ...base, humidity: 28 })).toBe(false);
 
     expect(isChipNoteworthy("dew_point", base)).toBe(false);
-    expect(isChipNoteworthy("dew_point", { ...base, dewPoint: 8 })).toBe(true);
+    expect(isChipNoteworthy("dew_point", { ...base, dewPoint: 3 })).toBe(true);
+    expect(isChipNoteworthy("dew_point", { ...base, dewPoint: 8 })).toBe(false);
+    expect(isChipNoteworthy("dew_point", { ...base, dewPoint: 18 })).toBe(true);
+    expect(isChipNoteworthy("dew_point", { ...base, dewPoint: 16 })).toBe(false);
 
     expect(isChipNoteworthy("pressure", base)).toBe(false);
-    expect(isChipNoteworthy("pressure", { ...base, pressure: 990 })).toBe(true);
+    expect(isChipNoteworthy("pressure", { ...base, pressure: 985 })).toBe(true);
+    expect(isChipNoteworthy("pressure", { ...base, pressure: 990 })).toBe(false);
+    expect(isChipNoteworthy("pressure", { ...base, pressure: 1035 })).toBe(true);
+    expect(isChipNoteworthy("pressure", { ...base, pressure: 1028 })).toBe(false);
 
     expect(isChipNoteworthy("visibility", base)).toBe(false);
     expect(
       isChipNoteworthy("visibility", { ...base, visibility: 0.4 }),
+    ).toBe(true);
+  });
+
+  it("reads the dew point in °F when the unit says so", () => {
+    // 41 °F = 5 °C (not noteworthy), 37 °F ≈ 2.8 °C, 66 °F ≈ 18.9 °C.
+    const f = { ...base, dewPointUnit: "°F" };
+    expect(isChipNoteworthy("dew_point", { ...f, dewPoint: 41 })).toBe(false);
+    expect(isChipNoteworthy("dew_point", { ...f, dewPoint: 37 })).toBe(true);
+    expect(isChipNoteworthy("dew_point", { ...f, dewPoint: 66 })).toBe(true);
+    expect(isChipNoteworthy("dew_point", { ...f, dewPoint: 55 })).toBe(false);
+  });
+
+  it("converts pressure units before comparing", () => {
+    expect(
+      isChipNoteworthy("pressure", { ...base, pressure: 29.2, pressureUnit: "inHg" }),
+    ).toBe(true);
+    expect(
+      isChipNoteworthy("pressure", { ...base, pressure: 29.9, pressureUnit: "inHg" }),
+    ).toBe(false);
+    expect(
+      isChipNoteworthy("pressure", { ...base, pressure: 103.5, pressureUnit: "kPa" }),
     ).toBe(true);
   });
 
@@ -686,6 +715,33 @@ describe("computeChipLayout", () => {
     // User order: humidity, pressure, then defaults (… cloud_coverage, dew_point …).
     expect(l.final.primary).toEqual(["humidity", "pressure"]);
     expect(l.final.overflow).toEqual(["cloud_coverage", "dew_point"]);
+  });
+
+  it("ordinary humidity, dew point and pressure no longer jump ahead of quiet chips", () => {
+    const mild: SmartChipValues = {
+      ...base,
+      humidity: 72,
+      dewPoint: 16,
+      pressure: 1005,
+    };
+    const { primary } = partitionSmartChips(
+      ["humidity", "dew_point", "pressure", "cloud_coverage"],
+      mild,
+    );
+    expect(primary).toEqual([]);
+  });
+
+  it("an unusual reading still outranks nothing but is ahead of quiet chips", () => {
+    const humid: SmartChipValues = { ...base, humidity: 85 };
+    const l = computeChipLayout(true, ["cloud_coverage", "humidity", "pressure"], humid, 0);
+    expect(l.pre.primary).toEqual(["humidity", "pressure", "cloud_coverage"]);
+  });
+
+  it("the trio still fills a quiet row and demotes into More when narrow", () => {
+    const l = computeChipLayout(true, ["humidity", "dew_point", "pressure"], base, 1);
+    expect(l.pre.primary).toEqual(["humidity", "pressure", "dew_point"]);
+    expect(l.final.primary).toEqual(["humidity", "pressure"]);
+    expect(l.final.overflow).toEqual(["dew_point"]);
   });
 
   it("no demotions → returning null; smart off → everything primary", () => {

@@ -705,6 +705,107 @@ export const cardStyles = [
       min-width: 0;
       opacity: 0.9;
     }
+    .detail-pressure-bar-wrap {
+      margin-top: var(--detail-section-gap);
+      margin-bottom: 14px;
+    }
+    .detail-pressure-bar-track {
+      position: relative;
+      height: 8px;
+      border-radius: 999px;
+      overflow: visible;
+    }
+    .detail-pressure-bar-seg {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+    }
+    .detail-pressure-bar-seg:first-child {
+      border-radius: 999px 0 0 999px;
+    }
+    .detail-pressure-bar-seg:nth-child(3) {
+      border-radius: 0 999px 999px 0;
+    }
+    .detail-pressure-bar-dot {
+      position: absolute;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      margin-left: -7px;
+      transform: translateY(-50%);
+      border-radius: 50%;
+      background: #fff;
+      box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.35),
+        0 1px 4px rgba(0, 0, 0, 0.25);
+    }
+    .pressure-legend {
+      margin-top: 12px;
+    }
+    .pressure-legend-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 550;
+      padding: 4px 0;
+      cursor: pointer;
+      opacity: 0.85;
+    }
+    .pressure-legend-toggle:hover,
+    .pressure-legend-toggle:focus-visible {
+      opacity: 1;
+      outline: none;
+    }
+    .pressure-legend-toggle:hover .pressure-legend-label,
+    .pressure-legend-toggle:focus-visible .pressure-legend-label {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .pressure-legend-info {
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .pressure-legend-panel {
+      margin-top: 8px;
+      display: grid;
+      gap: 0;
+      font-size: 0.8rem;
+    }
+    .pressure-legend-head,
+    .pressure-legend-row {
+      display: grid;
+      grid-template-columns: 14px 7.5rem minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+    }
+    .pressure-legend-head {
+      font-weight: 600;
+      opacity: 0.75;
+      border-top: none;
+      padding-top: 0;
+    }
+    .pressure-legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .pressure-legend-range {
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+    }
+    .pressure-legend-cat {
+      min-width: 0;
+      opacity: 0.9;
+    }
     .detail-sun-arc {
       margin-bottom: 8px;
     }

@@ -1,5 +1,8 @@
 import {
   dewComfort,
+  isDewPointChipNoteworthy,
+  isHumidityChipNoteworthy,
+  isPressureChipNoteworthy,
   pressureBand,
   visibilityBand,
 } from "../details/metric-bands";
@@ -119,6 +122,8 @@ export interface SmartChipValues {
   pressureUnit: string;
   cloudCoverage: number | null;
   dewPoint: number | null;
+  /** Temperature unit of `dewPoint` (default °C). */
+  dewPointUnit?: string;
   visibility: number | null;
   visibilityUnit: string;
   precipitation: number | null;
@@ -181,21 +186,12 @@ export function isChipNoteworthy(
       return (
         values.pollenLevel != null && values.pollenLevel !== "none"
       );
-    case "humidity": {
-      const rh = values.humidity;
-      if (rh == null || Number.isNaN(rh)) return false;
-      return rh <= 30 || rh >= 70;
-    }
-    case "dew_point": {
-      const comfort = dewComfort(values.dewPoint);
-      return (
-        comfort === "dry" || comfort === "humid" || comfort === "muggy"
-      );
-    }
-    case "pressure": {
-      const band = pressureBand(values.pressure, values.pressureUnit);
-      return band === "low" || band === "high";
-    }
+    case "humidity":
+      return isHumidityChipNoteworthy(values.humidity);
+    case "dew_point":
+      return isDewPointChipNoteworthy(values.dewPoint, values.dewPointUnit);
+    case "pressure":
+      return isPressureChipNoteworthy(values.pressure, values.pressureUnit);
     case "visibility": {
       const band = visibilityBand(values.visibility, values.visibilityUnit);
       return band === "fog" || band === "haze";

@@ -42,6 +42,7 @@ import {
 } from "./lunation-arc-model";
 import { getMoonSnapshot, moonPhaseIcon, moonPhaseLocalizeKey } from "./moon-phase";
 import { buildSunArcModel } from "./sun-arc-model";
+import { buildPressureScaleModel } from "./pressure-scale";
 import { buildUvBarModel } from "./uv-bar-model";
 import type { DetailMetricId, DetailModel, MetricSeries } from "./types";
 import { pollenLevelClass } from "../pollen/colors";
@@ -191,6 +192,8 @@ function unitForSeries(
       return windUnitLabel(windDisplay, snap.windSpeedUnit);
     case "precipitation":
       return snap.precipitationUnit;
+    case "pressure":
+      return snap.pressureUnit;
     default:
       return "";
   }
@@ -443,6 +446,14 @@ export function buildDetailModel(ctx: BuildDetailContext): DetailModel {
   if (group === "moon") {
     model.lunationArc = buildLunationArcModel(ctx.language, new Date(nowMs));
     model.series = null;
+  }
+
+  if (group === "pressure") {
+    model.pressureScale = buildPressureScaleModel(
+      ctx.snap.pressure,
+      ctx.snap.pressureUnit,
+      ctx.language,
+    );
   }
 
   if (group === "uv_index") {

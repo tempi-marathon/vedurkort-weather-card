@@ -38,3 +38,22 @@ describe("getMeteoconSvg", () => {
     expect(modal).toContain(`url(#${idModal})`);
   });
 });
+
+describe("moon phase icons", () => {
+  const moons = [
+    "moon-new",
+    "moon-waxing-crescent",
+    "moon-first-quarter",
+    "moon-waxing-gibbous",
+    "moon-full",
+    "moon-waning-gibbous",
+    "moon-last-quarter",
+    "moon-waning-crescent",
+  ] as const;
+
+  it.each(moons)("renders %s in animated and static styles", (name) => {
+    for (const animated of [true, false]) {
+      expect(getMeteoconSvg(name, "fill", animated, "main")).toContain("<svg");
+    }
+  });
+});

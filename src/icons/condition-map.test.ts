@@ -197,3 +197,72 @@ describe("hourlyForecastCondition", () => {
     ).toBe("clear-night");
   });
 });
+
+describe("conditionToMeteocon moon phase at night", () => {
+  const NEW_MOON_MS = Date.UTC(2000, 0, 6, 18, 14, 0);
+  const atAge = (days: number) => NEW_MOON_MS + days * 86_400_000;
+
+  const phases = [
+    [0, "moon-new"],
+    [3, "moon-waxing-crescent"],
+    [7.4, "moon-first-quarter"],
+    [10, "moon-waxing-gibbous"],
+    [14.8, "moon-full"],
+    [18, "moon-waning-gibbous"],
+    [22, "moon-last-quarter"],
+    [26, "moon-waning-crescent"],
+  ] as const;
+
+  it.each(phases)("shows the moon at lunar age %s as %s", (age, icon) => {
+    expect(conditionToMeteocon("clear-night", false, null, false, atAge(age))).toBe(
+      icon,
+    );
+  });
+
+  it("gives all eight phases a distinct icon", () => {
+    const icons = phases.map(([age]) =>
+      conditionToMeteocon("clear-night", false, null, false, atAge(age)),
+    );
+    expect(new Set(icons).size).toBe(8);
+  });
+
+  it("uses the moon for sunny at night but not by day", () => {
+    expect(conditionToMeteocon("sunny", false, null, false, atAge(14.8))).toBe(
+      "moon-full",
+    );
+    expect(conditionToMeteocon("sunny", true, null, false, atAge(14.8))).toBe(
+      "clear-day",
+    );
+  });
+
+  it("accepts a Date as well as epoch ms", () => {
+    expect(
+      conditionToMeteocon("clear-night", false, null, false, new Date(atAge(14.8))),
+    ).toBe("moon-full");
+  });
+
+  it("keeps clear-night without a time or with an invalid time", () => {
+    expect(conditionToMeteocon("clear-night", false)).toBe("clear-night");
+    expect(conditionToMeteocon("clear-night", false, null, false, NaN)).toBe(
+      "clear-night",
+    );
+    expect(
+      conditionToMeteocon("clear-night", false, null, false, new Date("nope")),
+    ).toBe("clear-night");
+  });
+
+  it("keeps the extreme icon when escalated", () => {
+    expect(
+      conditionToMeteocon("clear-night", false, null, true, atAge(14.8)),
+    ).toBe("extreme-night");
+  });
+
+  it("leaves other night conditions alone", () => {
+    expect(conditionToMeteocon("partlycloudy", false, 0, false, atAge(14.8))).toBe(
+      "partly-cloudy-night",
+    );
+    expect(conditionToMeteocon("cloudy", false, 100, false, atAge(14.8))).toBe(
+      "overcast-night",
+    );
+  });
+});
