@@ -11,7 +11,8 @@ export type ForecastField =
   | "precipitation"
   | "precipitation_probability"
   | "cloud_coverage"
-  | "uv_index";
+  | "uv_index"
+  | "pressure";
 
 const FIELD_BY_METRIC: Partial<Record<DetailMetricId, ForecastField>> = {
   current: "temperature",
@@ -23,6 +24,7 @@ const FIELD_BY_METRIC: Partial<Record<DetailMetricId, ForecastField>> = {
   precipitation_probability: "precipitation_probability",
   cloud_coverage: "cloud_coverage",
   uv_index: "uv_index",
+  pressure: "pressure",
 };
 
 function readField(item: ForecastItem, field: ForecastField): number | null {
@@ -41,6 +43,8 @@ function readField(item: ForecastItem, field: ForecastField): number | null {
       return item.cloud_coverage ?? null;
     case "uv_index":
       return item.uv_index ?? null;
+    case "pressure":
+      return item.pressure ?? null;
     default:
       return null;
   }

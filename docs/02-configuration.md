@@ -69,6 +69,7 @@ With `smart_chips: true` the row is one line: chips that matter right now come f
 - **Moon**: noteworthy within 24 hours of a new moon, first quarter, full moon, or last quarter, ranked last among noteworthy chips. Otherwise a quiet chip.
 - **Quiet chips** never push out a noteworthy chip. Turning off the noteworthy chips lets the next chips in your order move up from **More**.
 - **Weather chips** (wind, UV, precipitation, fog, pollen, …) join the row when their value is noteworthy and are ranked by severity; `chip_order` breaks ties.
+- **Humidity, dew point and pressure** are noteworthy only at extremes: humidity ≤ 25% or ≥ 80%, dew point below 5 °C or at 18 °C and above, pressure below 990 hPa or above 1030 hPa. Between those values they are quiet chips that only use spare room. (This is stricter than earlier versions; no configuration change is needed.)
 - If the last chip and **More** don't both fit on one line, the least important chip moves into **More** so **More** stays on the first line. The row then holds that layout until the card width or the data changes.
 
 ## Chip order

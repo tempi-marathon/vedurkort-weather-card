@@ -113,4 +113,6 @@ export interface ForecastItem {
   cloud_coverage?: number;
   /** UV index when the integration provides it in hourly forecast. */
   uv_index?: number;
+  /** Forecast pressure, in the weather entity's pressure unit. */
+  pressure?: number;
 }

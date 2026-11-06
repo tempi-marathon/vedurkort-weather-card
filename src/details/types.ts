@@ -4,10 +4,12 @@ import type { ForecastItem } from "../types";
 import type { HourlySlotItem } from "./sun-events";
 import type { LunationArcModel } from "./lunation-arc-model";
 import type { SunArcModel } from "./sun-arc-model";
+import type { PressureScaleModel } from "./pressure-scale";
 import type { UvBarModel } from "./uv-bar-model";
 
 export type { LunationArcModel } from "./lunation-arc-model";
 export type { SunArcModel } from "./sun-arc-model";
+export type { PressureScaleModel } from "./pressure-scale";
 export type { UvBarModel } from "./uv-bar-model";
 
 export type DetailMetricId =
@@ -78,6 +80,8 @@ export interface DetailModel {
   lunationArc?: LunationArcModel | null;
   /** UV sheet: gradient bar replaces the standard hero. */
   uvBar?: UvBarModel | null;
+  /** Pressure sheet: banded scale with a marker for the current reading. */
+  pressureScale?: PressureScaleModel | null;
   /** Hourly items for condition/wind rows under the chart. */
   hourlyRowItems?: HourlySlotItem[];
   /** Current-conditions sheet: hourly condition icons under chart. */

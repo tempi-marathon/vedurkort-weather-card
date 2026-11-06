@@ -105,6 +105,8 @@ export function renderForecastRow(
           condition,
           isDay,
           item.cloud_coverage,
+          false,
+          opts.mode === "hourly" ? new Date(item.datetime) : undefined,
         );
         const svg = getMeteoconSvg(
           icon,

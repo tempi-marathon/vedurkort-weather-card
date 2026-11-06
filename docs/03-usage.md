@@ -18,8 +18,9 @@ Full option reference: [2. Configuration](02-configuration.md)
 
 Tap the **current-weather block** (temperature + condition) or any **detail chip** to open a centered detail sheet. When `background` is `static` or `animated`, the sheet reuses the same CSS weather scene as the card (`static` freezes the full scene including precip). Animated scene motion pauses per card when that card is scrolled off-screen, when the tab is in the background, or when `prefers-reduced-motion` is set — so phones and dashboards with many cards do not keep animating invisible rain/clouds. An open detail/alerts/daily dialog on a card keeps that card’s animated scene running even if the host is reported off-screen.
 
-Each sheet shows a large hero value, a short interpretation line, optional **24-hour forecast chart** (from hourly forecast data), and related stats. The current-conditions sheet also shows hourly condition icons under the chart. Charts are available for temperature, humidity, wind speed, precipitation, precipitation probability, and cloud coverage. UV, pressure, visibility, dew point, and gust show current values and copy without a chart when hourly forecast lacks that field.
+Each sheet shows a large hero value, a short interpretation line, optional **24-hour forecast chart** (from hourly forecast data), and related stats. The current-conditions sheet also shows hourly condition icons under the chart. Charts are available for temperature, humidity, wind speed, precipitation, precipitation probability, cloud coverage, and pressure. UV, visibility, dew point, and gust show current values and copy without a chart when hourly forecast lacks that field.
 
+The **pressure** sheet shows a low / normal / high scale with a marker for the current reading, plus a **pressure scale** legend with the ranges in your pressure unit (hPa, mbar, kPa, inHg or mmHg).
 **Tap action default:** opens the current-conditions sheet. Restore Home Assistant’s entity dialog with:
 
 ```yaml
@@ -51,11 +52,13 @@ Not every weather integration exposes every attribute. Veðurkort reads values f
 
 On the card, detail chips are **hidden when there is no value**. Moon is an exception: when `show_moon` is on, the chip is always available (phase and illumination are calculated locally). In the visual editor, other toggles stay available and show a small hint whether the selected weather entity currently has that attribute — use an override sensor when it does not.
 
-**Smart chips** keeps the row to what’s useful right now and puts the rest under **More**. Your chip toggles still decide what’s allowed.
+**Smart chips** keeps the row to what’s useful right now and puts the rest under **More**. Your chip toggles still decide what’s allowed. Humidity, dew point and pressure only count as noteworthy at more extreme values than before (see [Smart chips](02-configuration.md#smart-chips)), so they show up less often ahead of other chips; your smart-chip setup needs no changes.
 
 Example with overrides: [6. Examples](06-examples.md#sensor-overrides)
 
 ## Icons & backgrounds
+
+- On a clear night the current-conditions icon, and clear-night hours in the hourly forecast, show the moon in its current phase (computed on-device) instead of a generic clear-night icon. Cloudy nights and active alert icons are unchanged.
 
 - Meteocons styles: `fill` / `flat` / `line` / `monochrome`, animated or static
 - Day/night condition icons (hourly icons follow sun rising/setting; daily uses daytime variants where available)

@@ -5,6 +5,8 @@ import type { HomeAssistant } from "../types";
 import type { IconRenderer } from "../sections/alerts-section";
 import { renderBeaufortLegend } from "./beaufort-legend";
 import { renderHumidityLegend } from "./humidity-legend";
+import { renderPressureBarHero } from "./pressure-bar";
+import { renderPressureLegend } from "./pressure-legend";
 import { metricGroup } from "./groups";
 import { renderDetailHero } from "./hero";
 import { renderPollenLegend } from "./pollen-legend";
@@ -35,6 +37,8 @@ export interface DetailSheetContext {
   onToggleUvLegend?: () => void;
   humidityLegendOpen?: boolean;
   onToggleHumidityLegend?: () => void;
+  pressureLegendOpen?: boolean;
+  onTogglePressureLegend?: () => void;
 }
 
 export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
@@ -58,6 +62,8 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
     onToggleUvLegend,
     humidityLegendOpen,
     onToggleHumidityLegend,
+    pressureLegendOpen,
+    onTogglePressureLegend,
   } = ctx;
 
   const chartCols = model.series?.points.length ?? 0;
@@ -74,6 +80,7 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
   const isPollen = model.id === "pollen";
   const isUv = metricGroup(model.id) === "uv_index";
   const isHumidity = metricGroup(model.id) === "humidity";
+  const isPressure = metricGroup(model.id) === "pressure";
   const sunEvents =
     model.hourlyRowItems?.map(
       (item, index) =>
@@ -87,7 +94,15 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
         ? renderLunationArcHero(model.lunationArc, icon, model.copy)
         : model.uvBar
           ? renderUvBarHero(model.uvBar, icon, language)
-          : renderDetailHero(icon, {
+          : model.pressureScale
+            ? renderPressureBarHero(
+                model.pressureScale,
+                icon,
+                { icon: model.heroIcon, value: model.heroValue },
+                model.copy,
+                language,
+              )
+            : renderDetailHero(icon, {
               icon: model.heroIcon,
               value: model.heroValue,
               copy: model.copy || undefined,
@@ -140,7 +155,10 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
             </div>
           </div>
         `
-      : !model.sunArc && !model.lunationArc && !model.uvBar
+      : !model.sunArc &&
+          !model.lunationArc &&
+          !model.uvBar &&
+          !model.pressureScale
         ? html`<p class="detail-no-chart">${noChartText}</p>`
         : nothing}
     ${model.related.length
@@ -186,6 +204,14 @@ export function renderDetailSheetBody(ctx: DetailSheetContext): TemplateResult {
           language,
           open: !!pollenLegendOpen,
           onToggle: onTogglePollenLegend,
+        })
+      : nothing}
+    ${isPressure && model.pressureScale && onTogglePressureLegend
+      ? renderPressureLegend({
+          language,
+          rows: model.pressureScale.legendRows,
+          open: !!pressureLegendOpen,
+          onToggle: onTogglePressureLegend,
         })
       : nothing}
     ${isHumidity && onToggleHumidityLegend

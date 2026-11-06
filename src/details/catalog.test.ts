@@ -203,3 +203,39 @@ describe("buildDetailModel current forecast sun columns", () => {
     expect(model.series?.points.length).toBe(2);
   });
 });
+
+describe("buildDetailModel pressure", () => {
+  const nowMs = Date.parse("2026-08-23T10:30:00+00:00");
+
+  it("shows the scale and no graph when the forecast has no pressure", () => {
+    const model = buildDetailModel(
+      ctx("pressure", {
+        snap: snap({ pressure: 1012 }),
+        hourlyForecast: hourly([{ wind_speed: 10 }, { wind_speed: 12 }]),
+        nowMs,
+      }),
+    );
+    expect(model.pressureScale?.band).toBe("normal");
+    expect(model.series).toBeNull();
+  });
+
+  it("adds a graph in the pressure unit when the forecast has pressure", () => {
+    const model = buildDetailModel(
+      ctx("pressure", {
+        snap: snap({ pressure: 29.9, pressureUnit: "inHg" }),
+        hourlyForecast: hourly([{ pressure: 29.9 }, { pressure: 29.8 }]),
+        nowMs,
+      }),
+    );
+    expect(model.series?.id).toBe("pressure");
+    expect(model.series?.unit).toBe("inHg");
+    expect(model.pressureScale?.valueLabel).toBe("29.90 inHg");
+  });
+
+  it("has no scale when the reading is missing", () => {
+    const model = buildDetailModel(
+      ctx("pressure", { snap: snap({ pressure: null }), nowMs }),
+    );
+    expect(model.pressureScale).toBeNull();
+  });
+});

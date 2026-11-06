@@ -1,4 +1,5 @@
 import type { MeteoconName } from "./allowlist";
+import { lunarAgeDays, moonPhaseIcon, phaseFromAge } from "../details/moon-phase";
 import type { HaWeatherCondition } from "../types";
 
 /** Prefer sunless icons when coverage is missing or at/above this percent. */
@@ -29,18 +30,29 @@ export function hourlyForecastCondition(
   return condition;
 }
 
+/** Moon-phase icon for `at`, or the generic clear-night icon without a valid time. */
+function clearNightIcon(at?: Date | number): MeteoconName {
+  if (at == null) return "clear-night";
+  const date = new Date(at);
+  if (Number.isNaN(date.getTime())) return "clear-night";
+  return moonPhaseIcon(phaseFromAge(lunarAgeDays(date)));
+}
+
 /**
  * Map HA weather conditions → Meteocon names with day/night variants.
  * Cloudy / precip / storm icons use sunless names when cloud coverage is
  * missing or ≥ {@link OVERCAST_CLOUD_COVERAGE}; otherwise day/night peeks.
  * When `escalate` is true (active highest-category alert), use Meteocons
  * extreme variants for the current condition.
+ * When `at` is given, a plain clear night shows the moon phase for that time
+ * instead of the generic clear-night icon.
  */
 export function conditionToMeteocon(
   condition: HaWeatherCondition | undefined,
   isDay = true,
   cloudCoverage?: number | null,
   escalate = false,
+  at?: Date | number,
 ): MeteoconName {
   const overcast = isOvercastCloudCover(cloudCoverage);
 
@@ -92,9 +104,9 @@ export function conditionToMeteocon(
 
   switch (condition) {
     case "clear-night":
-      return "clear-night";
+      return clearNightIcon(at);
     case "sunny":
-      return isDay ? "clear-day" : "clear-night";
+      return isDay ? "clear-day" : clearNightIcon(at);
     case "cloudy":
       return isDay ? "overcast-day" : "overcast-night";
     case "fog":

@@ -816,6 +816,11 @@ function detailValueLabel(
     }
     return `${Math.round(value)}${u ? ` ${u}` : ""}`;
   }
+  if (series.id === "pressure") {
+    const u = series.unit.trim();
+    const digits = u.toLowerCase().includes("inhg") ? 2 : u.toLowerCase().includes("kpa") ? 1 : 0;
+    return `${value.toFixed(digits)}${u ? ` ${u}` : ""}`;
+  }
   return `${Math.round(value)}`;
 }
 
