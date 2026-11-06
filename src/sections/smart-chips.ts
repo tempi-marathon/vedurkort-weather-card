@@ -476,7 +476,8 @@ export interface ChipLayout {
 /**
  * Single source for the rendered chip layout (section + card measuring).
  * Smart mode fills the row: noteworthy chips first (by severity), then quiet
- * chips in user order. Whatever doesn't fit on one line is demoted into More.
+ * chips in user order, except sun and moon, which stay in More until noteworthy.
+ * Whatever doesn't fit on one line is demoted into More.
  */
 export function computeChipLayout(
   smartChips: boolean,
@@ -486,9 +487,12 @@ export function computeChipLayout(
 ): ChipLayout {
   const split = resolveDetailChips(smartChips, available, values);
   if (!smartChips) return { pre: split, final: split, returning: null };
+  // Sun and moon only earn a row slot inside their window; quiet ones stay in More.
+  const held = split.overflow.filter((id) => id === "sun" || id === "moon");
+  const fillers = split.overflow.filter((id) => id !== "sun" && id !== "moon");
   const pre: SmartChipPartition = {
-    primary: [...split.primary, ...split.overflow],
-    overflow: [],
+    primary: [...split.primary, ...fillers],
+    overflow: held,
   };
   const final = demotePrimaryChips(pre, demotions);
   const returning =

@@ -2960,14 +2960,14 @@ function N5(e, t, i, a) {
     final: r,
     returning: null
   };
-  const n = {
-    primary: [...r.primary, ...r.overflow],
-    overflow: []
-  }, s = P5(n, a);
+  const n = r.overflow.filter((d) => d === "sun" || d === "moon"), s = r.overflow.filter((d) => d !== "sun" && d !== "moon"), l = {
+    primary: [...r.primary, ...s],
+    overflow: n
+  }, o = P5(l, a);
   return {
-    pre: n,
-    final: s,
-    returning: s.primary.length < n.primary.length ? s.overflow[0] ?? null : null
+    pre: l,
+    final: o,
+    returning: o.primary.length < l.primary.length ? o.overflow[0] ?? null : null
   };
 }
 var Bt, Sr, U5, q5, H5, A5, L5, c2 = N((() => {
