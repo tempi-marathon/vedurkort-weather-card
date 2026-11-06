@@ -58,7 +58,7 @@ Example with overrides: [6. Examples](06-examples.md#sensor-overrides)
 
 ## Icons & backgrounds
 
-- On a clear night the current-conditions icon, and clear-night hours in the hourly forecast, show the moon in its current phase (computed on-device) instead of a generic clear-night icon. Cloudy nights and active alert icons are unchanged.
+- On a clear night the current-conditions icon, and clear-night hours in the hourly forecast, show the moon in its current phase instead of a generic clear-night icon. Cloudy nights and active alert icons are unchanged.
 
 - Meteocons styles: `fill` / `flat` / `line` / `monochrome`, animated or static
 - Day/night condition icons (hourly icons follow sun rising/setting; daily uses daytime variants where available)

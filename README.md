@@ -24,7 +24,7 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 - Optional CSS condition backgrounds (`off` / `static` / `animated`)
 - Detail chips (sun, humidity, wind, UV, pressure, and more) with tap-to-open detail sheets
 - Reorder detail chips in the visual editor (drag or ▲/▼); smart chips show sun and moon only near sunrise/sunset or a major moon phase, and humidity, dew point and pressure only at extremes
-- Moon-phase icon on clear nights (main card and hourly forecast)
+- Moon-phase icon on clear nights
 - Pressure detail with a low/normal/high scale and forecast graph
 - Layout presets: `default`, `compact`, or `minimal`
 - Full visual editor — configure everything in the UI, no YAML required
