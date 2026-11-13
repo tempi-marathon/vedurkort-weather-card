@@ -60,6 +60,13 @@ import {
   type ForecastSectionState,
 } from "./sections/forecast-section";
 import {
+  forecastTabOrder,
+  forecastTabsActive,
+  renderForecastTabsArea,
+  resolveActiveTab,
+  type ForecastTab,
+} from "./sections/forecast-tabs";
+import {
   nextMorePackDemotions,
   type MorePackLatch,
 } from "./sections/smart-chips";
@@ -83,6 +90,8 @@ export class VedurkortWeatherCard extends LitElement {
   @state() private _hourlyForecast: ForecastItem[] = [];
   @state() private _dailyError: string | null = null;
   @state() private _hourlyError: string | null = null;
+  /** Viewer's tab choice; null = configured default. Session-only. */
+  @state() private _forecastTab: ForecastTab | null = null;
   @state() private _dailyPlotLeft = 0;
   @state() private _dailyPlotWidth = 0;
   @state() private _hourlyPlotLeft = 0;
@@ -191,6 +200,7 @@ export class VedurkortWeatherCard extends LitElement {
       this._morePackLatch = null;
       this._chipWidths.clear();
     }
+    this._forecastTab = null;
     this._syncClock();
   }
 
@@ -1456,6 +1466,8 @@ export class VedurkortWeatherCard extends LitElement {
     const showDailyInline = dailyShowsInline(this._config.daily);
     const showDailyModalTrigger = dailyShowsModalTrigger(this._config.daily);
     const showHourly = this._config.hourly.enabled;
+    const tabsActive = forecastTabsActive(this._config);
+    const activeTab = resolveActiveTab(this._config, this._forecastTab);
     const showAlertsStrip = alerts.length > 0;
     const showDetails =
       showCurrent &&
@@ -1566,35 +1578,69 @@ export class VedurkortWeatherCard extends LitElement {
               `
             : nothing}
 
-          ${showDailyInline
+          ${tabsActive
             ? html`
-                <div class="section section-daily">
-                  ${renderForecastSection(
-                    "daily",
-                    this.hass,
-                    this._config,
-                    snap,
-                    forecastState,
+                <div class="section section-forecast-tabs">
+                  ${renderForecastTabsArea({
+                    tabs: forecastTabOrder(this._config),
+                    active: activeTab,
+                    onSelect: (tab) => {
+                      this._forecastTab = tab;
+                    },
                     language,
-                  )}
+                    panels: {
+                      daily: renderForecastSection(
+                        "daily",
+                        this.hass,
+                        this._config,
+                        snap,
+                        forecastState,
+                        language,
+                      ),
+                      hourly: renderForecastSection(
+                        "hourly",
+                        this.hass,
+                        this._config,
+                        snap,
+                        forecastState,
+                        language,
+                        () => this._onHourlyScroll(),
+                      ),
+                    },
+                  })}
                 </div>
               `
-            : nothing}
-          ${showHourly
-            ? html`
-                <div class="section section-hourly">
-                  ${renderForecastSection(
-                    "hourly",
-                    this.hass,
-                    this._config,
-                    snap,
-                    forecastState,
-                    language,
-                    () => this._onHourlyScroll(),
-                  )}
-                </div>
-              `
-            : nothing}
+            : html`
+                ${showDailyInline
+                  ? html`
+                      <div class="section section-daily">
+                        ${renderForecastSection(
+                          "daily",
+                          this.hass,
+                          this._config,
+                          snap,
+                          forecastState,
+                          language,
+                        )}
+                      </div>
+                    `
+                  : nothing}
+                ${showHourly
+                  ? html`
+                      <div class="section section-hourly">
+                        ${renderForecastSection(
+                          "hourly",
+                          this.hass,
+                          this._config,
+                          snap,
+                          forecastState,
+                          language,
+                          () => this._onHourlyScroll(),
+                        )}
+                      </div>
+                    `
+                  : nothing}
+              `}
         </div>
       </ha-card>
       ${renderAlertsDialog(

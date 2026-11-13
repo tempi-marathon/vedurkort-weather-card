@@ -48,6 +48,9 @@ const baseConfig = (): VedurkortCardConfig => ({
   show_precipitation_probability: false,
   show_alerts: false,
   show_pollen: false,
+  forecast_tabs: false,
+  forecast_tabs_order: "daily_first",
+  forecast_tabs_default: "first",
   daily: {
     enabled: false,
     display: "off",
@@ -84,6 +87,24 @@ describe("computeCardSize", () => {
     config.daily.display = "inline";
     config.hourly.enabled = true;
     expect(computeCardSize(config, undefined)).toBe(9);
+  });
+
+  it("counts one shared forecast area plus the tab row when tabs are active", () => {
+    const config = baseConfig();
+    config.forecast_tabs = true;
+    config.daily.enabled = true;
+    config.daily.display = "inline";
+    config.hourly.enabled = true;
+    expect(computeCardSize(config, undefined)).toBe(7);
+  });
+
+  it("ignores tabs when daily is modal-only", () => {
+    const config = baseConfig();
+    config.forecast_tabs = true;
+    config.daily.enabled = true;
+    config.daily.display = "modal";
+    config.hourly.enabled = true;
+    expect(computeCardSize(config, undefined)).toBe(6);
   });
 
   it("does not add size for modal-only daily", () => {

@@ -61,6 +61,9 @@ const baseConfig: VedurkortCardConfig = {
   show_precipitation_probability: false,
   show_alerts: false,
   show_pollen: false,
+  forecast_tabs: false,
+  forecast_tabs_order: "daily_first",
+  forecast_tabs_default: "first",
   daily: {
     enabled: false,
     display: "off",

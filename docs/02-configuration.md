@@ -2,7 +2,7 @@
 
 All options can be set in the visual editor. YAML details are below.
 
-Enable any combination of `show_current`, `daily.display` (not `off`), and `hourly.enabled`. When both forecasts are on, daily is shown above hourly. If all three are off, the card shows a short configuration hint.
+Enable any combination of `show_current`, `daily.display` (not `off`), and `hourly.enabled`. When both forecasts are on, daily is shown above hourly (or as tabs, see [Forecast tabs](#forecast-tabs)). If all three are off, the card shows a short configuration hint.
 
 See also: [3. Usage](03-usage.md) · [4. Weather alerts](04-alerts.md) · [5. Pollen](05-pollen.md) · [6. Examples](06-examples.md)
 
@@ -37,6 +37,9 @@ See also: [3. Usage](03-usage.md) · [4. Weather alerts](04-alerts.md) · [5. Po
 | `show_precipitation_probability` | boolean | `false` | Show current precipitation probability (%). |
 | `daily` | object | see below | Daily forecast section options. |
 | `hourly` | object | see below | Hourly forecast section options. |
+| `forecast_tabs` | boolean | `false` | Show daily and hourly as **Daily / Hourly tabs** in one forecast area instead of stacked. Only takes effect when `daily.display` is `inline` and `hourly.enabled` is `true`; otherwise it is ignored. See [Forecast tabs](#forecast-tabs). |
+| `forecast_tabs_order` | string | `daily_first` | Tab order: `daily_first` (Daily \| Hourly) or `hourly_first` (Hourly \| Daily). |
+| `forecast_tabs_default` | string | `first` | Tab open on load: `first` (the leftmost tab), `daily`, or `hourly`. |
 | `show_alerts` | boolean | `false` | Show a weather-alert summary when an alert source is configured and at least one **active** warning exists. Hidden when idle. Requires `show_current: true` for strip placement on the current-weather section. |
 | `alerts_device` | string | none | [CAP Alerts](https://github.com/seevee/cap_alerts) **device id** — discovers all per-alert sensors under that device. Recommended for CAP Alerts usage. Auto-detected when you have exactly one CAP device. |
 | `alerts_entities` | list | none | One or more alert entities (e.g. `binary_sensor.meteoalarm`). Active warnings from all entities are merged. |
@@ -105,6 +108,25 @@ With `smart_chips: true` the row is ordered automatically (see [Smart chips](#sm
 | `precip_type` | string | `rainfall` | Precipitation series: `rainfall` or `probability`. |
 
 The daily modal uses the same viewport dialog shell as alerts and detail sheets (weather background/scene when `background` is `static` or `animated`, title, Close, backdrop dismiss).
+
+## Forecast tabs
+
+Set `forecast_tabs: true` to show the daily and hourly forecasts as two tabs in one forecast area. It needs `daily.display: inline` ("On the card") and `hourly.enabled: true`; with daily in a dialog or off, or hourly off, the option is ignored and the card renders as before.
+
+```yaml
+daily:
+  display: inline
+hourly:
+  enabled: true
+forecast_tabs: true
+forecast_tabs_order: hourly_first   # Hourly | Daily
+forecast_tabs_default: daily        # open on Daily
+```
+
+- The forecast area stays as tall as the taller forecast, so switching tabs never resizes the card.
+- The viewer's choice lasts for the session only and resets to `forecast_tabs_default` when the card configuration changes.
+- Tabs apply to the card only; the daily dialog is unchanged.
+- In the visual editor the options appear under **Forecast tabs** once daily is "On the card" and hourly is on.
 
 ## Hourly options (`hourly`)
 

@@ -12,6 +12,8 @@ When daily is `inline`, the chart sits on the card (above hourly when hourly is 
 
 Hourly charts scroll horizontally when showing more than 12 hours.
 
+**Forecast tabs** — with daily `inline` and hourly on, `forecast_tabs: true` swaps the stacked sections for a single area with Daily / Hourly tabs. Choose the tab order and which tab opens first with `forecast_tabs_order` and `forecast_tabs_default`. Selection is session-only, the card height stays constant, and the daily dialog never shows tabs. See [Forecast tabs](02-configuration.md#forecast-tabs).
+
 Full option reference: [2. Configuration](02-configuration.md)
 
 ## Detail sheets
