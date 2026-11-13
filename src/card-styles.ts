@@ -713,18 +713,6 @@ export const cardStyles = [
       position: relative;
       height: 8px;
       border-radius: 999px;
-      overflow: visible;
-    }
-    .detail-pressure-bar-seg {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-    }
-    .detail-pressure-bar-seg:first-child {
-      border-radius: 999px 0 0 999px;
-    }
-    .detail-pressure-bar-seg:nth-child(3) {
-      border-radius: 0 999px 999px 0;
     }
     .detail-pressure-bar-dot {
       position: absolute;
