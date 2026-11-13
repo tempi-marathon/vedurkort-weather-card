@@ -1157,6 +1157,50 @@ export class VedurkortWeatherCardEditor extends LitElement {
         </fieldset>
 
         <fieldset>
+          <legend>${this._t("legend_forecast_tabs")}</legend>
+          ${c.daily.display === "inline" && c.hourly.enabled
+            ? html`
+                <label class="row enable">
+                  <input
+                    type="checkbox"
+                    .checked=${c.forecast_tabs}
+                    data-config="forecast_tabs"
+                    @change=${this._value}
+                  />
+                  ${this._t("forecast_tabs_enable")}
+                </label>
+                ${c.forecast_tabs
+                  ? html`
+                      <label>
+                        ${this._t("forecast_tabs_order")}
+                        <select
+                          .value=${c.forecast_tabs_order}
+                          data-config="forecast_tabs_order"
+                          @change=${this._value}
+                        >
+                          <option value="daily_first" ?selected=${c.forecast_tabs_order === "daily_first"}>${this._t("forecast_tabs_order_daily_first")}</option>
+                          <option value="hourly_first" ?selected=${c.forecast_tabs_order === "hourly_first"}>${this._t("forecast_tabs_order_hourly_first")}</option>
+                        </select>
+                      </label>
+                      <label>
+                        ${this._t("forecast_tabs_default")}
+                        <select
+                          .value=${c.forecast_tabs_default}
+                          data-config="forecast_tabs_default"
+                          @change=${this._value}
+                        >
+                          <option value="first" ?selected=${c.forecast_tabs_default === "first"}>${this._t("forecast_tabs_default_first")}</option>
+                          <option value="daily" ?selected=${c.forecast_tabs_default === "daily"}>${this._t("forecast_tabs_default_daily")}</option>
+                          <option value="hourly" ?selected=${c.forecast_tabs_default === "hourly"}>${this._t("forecast_tabs_default_hourly")}</option>
+                        </select>
+                      </label>
+                    `
+                  : nothing}
+              `
+            : html`<p class="hint">${this._t("forecast_tabs_hint")}</p>`}
+        </fieldset>
+
+        <fieldset>
           <legend>${this._t("legend_alerts")}</legend>
           <label class="row enable">
             <input

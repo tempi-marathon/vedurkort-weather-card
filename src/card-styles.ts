@@ -39,6 +39,53 @@ export const cardStyles = [
       border-top: 1px solid
         color-mix(in srgb, currentColor 18%, transparent);
     }
+    .forecast-tabs {
+      display: inline-flex;
+      gap: 2px;
+      margin: 0 0 12px;
+      padding: 3px;
+      border-radius: 999px;
+      background: color-mix(in srgb, currentColor 10%, transparent);
+    }
+    .forecast-tab {
+      margin: 0;
+      padding: 5px 14px;
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      line-height: 1.2;
+      opacity: 0.75;
+      cursor: pointer;
+    }
+    .forecast-tab:hover {
+      opacity: 1;
+    }
+    .forecast-tab.is-active {
+      background: color-mix(in srgb, currentColor 20%, transparent);
+      opacity: 1;
+    }
+    .forecast-tab:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 1px;
+    }
+    /* Both panels share one grid cell: the area is as tall as the taller
+       forecast, so switching tabs never resizes the card. */
+    .forecast-tabs-panels {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .forecast-tab-panel {
+      grid-area: 1 / 1;
+      min-width: 0;
+    }
+    .forecast-tab-panel.is-hidden {
+      visibility: hidden;
+      pointer-events: none;
+    }
     .section-header + .section {
       margin-top: 0;
       padding-top: 0;

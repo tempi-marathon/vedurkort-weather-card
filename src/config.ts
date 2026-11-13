@@ -12,6 +12,17 @@ import {
 export type PrecipType = "rainfall" | "probability";
 export type CardLayout = "default" | "compact" | "minimal";
 export const CARD_LAYOUTS: CardLayout[] = ["default", "compact", "minimal"];
+export type ForecastTabsOrder = "daily_first" | "hourly_first";
+export const FORECAST_TABS_ORDERS: ForecastTabsOrder[] = [
+  "daily_first",
+  "hourly_first",
+];
+export type ForecastTabsDefault = "first" | "daily" | "hourly";
+export const FORECAST_TABS_DEFAULTS: ForecastTabsDefault[] = [
+  "first",
+  "daily",
+  "hourly",
+];
 export type DailyDisplay = "off" | "inline" | "modal";
 export const DAILY_DISPLAYS: DailyDisplay[] = ["off", "inline", "modal"];
 /** Condition scene: off, frozen still, or full CSS animation. */
@@ -143,6 +154,15 @@ export interface VedurkortCardConfig {
   precipitation_entity?: string;
   precipitation_probability_entity?: string;
   sun_entity?: string;
+  /**
+   * Show daily and hourly as tabs in one forecast area instead of stacked.
+   * Applies only when daily is inline and hourly is enabled. Default false.
+   */
+  forecast_tabs: boolean;
+  /** Which tab sits on the left. */
+  forecast_tabs_order: ForecastTabsOrder;
+  /** Tab open on load: the leftmost one, or a specific tab. */
+  forecast_tabs_default: ForecastTabsDefault;
   daily: DailyConfig;
   hourly: HourlyConfig;
 }
@@ -179,6 +199,9 @@ export const DEFAULT_CONFIG: Omit<VedurkortCardConfig, "entity"> = {
   show_alerts: false,
   show_pollen: false,
   sun_entity: "sun.sun",
+  forecast_tabs: false,
+  forecast_tabs_order: "daily_first",
+  forecast_tabs_default: "first",
   daily: {
     ...DEFAULT_FORECAST_BLOCK,
     days: 5,
@@ -259,6 +282,13 @@ function mergeConfigFields(
     alerts_device: emptyToUndef(input.alerts_device),
     alerts_entities: alertsEntities.length ? alertsEntities : undefined,
     show_pollen: Boolean(input.show_pollen ?? DEFAULT_CONFIG.show_pollen),
+    forecast_tabs: Boolean(
+      input.forecast_tabs ?? DEFAULT_CONFIG.forecast_tabs,
+    ),
+    forecast_tabs_order: normalizeForecastTabsOrder(input.forecast_tabs_order),
+    forecast_tabs_default: normalizeForecastTabsDefault(
+      input.forecast_tabs_default,
+    ),
     pollen_device: emptyToUndef(input.pollen_device),
     daily,
     hourly,
@@ -285,6 +315,18 @@ function migrateShowWind(input: {
       input.show_wind_direction ||
       input.show_wind_gust,
   );
+}
+
+function normalizeForecastTabsOrder(value: unknown): ForecastTabsOrder {
+  return FORECAST_TABS_ORDERS.includes(value as ForecastTabsOrder)
+    ? (value as ForecastTabsOrder)
+    : DEFAULT_CONFIG.forecast_tabs_order;
+}
+
+function normalizeForecastTabsDefault(value: unknown): ForecastTabsDefault {
+  return FORECAST_TABS_DEFAULTS.includes(value as ForecastTabsDefault)
+    ? (value as ForecastTabsDefault)
+    : DEFAULT_CONFIG.forecast_tabs_default;
 }
 
 function normalizeWindSpeedUnit(value: unknown): WindSpeedDisplayUnit {

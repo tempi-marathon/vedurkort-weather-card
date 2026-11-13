@@ -130,3 +130,69 @@ describe("editor chip list", () => {
     ).toBeTruthy();
   });
 });
+
+describe("editor forecast tabs", () => {
+  const has = (root: ShadowRoot, key: string) =>
+    root.querySelector(`[data-config="${key}"]`) != null;
+
+  it("shows the toggle only when daily is inline and hourly is on", async () => {
+    const { root } = await mount({
+      daily: { display: "inline" },
+      hourly: { enabled: true },
+    });
+    expect(has(root, "forecast_tabs")).toBe(true);
+    expect(root.textContent).not.toContain("Tabs need the daily forecast");
+  });
+
+  it("shows order and default only once tabs are on", async () => {
+    const off = await mount({
+      daily: { display: "inline" },
+      hourly: { enabled: true },
+    });
+    expect(has(off.root, "forecast_tabs_order")).toBe(false);
+    expect(has(off.root, "forecast_tabs_default")).toBe(false);
+    document.body.innerHTML = "";
+    const on = await mount({
+      forecast_tabs: true,
+      daily: { display: "inline" },
+      hourly: { enabled: true },
+    });
+    expect(has(on.root, "forecast_tabs_order")).toBe(true);
+    expect(has(on.root, "forecast_tabs_default")).toBe(true);
+  });
+
+  it("shows a hint instead when daily is a dialog or hourly is off", async () => {
+    for (const cfg of [
+      { daily: { display: "modal" }, hourly: { enabled: true } },
+      { daily: { display: "inline" }, hourly: { enabled: false } },
+    ]) {
+      const { root } = await mount({ forecast_tabs: true, ...cfg });
+      expect(has(root, "forecast_tabs")).toBe(false);
+      expect(has(root, "forecast_tabs_order")).toBe(false);
+      expect(root.textContent).toContain("Tabs need the daily forecast");
+      document.body.innerHTML = "";
+    }
+  });
+
+  it("writes the order and default into the config", async () => {
+    const { root, events, el } = await mount({
+      forecast_tabs: true,
+      daily: { display: "inline" },
+      hourly: { enabled: true },
+    });
+    const order = root.querySelector<HTMLSelectElement>(
+      'select[data-config="forecast_tabs_order"]',
+    )!;
+    order.value = "hourly_first";
+    order.dispatchEvent(new Event("change"));
+    await el.updateComplete;
+    expect(events.at(-1)!.forecast_tabs_order).toBe("hourly_first");
+    const def = root.querySelector<HTMLSelectElement>(
+      'select[data-config="forecast_tabs_default"]',
+    )!;
+    def.value = "daily";
+    def.dispatchEvent(new Event("change"));
+    await el.updateComplete;
+    expect(events.at(-1)!.forecast_tabs_default).toBe("daily");
+  });
+});

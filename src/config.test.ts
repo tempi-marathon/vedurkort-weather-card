@@ -319,3 +319,50 @@ describe("chip_order", () => {
     expect(cfg.chip_order?.[0]).toBe("pollen");
   });
 });
+
+describe("forecast tabs config", () => {
+  it("defaults forecast_tabs to false for legacy configs", () => {
+    expect(normalizeConfig({ entity: "weather.home" }).forecast_tabs).toBe(
+      false,
+    );
+    expect(editorConfigFromRaw({}).forecast_tabs).toBe(false);
+  });
+
+  it("preserves forecast_tabs true in card and editor paths", () => {
+    expect(
+      normalizeConfig({ entity: "weather.home", forecast_tabs: true })
+        .forecast_tabs,
+    ).toBe(true);
+    expect(
+      normalizeEditorConfig({ forecast_tabs: true }).forecast_tabs,
+    ).toBe(true);
+  });
+});
+
+describe("forecast tabs order and default", () => {
+  it("defaults for legacy configs", () => {
+    const cfg = normalizeConfig({ entity: "weather.home" });
+    expect(cfg.forecast_tabs_order).toBe("daily_first");
+    expect(cfg.forecast_tabs_default).toBe("first");
+  });
+
+  it("preserves valid values", () => {
+    const cfg = normalizeConfig({
+      entity: "weather.home",
+      forecast_tabs_order: "hourly_first",
+      forecast_tabs_default: "daily",
+    });
+    expect(cfg.forecast_tabs_order).toBe("hourly_first");
+    expect(cfg.forecast_tabs_default).toBe("daily");
+  });
+
+  it("falls back to defaults for invalid values", () => {
+    const cfg = normalizeConfig({
+      entity: "weather.home",
+      forecast_tabs_order: "sideways" as never,
+      forecast_tabs_default: "weekly" as never,
+    });
+    expect(cfg.forecast_tabs_order).toBe("daily_first");
+    expect(cfg.forecast_tabs_default).toBe("first");
+  });
+});
