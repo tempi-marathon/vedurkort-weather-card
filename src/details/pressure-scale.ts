@@ -32,6 +32,12 @@ export interface PressureScaleSegment {
   color: string;
 }
 
+export interface PressureGradientStop {
+  /** Position along the bar, 0–100%, ascending. */
+  pct: number;
+  color: string;
+}
+
 export interface PressureLegendRow {
   band: PressureScaleBand;
   color: string;
@@ -47,8 +53,13 @@ export interface PressureScaleModel {
   /** Reading with unit, e.g. "1012 hPa". */
   valueLabel: string;
   segments: PressureScaleSegment[];
+  /** Solid band cores with a short blend around each boundary. */
+  gradientStops: PressureGradientStop[];
   legendRows: PressureLegendRow[];
 }
+
+/** Half-width (scale %) of the color blend centred on each band boundary. */
+const BLEND_HALF_PCT = 6;
 
 function pctOfScale(hPa: number): number {
   const span = PRESSURE_SCALE_MAX_HPA - PRESSURE_SCALE_MIN_HPA;
@@ -111,6 +122,14 @@ export function buildPressureScaleModel(
       { band: "low", fromPct: 0, toPct: lowPct, color: BAND_COLORS.low },
       { band: "normal", fromPct: lowPct, toPct: highPct, color: BAND_COLORS.normal },
       { band: "high", fromPct: highPct, toPct: 100, color: BAND_COLORS.high },
+    ],
+    gradientStops: [
+      { pct: 0, color: BAND_COLORS.low },
+      { pct: lowPct - BLEND_HALF_PCT, color: BAND_COLORS.low },
+      { pct: lowPct + BLEND_HALF_PCT, color: BAND_COLORS.normal },
+      { pct: highPct - BLEND_HALF_PCT, color: BAND_COLORS.normal },
+      { pct: highPct + BLEND_HALF_PCT, color: BAND_COLORS.high },
+      { pct: 100, color: BAND_COLORS.high },
     ],
     legendRows: buildPressureLegendRows(unit, language),
   };

@@ -23,6 +23,35 @@ describe("buildPressureScaleModel", () => {
     expect(high!.toPct).toBe(100);
   });
 
+  it("builds ascending gradient stops with solid band cores", () => {
+    const m = buildPressureScaleModel(1012, "hPa", "en")!;
+    const stops = m.gradientStops;
+    expect(stops[0]!.pct).toBe(0);
+    expect(stops[stops.length - 1]!.pct).toBe(100);
+    for (let i = 1; i < stops.length; i++) {
+      expect(stops[i]!.pct).toBeGreaterThan(stops[i - 1]!.pct);
+    }
+    const lowPct = ((1000 - 970) / 80) * 100;
+    const highPct = ((1025 - 970) / 80) * 100;
+    // Blend zones are centred on the 1000 and 1025 hPa boundaries.
+    expect((stops[1]!.pct + stops[2]!.pct) / 2).toBeCloseTo(lowPct);
+    expect((stops[3]!.pct + stops[4]!.pct) / 2).toBeCloseTo(highPct);
+    // Each band keeps one solid color across its core.
+    expect(stops[0]!.color).toBe(stops[1]!.color);
+    expect(stops[2]!.color).toBe(stops[3]!.color);
+    expect(stops[4]!.color).toBe(stops[5]!.color);
+  });
+
+  it("uses the legend colors for the gradient cores", () => {
+    const m = buildPressureScaleModel(1012, "hPa", "en")!;
+    const colors = m.legendRows.map((r) => r.color);
+    expect([
+      m.gradientStops[0]!.color,
+      m.gradientStops[2]!.color,
+      m.gradientStops[5]!.color,
+    ]).toEqual(colors);
+  });
+
   it("places the marker and band for low, normal and high readings", () => {
     const low = buildPressureScaleModel(985, "hPa", "en")!;
     const mid = buildPressureScaleModel(1012, "hPa", "en")!;

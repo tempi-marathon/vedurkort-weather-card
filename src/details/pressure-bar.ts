@@ -14,20 +14,15 @@ export function renderPressureBarHero(
 ): TemplateResult {
   const ariaLabel = `${localize("pressure", language)} ${scale.valueLabel}, ${scale.bandLabel}`;
 
+  const gradient = `linear-gradient(to right, ${scale.gradientStops
+    .map((s) => `${s.color} ${s.pct}%`)
+    .join(", ")})`;
+
   return html`
     <div class="detail-pressure-hero" role="img" aria-label=${ariaLabel}>
       ${renderDetailHero(icon, hero)}
       <div class="detail-pressure-bar-wrap">
-        <div class="detail-pressure-bar-track">
-          ${scale.segments.map(
-            (seg) => html`
-              <span
-                class="detail-pressure-bar-seg"
-                style="left:${seg.fromPct}%;width:${seg.toPct -
-                seg.fromPct}%;background:${seg.color}"
-              ></span>
-            `,
-          )}
+        <div class="detail-pressure-bar-track" style="background:${gradient}">
           <span
             class="detail-pressure-bar-dot"
             style="left: ${scale.markerPct}%"
