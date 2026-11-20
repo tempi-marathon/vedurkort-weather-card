@@ -9,6 +9,7 @@
     "build": "npm run sync-icons && tsc --noEmit && vite build",
     "sync-icons": "node scripts/sync-icons.mjs",
     "lint": "tsc --noEmit",
+    "pretest": "npm run sync-icons",
     "test": "vitest run"
   },
   "keywords": [
