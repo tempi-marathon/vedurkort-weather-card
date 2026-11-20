@@ -889,69 +889,60 @@ export const backgroundStyles = css`
   }
 
   /* ---- fog ---- */
+  /* Overcast day/night sky (same palettes as the cloudy scenes) with soft
+     horizontal bands of haze drifting across it. */
   .vk-bg--fog .vk-bg__sky {
-    background: linear-gradient(180deg, #b8bcb6 0%, #9da29b 55%, #828780 100%);
+    background: linear-gradient(180deg, #6b7c93 0%, #9aabbd 50%, #c5d0db 100%);
   }
   .vk-fog-wisps {
     position: absolute;
     inset: 0 -25%;
     background:
-      radial-gradient(
-        ellipse 30% 50% at 18% 12%,
-        rgba(255, 255, 255, 0.5) 0%,
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 32% 45% at 65% 8%,
-        rgba(255, 255, 255, 0.45) 0%,
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 38% 55% at 22% 88%,
-        rgba(255, 255, 255, 0.55) 0%,
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 35% 50% at 70% 92%,
-        rgba(255, 255, 255, 0.5) 0%,
-        transparent 70%
+      linear-gradient(
+        180deg,
+        transparent 6%,
+        rgba(255, 255, 255, 0.34) 10%,
+        transparent 15%,
+        transparent 27%,
+        rgba(255, 255, 255, 0.26) 31%,
+        transparent 35%,
+        transparent 47%,
+        rgba(255, 255, 255, 0.38) 52%,
+        transparent 58%,
+        transparent 68%,
+        rgba(255, 255, 255, 0.3) 72%,
+        transparent 77%,
+        transparent 86%,
+        rgba(255, 255, 255, 0.4) 91%,
+        transparent 96%
       );
-    filter: blur(22px);
-    -webkit-mask-image: linear-gradient(
-      180deg,
-      #000 0%,
-      rgba(0, 0, 0, 0.12) 35%,
-      rgba(0, 0, 0, 0.12) 65%,
-      #000 100%
-    );
-    mask-image: linear-gradient(
-      180deg,
-      #000 0%,
-      rgba(0, 0, 0, 0.12) 35%,
-      rgba(0, 0, 0, 0.12) 65%,
-      #000 100%
-    );
+    filter: blur(7px);
     animation: vk-fog-drift 70s linear infinite alternate;
     will-change: transform;
   }
   .vk-bg--fog .vk-bg__scrim {
     background: linear-gradient(
       180deg,
-      transparent 0%,
-      rgba(220, 224, 218, 0.35) 100%
+      rgba(0, 0, 0, 0.1) 0%,
+      rgba(0, 0, 0, 0.22) 100%
     );
   }
   .vk-bg--fog-night .vk-bg__sky {
-    background: linear-gradient(180deg, #3a4048 0%, #2a3038 55%, #1e242c 100%);
+    background: radial-gradient(
+      ellipse at 50% 110%,
+      #2a3548 0%,
+      #1a2235 55%,
+      #0e1220 100%
+    );
   }
   .vk-bg--fog-night .vk-fog-wisps {
-    opacity: 0.55;
+    opacity: 0.4;
   }
   .vk-bg--fog-night .vk-bg__scrim {
     background: linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.12) 0%,
-      rgba(0, 0, 0, 0.38) 100%
+      rgba(0, 0, 0, 0.2) 0%,
+      rgba(0, 0, 0, 0.45) 100%
     );
   }
 

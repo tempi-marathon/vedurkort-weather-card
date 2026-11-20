@@ -6,6 +6,7 @@ import {
   hourlyForecastCondition,
   isOvercastCloudCover,
   OVERCAST_CLOUD_COVERAGE,
+  pressureIcon,
   uvIndexIcon,
 } from "./condition-map";
 
@@ -264,5 +265,38 @@ describe("conditionToMeteocon moon phase at night", () => {
     expect(conditionToMeteocon("cloudy", false, 100, false, atAge(14.8))).toBe(
       "overcast-night",
     );
+  });
+});
+
+describe("pressureIcon", () => {
+  it("falls back to the plain barometer without a valid reading", () => {
+    expect(pressureIcon(null, "hPa")).toBe("barometer");
+    expect(pressureIcon(undefined, "hPa")).toBe("barometer");
+    expect(pressureIcon(Number.NaN, "hPa")).toBe("barometer");
+  });
+
+  it("maps each level in hPa", () => {
+    expect(pressureIcon(985, "hPa")).toBe("barometer-low");
+    expect(pressureIcon(1013, "hPa")).toBe("barometer-moderate");
+    expect(pressureIcon(1030, "hPa")).toBe("barometer-high");
+    expect(pressureIcon(1040, "hPa")).toBe("barometer-very-high");
+    expect(pressureIcon(1050, "hPa")).toBe("barometer-extreme");
+  });
+
+  it("puts boundary values in the lower level", () => {
+    expect(pressureIcon(1000, "hPa")).toBe("barometer-moderate");
+    expect(pressureIcon(1025, "hPa")).toBe("barometer-moderate");
+    expect(pressureIcon(1035, "hPa")).toBe("barometer-high");
+    expect(pressureIcon(1045, "hPa")).toBe("barometer-very-high");
+    expect(pressureIcon(1045.1, "hPa")).toBe("barometer-extreme");
+  });
+
+  it("chooses the same icon in other units", () => {
+    expect(pressureIcon(29.1, "inHg")).toBe("barometer-low"); // ~985 hPa
+    expect(pressureIcon(30.0, "inHg")).toBe("barometer-moderate"); // ~1016 hPa
+    expect(pressureIcon(30.8, "inHg")).toBe("barometer-very-high"); // ~1043 hPa
+    expect(pressureIcon(760, "mmHg")).toBe("barometer-moderate"); // ~1013 hPa
+    expect(pressureIcon(101.3, "kPa")).toBe("barometer-moderate");
+    expect(pressureIcon(104, "kPa")).toBe("barometer-very-high");
   });
 });

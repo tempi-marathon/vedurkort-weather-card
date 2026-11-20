@@ -5,6 +5,7 @@ import type { DetailMetricId } from "../details/types";
 import {
   bearingToLabel,
   beaufortIcon,
+  pressureIcon,
   uvIndexIcon,
 } from "../icons/condition-map";
 import type { MeteoconName } from "../icons/allowlist";
@@ -406,7 +407,7 @@ function renderChip(
     case "pressure":
       return renderDetailButton(
         icon,
-        "barometer",
+        pressureIcon(snap.pressure, snap.pressureUnit),
         formatNumber(snap.pressure, ` ${snap.pressureUnit}`, 0),
         localize("pressure", language),
         "pressure",
@@ -494,7 +495,7 @@ function chipIconName(
     case "uv_index":
       return uvIndexIcon(snap.uvIndex);
     case "pressure":
-      return "barometer";
+      return pressureIcon(snap.pressure, snap.pressureUnit);
     case "cloud_coverage":
       return "cloudy";
     case "dew_point":

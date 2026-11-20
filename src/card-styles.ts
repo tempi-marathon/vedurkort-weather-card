@@ -86,6 +86,23 @@ export const cardStyles = [
       visibility: hidden;
       pointer-events: none;
     }
+    /* Each panel fills the shared cell; the chart absorbs the extra height in
+       the shorter forecast. Its normal height is the flex basis and never
+       shrinks, so the tallest tab keeps its default chart. */
+    .forecast-tabs-panels .forecast-tab-panel,
+    .forecast-tabs-panels .forecast,
+    .forecast-tabs-panels .forecast-scroll-inner {
+      display: flex;
+      flex-direction: column;
+    }
+    .forecast-tabs-panels .forecast,
+    .forecast-tabs-panels .forecast-scroll-inner {
+      flex: 1 1 auto;
+    }
+    .forecast-tabs-panels .chart-wrap {
+      flex: 1 0 auto;
+      min-height: 0;
+    }
     .section-header + .section {
       margin-top: 0;
       padding-top: 0;

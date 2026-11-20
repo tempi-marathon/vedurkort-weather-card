@@ -1,4 +1,9 @@
 import type { MeteoconName } from "./allowlist";
+import {
+  PRESSURE_HIGH_HPA,
+  PRESSURE_LOW_HPA,
+  pressureToHpa,
+} from "../details/metric-bands";
 import { lunarAgeDays, moonPhaseIcon, phaseFromAge } from "../details/moon-phase";
 import type { HaWeatherCondition } from "../types";
 
@@ -233,4 +238,22 @@ export function uvIndexIcon(uv: number | null | undefined): MeteoconName {
   if (n <= 0) return "uv-index";
   if (n >= 11) return "uv-index-11-plus";
   return `uv-index-${Math.min(11, n)}` as MeteoconName;
+}
+
+/**
+ * Barometer icon for a pressure reading in any unit. Levels in hPa: below 1000
+ * low, to 1025 moderate, to 1035 high, to 1045 very high, above extreme.
+ * Boundary values belong to the lower level.
+ */
+export function pressureIcon(
+  pressure: number | null | undefined,
+  unit: string,
+): MeteoconName {
+  if (pressure == null || Number.isNaN(pressure)) return "barometer";
+  const hPa = pressureToHpa(pressure, unit);
+  if (hPa < PRESSURE_LOW_HPA) return "barometer-low";
+  if (hPa <= PRESSURE_HIGH_HPA) return "barometer-moderate";
+  if (hPa <= 1035) return "barometer-high";
+  if (hPa <= 1045) return "barometer-very-high";
+  return "barometer-extreme";
 }
