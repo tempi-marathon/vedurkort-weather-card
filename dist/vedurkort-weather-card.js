@@ -18332,7 +18332,8 @@ function H0(e, t, i, a, r, n, s, l) {
     language: n,
     sunEntity: i.sun_entity,
     weatherEntityId: i.entity,
-    sunEvents: h
+    sunEvents: h,
+    iconScope: l?.iconScope
   })}
               </div>
             </div>
@@ -20681,8 +20682,8 @@ var I = class extends Pe {
       },
       language: t,
       panels: {
-        daily: H0("daily", this.hass, this._config, i, z, t),
-        hourly: H0("hourly", this.hass, this._config, i, z, t, () => this._onHourlyScroll())
+        daily: H0("daily", this.hass, this._config, i, z, t, void 0, { iconScope: "tab-daily" }),
+        hourly: H0("hourly", this.hass, this._config, i, z, t, () => this._onHourlyScroll(), { iconScope: "tab-hourly" })
       }
     })}
                 </div>

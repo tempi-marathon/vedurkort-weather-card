@@ -1596,6 +1596,8 @@ export class VedurkortWeatherCard extends LitElement {
                         snap,
                         forecastState,
                         language,
+                        undefined,
+                        { iconScope: "tab-daily" },
                       ),
                       hourly: renderForecastSection(
                         "hourly",
@@ -1605,6 +1607,7 @@ export class VedurkortWeatherCard extends LitElement {
                         forecastState,
                         language,
                         () => this._onHourlyScroll(),
+                        { iconScope: "tab-hourly" },
                       ),
                     },
                   })}
