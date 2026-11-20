@@ -12,9 +12,9 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 
 **Custom type:** `custom:vedurkort-weather-card`
 
-| Daily tab | Hourly tab | Icon style | Pressure sheet |
-| --- | --- | --- | --- |
-| ![Forecast tabs, Daily tab on a sunny day](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-tabs-daily.png) | ![Forecast tabs, Hourly tab at night with the moon phase](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-tabs-hourly.png) | ![Line icon style with the daily forecast](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-line-icons.png) | ![Pressure detail sheet with low, normal and high scale](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-pressure.png) |
+| Daily tab | Hourly tab | Icon style | Pressure sheet | Fog |
+| --- | --- | --- | --- | --- |
+| ![Forecast tabs, Daily tab on a sunny day](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-tabs-daily.png) | ![Forecast tabs, Hourly tab at night with the moon phase](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-tabs-hourly.png) | ![Line icon style with the daily forecast](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-line-icons.png) | ![Pressure detail sheet with low, normal and high scale](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-pressure.png) | ![Fog scene with the Daily tab](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-fog.png) |
 
 ## Features
 
