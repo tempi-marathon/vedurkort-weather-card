@@ -36,6 +36,11 @@ export interface ForecastSectionOptions {
   /** Override plot alignment (e.g. modal daily chart). */
   plotLeft?: number;
   plotWidth?: number;
+  /**
+   * Paint-id scope for the row icons. Tab panels pass distinct scopes so the
+   * hidden panel never owns the SVG ids (clip paths) the visible one uses.
+   */
+  iconScope?: string;
 }
 
 export interface DailyDialogShellOptions {
@@ -136,6 +141,7 @@ export function renderForecastSection(
                   sunEntity: config.sun_entity,
                   weatherEntityId: config.entity,
                   sunEvents,
+                  iconScope: options?.iconScope,
                 })}
               </div>
             </div>
