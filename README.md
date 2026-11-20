@@ -12,9 +12,9 @@ Home Assistant Lovelace weather card with **[Meteocons](https://meteocons.com/)*
 
 **Custom type:** `custom:vedurkort-weather-card`
 
-| Full | Current | Icon styles | Daily only |
+| Daily tab | Hourly tab | Icon style | Pressure sheet |
 | --- | --- | --- | --- |
-| ![Full card](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-full.png) | ![Current](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-current.png) | ![Icon styles](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-styles.png) | ![Daily only](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-daily-only.png) |
+| ![Forecast tabs, Daily tab on a sunny day](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-tabs-daily.png) | ![Forecast tabs, Hourly tab at night with the moon phase](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-tabs-hourly.png) | ![Line icon style with the daily forecast](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-line-icons.png) | ![Pressure detail sheet with low, normal and high scale](https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-pressure.png) |
 
 ## Features
 

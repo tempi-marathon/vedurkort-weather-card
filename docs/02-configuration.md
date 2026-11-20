@@ -75,6 +75,8 @@ With `smart_chips: true` the row is one line: chips that matter right now come f
 - **Humidity, dew point and pressure** are noteworthy only at extremes: humidity ≤ 25% or ≥ 80%, dew point below 5 °C or at 18 °C and above, pressure below 990 hPa or above 1030 hPa. Between those values they are quiet chips that only use spare room.
 - If the last chip and **More** don't both fit on one line, the least important chip moves into **More** so **More** stays on the first line. The row then holds that layout until the card width or the data changes.
 
+<img src="https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-more-menu.png" alt="The More menu open, listing the chips that are not on the row" width="320">
+
 ## Chip order
 
 Without smart chips, the detail chips show in `chip_order`. In the visual editor, the chip list sets both which chips appear and their order (drag the handle or use ▲/▼). **Reset order** goes back to the built-in order.

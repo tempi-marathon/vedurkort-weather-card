@@ -20,6 +20,8 @@ Full option reference: [2. Configuration](02-configuration.md)
 
 Tap the **current-weather block** (temperature + condition) or any **detail chip** to open a centered detail sheet. When `background` is `static` or `animated`, the sheet reuses the same CSS weather scene as the card (`static` freezes the full scene including precip). Animated scene motion pauses per card when that card is scrolled off-screen, when the tab is in the background, or when `prefers-reduced-motion` is set — so phones and dashboards with many cards do not keep animating invisible rain/clouds. An open detail/alerts/daily dialog on a card keeps that card’s animated scene running even if the host is reported off-screen.
 
+<img src="https://raw.githubusercontent.com/tempi-marathon/vedurkort-weather-card/main/images/vedurkort-chips.png" alt="All detail chips enabled, with the moon phase and pollen" width="320">
+
 Each sheet shows a large hero value, a short interpretation line, optional **24-hour forecast chart** (from hourly forecast data), and related stats. The current-conditions sheet also shows hourly condition icons under the chart. Charts are available for temperature, humidity, wind speed, precipitation, precipitation probability, cloud coverage, and pressure. UV, visibility, dew point, and gust show current values and copy without a chart when hourly forecast lacks that field.
 
 The **pressure** sheet shows a low / normal / high scale with smoothly blended colors and a marker for the current reading, plus a **pressure scale** legend with the ranges in your pressure unit (hPa, mbar, kPa, inHg or mmHg).
