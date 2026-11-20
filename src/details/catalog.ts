@@ -1,6 +1,7 @@
 import {
   bearingToLabel,
   beaufortIcon,
+  pressureIcon,
   uvIndexIcon,
 } from "../icons/condition-map";
 import type { MeteoconName } from "../icons/allowlist";
@@ -123,7 +124,7 @@ function heroForMetric(ctx: BuildDetailContext): {
     case "pressure":
       return {
         value: formatNumber(snap.pressure, ` ${snap.pressureUnit}`, 0) ?? "—",
-        icon: "barometer",
+        icon: pressureIcon(snap.pressure, snap.pressureUnit),
       };
     case "cloud_coverage":
       return {

@@ -24,7 +24,7 @@ Tap the **current-weather block** (temperature + condition) or any **detail chip
 
 Each sheet shows a large hero value, a short interpretation line, optional **24-hour forecast chart** (from hourly forecast data), and related stats. The current-conditions sheet also shows hourly condition icons under the chart. Charts are available for temperature, humidity, wind speed, precipitation, precipitation probability, cloud coverage, and pressure. UV, visibility, dew point, and gust show current values and copy without a chart when hourly forecast lacks that field.
 
-The **pressure** sheet shows a low / normal / high scale with smoothly blended colors and a marker for the current reading, plus a **pressure scale** legend with the ranges in your pressure unit (hPa, mbar, kPa, inHg or mmHg).
+The **pressure** sheet shows a low / normal / high scale with smoothly blended colors and a marker for the current reading, plus a **pressure scale** legend with the ranges in your pressure unit (hPa, mbar, kPa, inHg or mmHg). The pressure icon on the chip and in the sheet changes with the reading: low (below 1000 hPa), moderate (1000–1025), high (up to 1035), very high (up to 1045) and extreme (above 1045).
 **Tap action default:** opens the current-conditions sheet. Restore Home Assistant’s entity dialog with:
 
 ```yaml
